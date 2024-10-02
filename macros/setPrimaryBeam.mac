@@ -1,0 +1,17 @@
+#custom ParticleGun commands
+
+/gun/primaryType e-
+/gun/primaryEnergy 2.86 GeV
+/gun/primaryRelSigmaEnergy 1.0e-3
+/gun/primaryX 0 mm
+/gun/primaryY 0 mm
+/gun/primaryZ -30 mm
+/gun/primaryT 0 ns
+/gun/primaryXp 0 rad
+/gun/primaryYp 0 rad
+/gun/primarySigmaX 1 mm
+/gun/primarySigmaY 1 mm
+/gun/primarySigmaZ 1 mm
+/gun/primarySigmaT 0 ns
+/gun/primarySigmaXp 0.893e-6 rad
+/gun/primarySigmaYp 0.893e-6 rad

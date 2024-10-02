@@ -1,0 +1,38 @@
+#Positron Source type
+/det/isHybridSource false                   #defualt true
+
+#Radiator Crystal settings
+/crystal/setCrystalMaterial W               #PWO, BGO, W, Ir, C, Ge, Si (default)
+/crystal/setCrystalSize 20. 20. 12.0 mm
+/crystal/setCrystalLattice <111>            #planes (e.g. (111)) or axes (e.g. <111>)
+/crystal/setCrystalAngleX 0.e-6             
+/crystal/setCrystalAngleY 0.e-6
+#/crystal/setPotentialPath ../Potentials/W111/u1_0.065A/        
+/det/setRadiator true                       #default is false
+
+#further settings
+/det/setScoringCrystalExit true             #default is false
+
+/run/initialize
+
+/run/verbose 1                              #to see the Couples CutsVsRegion
+
+/run/setfilenamesave output/output_2.86GeV_W12.0mm_crystalline_mis0.000rad_pot0.050A.root
+
+#/gun/UseGPS true                            #default false. It works only if ReadFromFile is false.
+#/control/execute macros/beam_6GeV.mac        #old GPS macro
+/control/execute macros/setPrimaryBeam.mac  #new custom ParticleGun commands      
+
+/score/create/boxMesh boxMesh1                
+/score/mesh/boxSize 10. 10. 6.0 mm
+/score/mesh/nBin 41 41 25
+/score/mesh/translate/xyz 0. 0. -6.0 mm
+/score/quantity/energyDeposit Edep          #[MeV]       
+/score/close
+/score/list             
+
+#statistics
+/run/printProgress 100
+/run/beamOn 10000                            
+
+/score/dumpQuantityToFile boxMesh1 Edep output/Edep_2.86GeV_W12.0mm_crystalline_mis0.000rad_pot0.050A.txt
