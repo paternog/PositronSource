@@ -22,9 +22,10 @@ The application can be used to simulate a positron source. One or two volumes ca
 </p>
 
 ### Physics
-There are many settings that can be used to tune the simulation of the particle interactions inside oriented crystals. For instance, a crystal curvature can be set. Alternatively, a crystalline undulator with ideal sinusoidal undulation can be simulated by setting the parameters of the sinusoid. Also, a series of commands can be used to tag the particles and simulate therir trajectory inside the crystal. In this case, a dedicated ntuple (or, in alternative, a text file) will be produced at the end of the run with the following columns:
+There are many settings that can be used to tune the simulation of particle interactions inside oriented crystals.
+A series of commands can be used to tag the particles and simulate their trajectories. In this case, a text file will be produced at the end of the run with the following columns:
 ```
-"volume", "eventID", "trackID", "x [mm]", "tx [rad], "z [mm]", "xx [mm]", "yy [mm]"
+"volume", "eventID", "trackID", "x [mm]", "tx [rad], "z [mm]", "xx [mm]", "yy [mm]""
 ```
 In order to plot the trajectory use z and xx variables, while for tagging use x, tx and z.
 
