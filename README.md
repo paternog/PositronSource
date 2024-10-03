@@ -41,7 +41,8 @@ The beam features (primary particles) have to be set through standard `G4General
 PositronSource is optimised for an ntuple-based output, in which data from sensitive detectors are written event by event. The default output file format is the [ROOT](https://root.cern/) file (`.root`), which contains the ntuples as [tree objects](https://root.cern.ch/doc/master/classTTree.html). The output file is saved in `output/` (in the build path) at the end of the program execution; its name can be set in through the command `/run/setfilenamesave output/NAME_YOU_WANT.root`. Alternatively, different file formats can be chosen, e.g. the CSV. 
 
 The output file contains five ntuples. 
-The ntuple `scoring_ntuple` is used to score the features of the particles impingning onthe scoring screens. It contains the following variables (columns):
+
+The ntuple `scoring_ntuple` is used to score the features of the particles impingning on the scoring screens. It contains the following variables (columns):
 ```
 "screenID", "particle", "x", "y", "px", "py", "pz", "t", "eventID"    
 ```
@@ -61,7 +62,7 @@ The ntuple `edep_spheres` is instead used to store the energy deposited (MeV) in
 ```
 "volumeID", "edep", "eventID"    
 ```
-It is filled only if the target is indeed granular (it can be activated through the command `/det/setGranularConverter true`).
+where volumeID identify the single sphere inside the target. This ntuple is filled only if the target is indeed granular (it can be activated through the command `/det/setGranularConverter true`).
 
 Fianlly, the ntuple `scoring_ntuple2` is used to score the features of the particles leaving the radiator or the target/converter. It contains the following variables (columns):
 ```
