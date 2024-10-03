@@ -10,7 +10,7 @@ t_array=($(seq 8.0 1.0 16.0)) #mm
 mis_array=(0.000) #rad
 
 #pot_array=("0.050A", "0.065A")
-pot_array=("0.005A")
+pot_array=("0.050A")
 
 binsize=0.5 #mm
 
