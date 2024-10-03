@@ -18,7 +18,7 @@ The application is thought to be used without the need of a deep understaing of 
 The application can be used to simulate a positron source. One or two volumes can be present, depending if the user wants to consider a conventional/single-oriented-crystal sheme or the hybrid scheme. In the hybrid scheme, the first volume is a crystal typically oriented along a crystalline axis that serves as a radiator, whereas the second volume is a randomly oriented crystal where the photns emitted by the radiator are converted into positrons. The converter can be composed of small spheres (the so called granular target) so as to reduce the energy deposition and the thermomechanical stress. In addition, from one to three scoring screens are present to score the particle leaving or enetering the aformentioned volumes (see the figure below).
 
 <p align="center">
-    <img src="./readme_pics/geom.png" alt="" width="990" height="465">
+    <img src="./readme_pics/geom.png" alt="" width="800" height="465">
 </p>
 
 ### Physics
