@@ -1,5 +1,5 @@
 ## PositronSource
-PositronSource is a [Geant4](http://www.geant4.org/geant4/) application to simulate a positron source based both on the conventional approach and on oriented crystals. In the latter case both the single-crystal case and the hybrid scheme can be 
+PositronSource is a [Geant4](http://www.geant4.org/geant4/) application to simulate a positron source based both on the conventional approach and on oriented crystals. In the latter case, both the single-crystal source and the hybrid scheme can be investigated. 
 
 Both Geant4 and [CMake](https://cmake.org/) need to be installed on your machine in order to compile and run the software.
 Tested with:
@@ -15,14 +15,12 @@ Note: the latter requires [Git](https://git-scm.com/) installed on your machine.
 The application is thought to be used without the need of a deep understaing of how a Geant4 simulation works. Indeed, through a set of custom macro commands, the user can define the geometry and the physics he wants to use (see the macro run.mac inside the macros folder). 
 
 ### Geomtery
-The application can be used to simulate a calorimeter composed of a set of oriented crystals. The calorimeter can be segmented both transversely and longitudinally. The number of layers and the number of crystals per layer can be set through specific macro commands. To simulate the OREO case, the first layer only can be composed crystals oriented along a specific axis, whereas the other layer are composed of randmoly oriented crystals. Furtherore, a pre-shower layer at a given distance from the main calorimeter can be positioned. All the crystal features can be set via macro commands. 
+The application can be used to simulate a positron source. One or two volumes can be present, depending if the user wants to considerate a 
+
+calorimeter composed of a set of oriented crystals. The calorimeter can be segmented both transversely and longitudinally. The number of layers and the number of crystals per layer can be set through specific macro commands. To simulate the OREO case, the first layer only can be composed crystals oriented along a specific axis, whereas the other layer are composed of randmoly oriented crystals. Furtherore, a pre-shower layer at a given distance from the main calorimeter can be positioned. All the crystal features can be set via macro commands. 
 
 <p align="center">
-    <img src="./readme_pics/geom.jpg" alt="" width="990" height="465">
-</p>
-
-<p align="center">
-    <img src="./readme_pics/shower.png" alt="" width="990" height="465">
+    <img src="./readme_pics/geom.png" alt="" width="990" height="465">
 </p>
 
 ### Physics

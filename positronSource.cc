@@ -42,6 +42,7 @@
 
 #include "FTFP_BERT.hh"
 #include "G4FastSimulationPhysics.hh"
+#include "G4CoherentPairProductionPhysics.hh"
 
 #include "Randomize.hh"
 #include <sys/time.h>
@@ -68,19 +69,12 @@ int main(int argc,char** argv)
 		fin.close();
 	}
 	random_seed += time(NULL);
-	//random_seed *= 1000; //*random_seed + time(NULL); 
-	//random_seed += 1000;
     G4cout << "Random seed: " << random_seed << G4endl;
     CLHEP::HepRandom::setTheSeed(random_seed);
  
     //Use G4SteppingVerboseWithUnits
     G4int precision = 4;
     G4SteppingVerbose::UseBestUnit(precision);
-
-    //Construct the run manager
-    //auto* runManager =
-        //G4RunManagerFactory::CreateRunManager(G4RunManagerType::Default);
-    //runManager->SetNumberOfThreads( 1 );
       
 #ifdef G4MULTITHREADED
     G4MTRunManager* runManager = new G4MTRunManager;
@@ -125,6 +119,12 @@ int main(int argc,char** argv)
 	fastSimulationPhysics->ActivateFastSimulation("GenericIon");
 	// -- Attach the fast simulation physics constructor to the physics list
 	physicsList->RegisterPhysics(fastSimulationPhysics);
+	/*
+    //Coherent pair production model (new: September 2024, to test!)
+    G4CoherentPairProductionPhysics* coherentPairProductionPhysics =
+        new G4CoherentPairProductionPhysics();
+    physicsList->RegisterPhysics(coherentPairProductionPhysics);
+    */
 	physicsList->SetVerboseLevel(1);
 	runManager->SetUserInitialization(physicsList);
 
