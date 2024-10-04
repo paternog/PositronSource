@@ -1,5 +1,5 @@
 ## PositronSource
-PositronSource is a [Geant4](http://www.geant4.org/geant4/) application to simulate a positron source based both on the conventional approach, which relies on an amorphous target, and on oriented crystals. In the latter case, both the single-crystal and the hybrid scheme can be investigated. 
+PositronSource is a [Geant4](http://www.geant4.org/geant4/) application to simulate a positron source following the conventional approach, which relies on an amorphous target, and a positron source based on oriented crystals. In the latter case, both the single-crystal and the hybrid scheme can be investigated. 
 
 <p align="center">
     <img src="./readme_pics/schemes.png" alt="" width="900" height="450">
