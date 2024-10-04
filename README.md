@@ -2,7 +2,7 @@
 PositronSource is a [Geant4](http://www.geant4.org/geant4/) application to simulate a positron source based both on the conventional approach and on oriented crystals. In the latter case, both the single-crystal and the hybrid scheme can be investigated. 
 
 <p align="center">
-    <img src="./readme_pics/schemes.png" alt="" width="990" height="200">
+    <img src="./readme_pics/schemes.png" alt="" width="990" height="450">
 </p>
 
 Both Geant4 and [CMake](https://cmake.org/) need to be installed on your machine in order to compile and run the software.
