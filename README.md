@@ -24,7 +24,7 @@ The application can be used to simulate a positron source. One or two volumes ca
 An "advanved hybrid scheme" that includes a bending magnet or a collimtor to remove the charged particle or limit the number of particles impinging on the converter, respectively, can also be considered. 
 
 <p align="center">
-    <img src="./readme_pics/geom_coll_magnet.png" alt="" width="700" height="465">
+    <img src="./readme_pics/geom_coll_magnet.png" alt="" width="900" height="465">
 </p>
 
 A set of macros commands can be used to set the magnet and the collimator features (see macros/run.mac).
