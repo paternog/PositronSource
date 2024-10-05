@@ -216,7 +216,7 @@ def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True):
     """
     
     import numpy as np
-    
+        
     #calculate statistics    
     x = df['x[mm]'].values*1e-3           #m
     xp = df['xp[mrad]'].values*1e-3       #rad
@@ -229,11 +229,25 @@ def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True):
     px = xp*pz                            #MeV/c
     py = yp*pz                            #MeV/c
     theta = np.arctan((xp**2+yp**2)**0.5) #rad
+    gamma = np.mean(E/m)
+    delta_gamma = np.std(E/m)
     
-    em_x = np.sqrt(np.mean((x-np.mean(x))**2)*np.mean((xp-np.mean(xp))**2)-\
-                   np.mean((x-np.mean(x))*(xp-np.mean(xp)))**2)
-    em_y = np.sqrt(np.mean((y-np.mean(y))**2)*np.mean((yp-np.mean(yp))**2)-\
-                   np.mean((y-np.mean(y))*(yp-np.mean(yp)))**2)    
+    em_x_tr = np.sqrt(np.mean((x-np.mean(x))**2)*np.mean((xp-np.mean(xp))**2)-\
+                      np.mean((x-np.mean(x))*(xp-np.mean(xp)))**2)
+    em_y_tr = np.sqrt(np.mean((y-np.mean(y))**2)*np.mean((yp-np.mean(yp))**2)-\
+                      np.mean((y-np.mean(y))*(yp-np.mean(yp)))**2)
+    norm_em_x_tr = np.sqrt(gamma**2-1)*em_x_tr
+    norm_em_y_tr = np.sqrt(gamma**2-1)*em_y_tr
+    # Previous definition holds only when the beam energy spread is small.
+    # A more geneal definition is given by Floettmann PRAB, 034202 (2003).
+    # It is used by RF-Track and ASTRA, so I adopted it.
+    em_x = np.sqrt(np.mean((x-np.mean(x))**2)*np.mean((px-np.mean(px))**2)-\
+                   np.mean((x-np.mean(x))*(px-np.mean(px)))**2)/(m*np.mean(pz))
+    em_y = np.sqrt(np.mean((y-np.mean(y))**2)*np.mean((py-np.mean(py))**2)-\
+                   np.mean((y-np.mean(y))*(py-np.mean(py)))**2)/(m*np.mean(pz))
+    norm_em_x = np.mean(pz)*em_x
+    norm_em_y = np.mean(pz)*em_y
+    
     mean_x = np.mean(x)
     mean_y = np.mean(y)
     sigma_x = np.std(x)
@@ -246,26 +260,32 @@ def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True):
     mean_py = np.mean(py)
     sigma_px = np.std(px)
     sigma_py = np.std(py)
-    gamma = np.mean(E/m)
-    delta_gamma =np.std(E/m)
-    norm_em_x = np.sqrt(gamma**2-1)*em_x
-    norm_em_y = np.sqrt(gamma**2-1)*em_y
-    energy_spread = np.std(E)/np.mean(E)
     mean_E = np.mean(E)
-    std_E = np.std(E)
+    sigma_E = np.std(E)
+    energy_spread = sigma_E/mean_E
     n_m_p = len(E)
 
     #Twiss parameters (gpaterno)
-    beta_x = sigma_x**2/em_x
-    beta_y = sigma_y**2/em_y
-    gamma_x = sigma_xp**2/em_x
-    gamma_y = sigma_yp**2/em_y
-    alpha_x = np.sqrt(beta_x*gamma_x-1)
-    alpha_y = np.sqrt(beta_y*gamma_y-1)
+    beta_x = sigma_x**2/em_x_tr
+    beta_y = sigma_y**2/em_y_tr
+    gamma_x = sigma_xp**2/em_x_tr
+    gamma_y = sigma_yp**2/em_y_tr
+    xpx_rms = np.mean((x-np.mean(x))*(xp-np.mean(xp)))
+    ypy_rms = np.mean((y-np.mean(y))*(yp-np.mean(yp)))
+    alpha_x = -xpx_rms/em_x_tr
+    alpha_y = -ypy_rms/em_y_tr
+    #alpha_x = np.sqrt(beta_x*gamma_x-1) #equivalent is we use em_x_tr
+    #alpha_y = np.sqrt(beta_y*gamma_y-1) #equivalent is we use em_y_tr
 
     #print results
     if beVerbose:
         print('--------------------------------------------------\n')
+        print('Beam trace-space Emittances:')
+        print('em_x_tr = %.2e m*rad' % (em_x_tr))
+        print('em_y_tr = %.2e m*rad' % (em_y_tr))
+        print('Beam trace-space Emittances:')
+        print('em_x_n_tr = %.2e m*rad' % (norm_em_x_tr))
+        print('em_y_n_tr = %.2e m*rad' % (norm_em_y_tr))
         print('Beam Emittances:')
         print('em_x = %.2e m*rad' % (em_x))
         print('em_y = %.2e m*rad' % (em_y))
@@ -287,15 +307,15 @@ def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True):
         print('--------------------------------------------------\n')
         print('bunch_length = %.2f mm' % np.std(bl))
         print('')
-        print('mean_energy = %.4f MeV' % np.mean(E))
-        print('std_energy = %.4f MeV' % np.std(E))
+        print('mean_energy = %.4f MeV' % mean_E)
+        print('std_energy = %.4f MeV' % sigma_E)
         print('energy_spread = %.4f' % energy_spread)
         print('gamma = %.4f' % gamma)
         print('delta_gamma = %.4f' % delta_gamma)
         print('--------------------------------------------------\n')
         print('NMP = %d\n' % n_m_p)
         print('--------------------------------------------------\n')
-        print('Twiss parameters:')
+        print('Twiss parameters (calculated using em_x,y_tr):')
         print('alpha_x = %.4f' % alpha_x)
         print('alpha_y = %.4f' % alpha_y)
         print('beta_x = %.6f m' % beta_x)
@@ -728,7 +748,7 @@ def two_scatterplot_with_hist(x1, y1, x2, y2, \
     
     # Show and save the plot
     if saveFigs:
-        plt.savefig(myoutpath + 'xy_with_histos' + '.jpg')
+        plt.savefig(myoutpath + '2D_with_histos' + '.jpg')
     plt.show()
 
 
