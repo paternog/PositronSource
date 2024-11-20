@@ -1,3 +1,11 @@
+def print_array_size(arr):
+    import numpy as np 
+    x = np.array(arr)
+    print("Size of the array = number of elements:", x.size)
+    print("Memory size of one array element in bytes:", x.itemsize)
+    print("Memory size of numpy array in MB:", round(x.size * x.itemsize / 1048576, 2))
+    
+    
 def list_flatten(myList):
     """
     flatten a list of lists
@@ -52,7 +60,8 @@ def from_edges_to_bins(edges):
 
 def smooth(y, box_pts):
     """
-    Function to smooth data
+    Function to smooth data (y).
+    box_pts acts a smooth factor.
     """
     import numpy as np
     box = np.ones(box_pts)/box_pts
@@ -183,22 +192,41 @@ def elliptical_selection(x, y, g_ell_center, g_ell_width, g_ell_height, angle, a
     return xin, yin, mask
 
 
-def write_spectrum_to_G4file(Eedges, spectrum, output_file):
+def write_spectrum(Eedges, spectrum, output_file):
     """
     Function to write an energy spectrum obtained through an
-    histogram with density=True to a file with Geant4 format. 
+    histogram to a text file. 
     output_file must be complete: output_path + outname + extension.
     """
     Ebin = Eedges[:-1] + (Eedges[1]-Eedges[0])*0.5
     Epdf = spectrum * (Eedges[1]-Eedges[0])
     print("spectrum integral:", round(sum(Epdf),4))
     with open(output_file, 'w') as f:
+        f.write('#energy[MeV] spectrum\n')
+        for i in range(len(Epdf)):
+            f.write('%.4f %.8f\n' % (Ebin[i], Epdf[i]))
+    print('spectrum written to %s!\n' % output_file)
+
+
+def write_spectrum_to_G4file(Eedges_MeV, spectrum, output_file):
+    """
+    Function to write an energy spectrum obtained through an
+    histogram with density=True to a file with Geant4 format.
+    In Geant4 the energy bins must be defined in MeV.
+    output_file must be complete: output_path + outname + extension.
+    """
+    DE = Eedges_MeV[1] - Eedges_MeV[0]
+    Ebin = Eedges_MeV[:-1] + DE*0.5
+    print("Energy bin width: %.3f MeV" % DE)    
+    Eprob = spectrum * DE
+    print("spectrum integral:", round(sum(Eprob), 4))
+    with open(output_file, 'w') as f:
         f.write('#energy spectrum\n')
         f.write('/gps/ene/type User\n')
         f.write('/gps/hist/type energy\n')
-        for i in range(len(Epdf)):
-            f.write('/gps/hist/point %.4f %.8f\n' % (Ebin[i], Epdf[i]))
-    print('spectrum written to %s!\n' % output_file)
+        for i in range(len(spectrum)):
+            f.write('/gps/hist/point %.4f %.8f\n' % (Ebin[i], Eprob[i]))
+    print('Spectrum written to %s!\n' % output_file)
     
 
 #######################################################################################################
@@ -586,9 +614,11 @@ def plot_RFTrack_weighted_scatterplots(df1, df2, radius_sel=1e15, lbl1='', lbl2=
         df2_sel = df2[df2['x[mm]']**2 + df2['y[mm]']**2 < radius_sel**2]
         
     if weightThem:
-        c1 = np.log(df1_sel['p[MeV/c]'])
+        #c1 = np.log(df1_sel['p[MeV/c]'])
+        c1 = (df1_sel['t[mm/c]'])
         if not df2.empty:
-            c2 = np.log(df2_sel['p[MeV/c]'])
+            #c2 = np.log(df2_sel['p[MeV/c]'])
+            c2 = (df2_sel['t[mm/c]'])
     else:
         c1 = '#1f77b4'
         c2 = '#ff7f0e'
@@ -605,7 +635,8 @@ def plot_RFTrack_weighted_scatterplots(df1, df2, radius_sel=1e15, lbl1='', lbl2=
     if weightThem:
         cbar = plt.colorbar(ax=plt.gca())
         cbar.ax.tick_params(labelsize=fs)
-        cbar.set_label(r"log(p[MeV/c])", fontsize=fs, rotation=90)
+        #cbar.set_label(r"log(p[MeV/c])", fontsize=fs, rotation=90)
+        cbar.set_label(r"t[mm/c]", fontsize=fs, rotation=90)
     plt.legend(fontsize=fs)
     plt.title("", fontsize=fs)
     plt.xlabel("x (mm)", fontsize=fs)
@@ -634,8 +665,10 @@ def two_scatterplot_with_hist(x1, y1, x2, y2, \
     from matplotlib.ticker import AutoMinorLocator
     
     # Set up default x and y limits
-    xlims = [min([min(x1), min(x2)]), max([max(x1), max(x2)])]
-    ylims = [min([min(y1), min(y2)]), max([max(y1), max(y2)])]
+    xmm = max([abs(min(x1)), abs(max(x1)), abs(min(x2)), abs(max(x2))])
+    ymm = max([abs(min(y1)), abs(max(y1)), abs(min(y2)), abs(max(y2))])
+    xlims = [-xmm, xmm]
+    ylims = [-ymm, ymm]
     #print("xlims:", xlims)
     #print("ylims:", ylims)
 
@@ -672,7 +705,7 @@ def two_scatterplot_with_hist(x1, y1, x2, y2, \
     axMain.tick_params(axis="both", which='major', direction='in', length=8)
     axMain.tick_params(axis="both", which='minor', direction='in', length=4)
     axMain.grid(color='gray', linestyle='--', linewidth=1, alpha=0.5)
-    #axMain.axis('equal') #caues a mismatch between the grids
+    #axMain.axis('equal') #it causes a mismatch between the grids
 
     # Plot the axes labels
     axMain.set_xlabel(xlabel, fontsize=fs)
@@ -703,10 +736,10 @@ def two_scatterplot_with_hist(x1, y1, x2, y2, \
     # Plot the histograms
     axHistx.hist(x1, bins=xbins, alpha=opacity, label=lbl1, color=c1)
     axHistx.hist(x2, bins=xbins, alpha=opacity, label=lbl2, color=c2)
-    axHistx.legend(fontsize=fs*0.75)
+    #axHistx.legend(fontsize=fs*0.75)
     axHisty.hist(y1, bins=ybins, orientation='horizontal', alpha=opacity, label=lbl1, color=c1)
     axHisty.hist(y2, bins=ybins, orientation='horizontal', alpha=opacity, label=lbl2, color=c2)
-    axHisty.legend(fontsize=fs*0.75)
+    #axHisty.legend(fontsize=fs*0.75)
  
     # Set up the histogram limits
     axHistx.set_xlim(xlims)
@@ -756,7 +789,7 @@ def plot_EorPspectrum(p, lbl='', \
                       p2=[], lbl2='', \
                       isE=False, plotLog=False, opacity=1, \
                       IWantDensity=False, NormMax=False, \
-                      nbin_E=100, range_E=None, \
+                      nbin_E=100, range_E=None, solidPlot=False, \
                       myoutpath='', saveFigs=False):
     
     """
@@ -781,27 +814,32 @@ def plot_EorPspectrum(p, lbl='', \
         NormMax = False
     else:
         ylbl = 'Counts (arb. units)'
-    
-    """
-    spectrum, edges = np.histogram(p, density=IWantDensity, bins=nbin_E, range=range_E)
-    bin_E = edges[:-1] + (edges[1]-edges[0])*0.5
-    if len(p2)>0:
-        spectrum2, _ = np.histogram(p2, density=IWantDensity, bins=nbin_E, range=range_E)
         
-    if NormMax:
-        spectrum = spectrum / np.max(spectrum)
-        if len(p2)>0:
-            spectrum2 = spectrum2 / np.max(spectrum2)
-    """
-    
+        
     fig = plt.figure(figsize=(9, 6))
     fs = 16
     lw = 2
-    #plt.plot(bin_E, spectrum, linewidth=lw, alpha=opacity, label=lbl)
-    h = plt.hist(p, density=IWantDensity, bins=nbin_E, range=range_E, alpha=opacity, label=lbl)
-    if len(p2)>0:
-        #plt.plot(bin_E, spectrum2, linewidth=lw, alpha=opacity, label=lbl2)
-        plt.hist(p2, density=IWantDensity, bins=nbin_E, range=range_E, alpha=opacity, label=lbl2)
+    
+    if solidPlot:
+        spectrum, edges, _ = plt.hist(p, density=IWantDensity, bins=nbin_E, range=range_E, alpha=opacity, label=lbl)
+        if len(p2)>0:     
+            spectrum2, _, _ = plt.hist(p2, density=IWantDensity, bins=nbin_E, range=range_E, alpha=opacity, label=lbl2)        
+    else:
+        # code to plot only lines and not solid histograms 
+        spectrum, edges = np.histogram(p, density=IWantDensity, bins=nbin_E, range=range_E)
+        bin_E = edges[:-1] + (edges[1]-edges[0])*0.5
+        if len(p2)>0:
+            spectrum2, _ = np.histogram(p2, density=IWantDensity, bins=nbin_E, range=range_E)
+
+        if NormMax:
+            spectrum = spectrum / np.max(spectrum)
+            if len(p2)>0:
+                spectrum2 = spectrum2 / np.max(spectrum2)
+        
+        plt.plot(bin_E, spectrum, linewidth=lw, alpha=opacity, label=lbl)
+        if len(p2)>0:
+            plt.plot(bin_E, spectrum2, linewidth=lw, alpha=opacity, label=lbl2)
+        
     plt.legend(fontsize=fs*0.75)
     plt.xlabel(xlbl, fontsize=fs)
     plt.ylabel(ylbl, fontsize=fs)
