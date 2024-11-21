@@ -198,14 +198,16 @@ def write_spectrum(Eedges, spectrum, output_file):
     histogram to a text file. 
     output_file must be complete: output_path + outname + extension.
     """
-    Ebin = Eedges[:-1] + (Eedges[1]-Eedges[0])*0.5
-    Epdf = spectrum * (Eedges[1]-Eedges[0])
-    print("spectrum integral:", round(sum(Epdf),4))
+    DE = Eedges[1] - Eedges[0]
+    Ebin = Eedges[:-1] + DE*0.5
+    print("Energy bin width: %.4f MeV" % DE) 
+    Eprob = spectrum * DE
+    print("Spectrum integral:", round(sum(Eprob),4))
     with open(output_file, 'w') as f:
         f.write('#energy[MeV] spectrum\n')
-        for i in range(len(Epdf)):
-            f.write('%.4f %.8f\n' % (Ebin[i], Epdf[i]))
-    print('spectrum written to %s!\n' % output_file)
+        for i in range(len(spectrum)):
+            f.write('%.4f %.8f\n' % (Ebin[i], Eprob[i]))
+    print('Spectrum written to %s!\n' % output_file)
 
 
 def write_spectrum_to_G4file(Eedges_MeV, spectrum, output_file):
@@ -217,9 +219,9 @@ def write_spectrum_to_G4file(Eedges_MeV, spectrum, output_file):
     """
     DE = Eedges_MeV[1] - Eedges_MeV[0]
     Ebin = Eedges_MeV[:-1] + DE*0.5
-    print("Energy bin width: %.3f MeV" % DE)    
+    print("Energy bin width: %.4f MeV" % DE)    
     Eprob = spectrum * DE
-    print("spectrum integral:", round(sum(Eprob), 4))
+    print("Spectrum integral:", round(sum(Eprob), 4))
     with open(output_file, 'w') as f:
         f.write('#energy spectrum\n')
         f.write('/gps/ene/type User\n')
@@ -231,6 +233,140 @@ def write_spectrum_to_G4file(Eedges_MeV, spectrum, output_file):
 
 #######################################################################################################
 ############# Set of functions to calculate and plot the phase space of particle beams ################
+def calc_CAIN_beam_properties(df, m=0.511, beVerbose=True, \
+                              IWantSaveStat=False, exportpath='', exportname=''):
+    
+    """
+    Function adapted form GenerateElectronBeamForCain.m (Matlab) script,
+    which is based on calculations originally developed by I. Drebot
+    for electrons and revised by gpaterno.
+    This version accepts a CAIN phase space given in the format:
+    columns = ['x[m]', 'y[m]', 't[s]', 'E[eV]', 'px[eV/c]', 'py[eV/c]', 'pz[eV/c]']
+    and calculates the properties, which can be saved to a txt file.
+    The particle mass in MeV/c2 can be passed. Verbosity can be turned off.
+    """
+    
+    import numpy as np
+    import pandas as pd
+    
+    # constants
+    c = 299792458 #speed of light in vacuum [m/s]
+
+    #calculate statistic (trace-based)
+    theta = np.arctan((df['px[eV/c]']**2+df['py[eV/c]']**2)**0.5/df['pz[eV/c]']) #[rad]    
+    e_x = df['x[m]']                     #[m]
+    e_xp = df['px[eV/c]']/df['pz[eV/c]'] #[rad]
+    e_y = df['y[m]']                     #[m]
+    e_yp = df['py[eV/c]']/df['pz[eV/c]'] #[rad]
+    e_s = df['t[s]']*c                   #[m]
+    e_E = df['E[eV]']*1e-6               #[MeV]
+
+    e_em_x = np.sqrt(np.mean((e_x-np.mean(e_x))**2)*np.mean((e_xp-np.mean(e_xp))**2)-\
+                     np.mean((e_x-np.mean(e_x))*(e_xp-np.mean(e_xp)))**2)
+    e_em_y = np.sqrt(np.mean((e_y-np.mean(e_y))**2)*np.mean((e_yp-np.mean(e_yp))**2)-\
+                     np.mean((e_y-np.mean(e_y))*(e_yp-np.mean(e_yp)))**2)
+    
+    mean_x = np.mean(e_x)
+    mean_y = np.mean(e_y)
+    sigma_x = np.std(e_x)
+    sigma_y = np.std(e_y)
+    mean_xp = np.mean(e_xp)
+    mean_yp = np.mean(e_yp)
+    sigma_xp = np.std(e_xp)
+    sigma_yp = np.std(e_yp)
+    gamma = np.mean(e_E/m)
+    delta_gamma = np.std(e_E/m)
+    norm_em_x = np.sqrt(gamma**2-1)*e_em_x
+    norm_em_y = np.sqrt(gamma**2-1)*e_em_y
+    energy_spread = np.std(e_E)/np.mean(e_E)
+    mean_e_E = np.mean(e_E)
+    std_e_E = np.std(e_E)
+    n_m_p = len(e_E)
+
+    #Twiss parameters (gpaterno)
+    beta_x = sigma_x**2/e_em_x
+    beta_y = sigma_y**2/e_em_y
+    gamma_x = sigma_xp**2/e_em_x
+    gamma_y = sigma_yp**2/e_em_y
+    alpha_x = np.sqrt(beta_x*gamma_x-1)
+    alpha_y = np.sqrt(beta_y*gamma_y-1)
+
+    #print results
+    print('--------------------------------------------------\n')
+    print('Beam non norm Emittances:')
+    print('EmitX = %.5e m*rad' % e_em_x)
+    print('EmitY = %.5e m*rad' % e_em_y)
+    print('Beam normalized Emittances:')
+    print('EmitXn = %.5e m*rad' % norm_em_x)
+    print('EmitYn = %.5e m*rad' % norm_em_y)
+    print('')
+    print('sigma_x = %.4f um' % (sigma_x*1e6))
+    print('sigma_y = %.4f um' % (sigma_y*1e6))
+    print('')
+    print('mean_energy = %.4f MeV' % (np.mean(e_E)))
+    print('std_energy = %.4f MeV' % (np.std(e_E)))
+    print('energy_spread = %.4f' % energy_spread)
+    print('gamma = %.4f' % gamma)
+    print('delta_gamma = %.4f' % delta_gamma)
+    print('--------------------------------------------------\n')
+    print('NMP = %d\n' % n_m_p)
+    print('theta_mean = %.4e rad' % np.mean(theta))
+    print('theta_std = %.4e rad' % np.std(theta))
+    print('theta_rms = %.4e rad' % ((np.std(theta)**2+np.mean(theta)**2)**0.5))
+    print('ept = %.4e rad' % ((sigma_xp**2+sigma_yp**2)**0.5))
+    print('theta_max = %.4e rad' % np.max(theta))
+    print('--------------------------------------------------\n')
+    print('sigma_z = %.4f um' % np.std(e_s*1e6))
+    print('--------------------------------------------------\n')
+    print('Twiss parameters:')
+    print('alpha_x = %.4f' % alpha_x)
+    print('alpha_y = %.4f' % alpha_y)
+    print('beta_x = %.6f m' % beta_x)
+    print('beta_y = %.6f m' % beta_y)
+    print('gamma_x = %.4f m^-1' % gamma_x)
+    print('gamma_y = %.4f m^-1' % gamma_y)
+    print('--------------------------------------------------\n')
+
+    #export results
+    if IWantSaveStat:
+        if exportname == '':
+            exportname = 'ebeam_stat.txt'
+        with open(exportpath+exportname, 'w') as f:
+            f.write('Beam non norm Emittances:\n')
+            f.write('EmitX = %.5e m*rad\n' % e_em_x)
+            f.write('EmitY = %.5e m*rad\n' % e_em_y)
+            f.write('Beam normalized Emittances:\n')
+            f.write('EmitXn = %.5e m*rad\n' % norm_em_x)
+            f.write('EmitYn = %.5e m*rad\n' % norm_em_y)
+            f.write('\n')
+            f.write('sigma_x = %.4f um\n' % (sigma_x*1e6))
+            f.write('sigma_y = %.4f um\n' % (sigma_y*1e6))
+            f.write('\n')
+            f.write('mean_energy = %.4f MeV\n' % (np.mean(e_E)))
+            f.write('std_energy = %.4f MeV\n' % (np.std(e_E)))
+            f.write('energy_spread = %.4f\n' % energy_spread)
+            f.write('gamma = %.4f\n' % gamma)
+            f.write('delta_gamma = %.4f\n' % delta_gamma)
+            f.write('--------------------------------------------------\n')
+            f.write('NMP = %d\n' % n_m_p)
+            f.write('theta_mean = %.4e rad\n' % np.mean(theta))
+            f.write('theta_std = %.4e rad\n' % np.std(theta))
+            f.write('theta_rms = %.4e rad\n' % ((np.std(theta)**2+np.mean(theta)**2)**0.5))
+            f.write('ept = %.4e rad\n' % ((sigma_xp**2+sigma_yp**2)**0.5))
+            f.write('theta_max = %.4e rad\n' % np.max(theta))
+            f.write('--------------------------------------------------\n')
+            f.write('sigma_z = %.4f um\n' % np.std(e_s*1e6))
+            f.write('--------------------------------------------------\n')
+            f.write('Twiss parameters:\n')
+            f.write('alpha_x = %.4f\n' % alpha_x)
+            f.write('alpha_y = %.4f\n' % alpha_y)
+            f.write('beta_x = %.6f m\n' % beta_x)
+            f.write('beta_y = %.6f m\n' % beta_y)
+            f.write('gamma_x = %.4f m^-1\n' % gamma_x)
+            f.write('gamma_y = %.4f m^-1\n' % gamma_y)      
+        print('Beam statistics written in %s file!\n' % (exportpath+exportname))
+
+
 def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True):
     
     """
@@ -266,7 +402,7 @@ def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True):
                       np.mean((y-np.mean(y))*(yp-np.mean(yp)))**2)
     norm_em_x_tr = np.sqrt(gamma**2-1)*em_x_tr
     norm_em_y_tr = np.sqrt(gamma**2-1)*em_y_tr
-    # Previous definition holds only when the beam energy spread is small.
+    # Previous (trace-based) definition holds only when the beam energy spread is small.
     # A more geneal definition is given by Floettmann PRAB, 034202 (2003).
     # It is used by RF-Track and ASTRA, so I adopted it.
     em_x = np.sqrt(np.mean((x-np.mean(x))**2)*np.mean((px-np.mean(px))**2)-\
@@ -593,7 +729,8 @@ def plot_RFTrack_x_vs_z(df, lbl, weight):
 
 
 def plot_RFTrack_weighted_scatterplots(df1, df2, radius_sel=1e15, lbl1='', lbl2='', \
-                                       weightThem=False, myoutpath='', saveFigs=False):
+                                       weightThem=False, weightVar='log(p)', \
+                                       myoutpath='', saveFigs=False):
 
     """
     It accepts two dataframes with an RF-Track phase space given in the format:
@@ -614,11 +751,17 @@ def plot_RFTrack_weighted_scatterplots(df1, df2, radius_sel=1e15, lbl1='', lbl2=
         df2_sel = df2[df2['x[mm]']**2 + df2['y[mm]']**2 < radius_sel**2]
         
     if weightThem:
-        #c1 = np.log(df1_sel['p[MeV/c]'])
-        c1 = (df1_sel['t[mm/c]'])
+        if weightVar == 'log(p)':
+            c1 = np.log(df1_sel['p[MeV/c]'])
+            clbl = r"log(p[MeV/c])"
+        else:
+            c1 = (df1_sel['t[mm/c]'])
+            clbl = r"t[mm/c]"
         if not df2.empty:
-            #c2 = np.log(df2_sel['p[MeV/c]'])
-            c2 = (df2_sel['t[mm/c]'])
+            if weightVar == 'log(p)':
+                c2 = np.log(df2_sel['p[MeV/c]'])
+            else:
+                c2 = (df2_sel['t[mm/c]'])
     else:
         c1 = '#1f77b4'
         c2 = '#ff7f0e'
@@ -634,9 +777,7 @@ def plot_RFTrack_weighted_scatterplots(df1, df2, radius_sel=1e15, lbl1='', lbl2=
         plt.scatter(df2_sel['x[mm]'], df2_sel['y[mm]'], s=psize, alpha=opacity, label=lbl2, c=c2)
     if weightThem:
         cbar = plt.colorbar(ax=plt.gca())
-        cbar.ax.tick_params(labelsize=fs)
-        #cbar.set_label(r"log(p[MeV/c])", fontsize=fs, rotation=90)
-        cbar.set_label(r"t[mm/c]", fontsize=fs, rotation=90)
+        cbar.set_label(clbl, fontsize=fs, rotation=90)
     plt.legend(fontsize=fs)
     plt.title("", fontsize=fs)
     plt.xlabel("x (mm)", fontsize=fs)
