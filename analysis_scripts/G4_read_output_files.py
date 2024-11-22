@@ -387,9 +387,9 @@ def read_and_plot_Edep_VoxelScorer(filename, normEvents, Nevents,
     Zmax = tranvsizeZ
 
     # generate vectors of points linearly spaced (corrected in 24/12/2023)
-    Xedges = np.linspace(Xmin, Xmax, nx+1)   #[mm]
-    Yedges = np.linspace(Ymin, Ymax, ny+1)   #[mm]
-    Zedges = np.linspace(Zmin, Zmax, nz+1)   #[mm]
+    Xedges = np.linspace(Xmin, Xmax, nx+1) #[mm]
+    Yedges = np.linspace(Ymin, Ymax, ny+1) #[mm]
+    Zedges = np.linspace(Zmin, Zmax, nz+1) #[mm]
     dx = Xedges[1] - Xedges[0]
     dy = Yedges[1] - Yedges[0]
     dz = Zedges[1] - Zedges[0]
@@ -559,9 +559,9 @@ def read_VoxelScorer(filename, normEvents, Nevents, \
     Zmax = tranvsizeZ
 
     # generate vectors of points linearly spaced (corrected in 24/12/2023)
-    Xedges = np.linspace(Xmin, Xmax, nx+1)   #[mm]
-    Yedges = np.linspace(Ymin, Ymax, ny+1)   #[mm]
-    Zedges = np.linspace(Zmin, Zmax, nz+1)   #[mm]
+    Xedges = np.linspace(Xmin, Xmax, nx+1) #[mm]
+    Yedges = np.linspace(Ymin, Ymax, ny+1) #[mm]
+    Zedges = np.linspace(Zmin, Zmax, nz+1) #[mm]
     dx = Xedges[1] - Xedges[0]
     dy = Yedges[1] - Yedges[0]
     dz = Zedges[1] - Zedges[0]
@@ -658,8 +658,13 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     
     # retrieve data and put them into a dataframe
     data = pd.read_csv(
-        filename, skiprows=3, names=["ind_x", "ind_y", "ind_z", "eDep", "useless0", "useless1"]
-    ).drop(columns=["useless0", "useless1"])
+        filename, skiprows=3, names=["ind_x", "ind_y", "ind_z", "eDep", "eDep2", "Nentry"]
+    ) #.drop(columns=["useless0", "useless1"])
+    
+    # calculate eDep uncertainty 
+    data["eDep_err"] = (data["eDep2"]/data["Nentry"] - 
+                        (data["eDep"]/data["Nentry"])**2)**0.5
+    data.fillna(0, inplace=True)
 
     # retrieve the number of voxels in each direction
     Nvoxel = len(data)
@@ -692,14 +697,14 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     z = Zedges[:-1] + dz*0.5
 
     # physical position inside the mesh data
-    data["x"] = dx * (data["ind_x"] + 0.5) - tranvsizeX*0.5  #central x [mm]
-    data["y"] = dy * (data["ind_y"] + 0.5) - tranvsizeY*0.5  #central y [mm]
-    data["z"] = dz * (data["ind_z"] + 0.5)                   #central z [mm]
-    data["r"] = np.sqrt(data["x"]**2 + data["y"]**2)         #central r [mm]
+    data["x"] = dx * (data["ind_x"] + 0.5) - tranvsizeX*0.5 #central x [mm]
+    data["y"] = dy * (data["ind_y"] + 0.5) - tranvsizeY*0.5 #central y [mm]
+    data["z"] = dz * (data["ind_z"] + 0.5)                  #central z [mm]
+    data["r"] = np.sqrt(data["x"]**2 + data["y"]**2)        #central r [mm]
     
-    #eDep Map
+    # eDep Map
     if normEvents:
         data["eDep"] = data["eDep"] / Nevents
-    data["eDepDensity"] = data["eDep"] / (dz * dy * dx)  #[MeV/mm**3] or [MeV/(mm**3 event)]
+    data["eDepDensity"] = data["eDep"] / (dz * dy * dx) #[MeV/mm**3] or [MeV/(mm**3 event)]
 
     return data, (x,y,z)
