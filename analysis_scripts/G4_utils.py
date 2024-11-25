@@ -242,7 +242,8 @@ def calc_CAIN_beam_properties(df, m=0.511, beVerbose=True, \
     for electrons and revised by gpaterno.
     This version accepts a CAIN phase space given in the format:
     columns = ['x[m]', 'y[m]', 't[s]', 'E[eV]', 'px[eV/c]', 'py[eV/c]', 'pz[eV/c]']
-    and calculates the properties, which can be saved to a txt file.
+    and calculates the properties, ruturning the Twiss parameters.
+    The particle features can be saved to txt file at a given (passed) path.
     The particle mass in MeV/c2 can be passed. Verbosity can be turned off.
     """
     
@@ -292,40 +293,41 @@ def calc_CAIN_beam_properties(df, m=0.511, beVerbose=True, \
     alpha_y = np.sqrt(beta_y*gamma_y-1)
 
     #print results
-    print('--------------------------------------------------\n')
-    print('Beam non norm Emittances:')
-    print('EmitX = %.5e m*rad' % e_em_x)
-    print('EmitY = %.5e m*rad' % e_em_y)
-    print('Beam normalized Emittances:')
-    print('EmitXn = %.5e m*rad' % norm_em_x)
-    print('EmitYn = %.5e m*rad' % norm_em_y)
-    print('')
-    print('sigma_x = %.4f um' % (sigma_x*1e6))
-    print('sigma_y = %.4f um' % (sigma_y*1e6))
-    print('')
-    print('mean_energy = %.4f MeV' % (np.mean(e_E)))
-    print('std_energy = %.4f MeV' % (np.std(e_E)))
-    print('energy_spread = %.4f' % energy_spread)
-    print('gamma = %.4f' % gamma)
-    print('delta_gamma = %.4f' % delta_gamma)
-    print('--------------------------------------------------\n')
-    print('NMP = %d\n' % n_m_p)
-    print('theta_mean = %.4e rad' % np.mean(theta))
-    print('theta_std = %.4e rad' % np.std(theta))
-    print('theta_rms = %.4e rad' % ((np.std(theta)**2+np.mean(theta)**2)**0.5))
-    print('ept = %.4e rad' % ((sigma_xp**2+sigma_yp**2)**0.5))
-    print('theta_max = %.4e rad' % np.max(theta))
-    print('--------------------------------------------------\n')
-    print('sigma_z = %.4f um' % np.std(e_s*1e6))
-    print('--------------------------------------------------\n')
-    print('Twiss parameters:')
-    print('alpha_x = %.4f' % alpha_x)
-    print('alpha_y = %.4f' % alpha_y)
-    print('beta_x = %.6f m' % beta_x)
-    print('beta_y = %.6f m' % beta_y)
-    print('gamma_x = %.4f m^-1' % gamma_x)
-    print('gamma_y = %.4f m^-1' % gamma_y)
-    print('--------------------------------------------------\n')
+    if beVerbose:
+        print('--------------------------------------------------\n')
+        print('Beam non norm Emittances:')
+        print('EmitX = %.5e m*rad' % e_em_x)
+        print('EmitY = %.5e m*rad' % e_em_y)
+        print('Beam normalized Emittances:')
+        print('EmitXn = %.5e m*rad' % norm_em_x)
+        print('EmitYn = %.5e m*rad' % norm_em_y)
+        print('')
+        print('sigma_x = %.4f um' % (sigma_x*1e6))
+        print('sigma_y = %.4f um' % (sigma_y*1e6))
+        print('')
+        print('mean_energy = %.4f MeV' % (np.mean(e_E)))
+        print('std_energy = %.4f MeV' % (np.std(e_E)))
+        print('energy_spread = %.4f' % energy_spread)
+        print('gamma = %.4f' % gamma)
+        print('delta_gamma = %.4f' % delta_gamma)
+        print('--------------------------------------------------\n')
+        print('NMP = %d\n' % n_m_p)
+        print('theta_mean = %.4e rad' % np.mean(theta))
+        print('theta_std = %.4e rad' % np.std(theta))
+        print('theta_rms = %.4e rad' % ((np.std(theta)**2+np.mean(theta)**2)**0.5))
+        print('ept = %.4e rad' % ((sigma_xp**2+sigma_yp**2)**0.5))
+        print('theta_max = %.4e rad' % np.max(theta))
+        print('--------------------------------------------------\n')
+        print('sigma_z = %.4f um' % np.std(e_s*1e6))
+        print('--------------------------------------------------\n')
+        print('Twiss parameters:')
+        print('alpha_x = %.4f' % alpha_x)
+        print('alpha_y = %.4f' % alpha_y)
+        print('beta_x = %.6f m' % beta_x)
+        print('beta_y = %.6f m' % beta_y)
+        print('gamma_x = %.4f m^-1' % gamma_x)
+        print('gamma_y = %.4f m^-1' % gamma_y)
+        print('--------------------------------------------------\n')
 
     #export results
     if IWantSaveStat:
@@ -365,6 +367,9 @@ def calc_CAIN_beam_properties(df, m=0.511, beVerbose=True, \
             f.write('gamma_x = %.4f m^-1\n' % gamma_x)
             f.write('gamma_y = %.4f m^-1\n' % gamma_y)      
         print('Beam statistics written in %s file!\n' % (exportpath+exportname))
+    
+    # retun Twiss parameters
+    return alpha_x, alpha_y, beta_x, beta_y, gamma_x, gamma_y
 
 
 def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True):
