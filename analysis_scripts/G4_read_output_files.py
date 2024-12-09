@@ -648,23 +648,26 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     and (x,y,z) are the coordinates [mm] of the voxel centers.
     """
     
-    ## function, equivalent to Matlab's one, that returns
-    ## a list with the indices of the array/matrix
-    ## that satisfy a given condition.
-    #def find(cond, N=1e7):    
-    #    cond = cond.reshape(np.size(cond), 1).ravel()
-    #    index = list(np.argwhere(cond).ravel())
-    #    return index[:N]
+    def find(cond, N=1e7):    
+        """
+        function, equivalent to Matlab's one, that returns
+        a list with the indices of an array/matrix
+        that satisfy a given condition.
+        """
+        cond = cond.reshape(np.size(cond), 1).ravel()
+        index = list(np.argwhere(cond).ravel())
+        return index[:N]
     
     # retrieve data and put them into a dataframe
     data = pd.read_csv(
         filename, skiprows=3, names=["ind_x", "ind_y", "ind_z", "eDep", "eDep2", "Nentry"]
-    ) #.drop(columns=["useless0", "useless1"])
+    )
     
     # calculate eDep uncertainty 
     data["eDep_err"] = (data["eDep2"]/data["Nentry"] - 
                         (data["eDep"]/data["Nentry"])**2)**0.5
     data.fillna(0, inplace=True)
+    data = data.drop(['eDep2', 'Nentry'])
 
     # retrieve the number of voxels in each direction
     Nvoxel = len(data)
@@ -705,6 +708,8 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     # eDep Map
     if normEvents:
         data["eDep"] = data["eDep"] / Nevents
+        data["eDep_err"] = data["eDep_err"] / Nevents
     data["eDepDensity"] = data["eDep"] / (dz * dy * dx) #[MeV/mm**3] or [MeV/(mm**3 event)]
 
+    # return
     return data, (x,y,z)
