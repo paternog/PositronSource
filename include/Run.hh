@@ -23,7 +23,7 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
+// gpaterno, December 2024
 //
 /// \file Run.hh
 /// \brief Description of the Run class
@@ -53,7 +53,9 @@ public:
     virtual void Merge(const G4Run*);
     
     G4double GetEdep() const {return fEdep;}    
-    G4double GetEdep2() const {return fEdep2;}    
+    G4double GetEdep2() const {return fEdep2;}
+    G4double GoodEvents() const {return fGoodEvents;}
+        
     void AddEdep(G4double, G4double, G4double, G4double);
     
     G4double GetEdep(G4int t, G4int r, G4int u) const {
@@ -69,7 +71,8 @@ public:
 private:
     G4int fCollID_edep;   
     G4double fEdep;
-    G4double fEdep2;        
+    G4double fEdep2;
+    G4int fGoodEvents;        
     
     G4bool fVoxelization;
     VoxelScorer* fEdepScorer;

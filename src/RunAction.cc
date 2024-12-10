@@ -23,7 +23,7 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
+// gpaterno, December 2024
 //
 /// \file RunAction.cc
 /// \brief Implementation of the RunAction class
@@ -169,8 +169,7 @@ void RunAction::BeginOfRunAction(const G4Run* run)
         << G4endl
         << "--------------------------------------------------------------"
         << G4endl;
-    }
-    
+    }    
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -185,7 +184,8 @@ void RunAction::EndOfRunAction(const G4Run* run)
     const Run* aRun = static_cast<const Run*>(run);
     G4double Edep  = aRun->GetEdep();    
     G4double Edep2 = aRun->GetEdep2();     
-    G4double stdEdep = sqrt(Edep2 - Edep*Edep/nofEvents);
+    G4int nGoodEvents = aRun->GoodEvents();
+    G4double stdEdep = sqrt(Edep2 - Edep*Edep/nGoodEvents); 
        
     //Print and write results to a text file
     if (IsMaster()) {    

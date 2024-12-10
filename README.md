@@ -113,7 +113,7 @@ Run the app GUI which will show you a default geometry. You could also launch a 
 
 ## Version
 version: 1.0,
-date: 03-10-2024
+date: 10-12-2024
 
 ## Contact
 Please, if you make some modifications, does not push them directly on the main branch.

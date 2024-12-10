@@ -23,7 +23,7 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
+// gpaterno, December 2024
 //
 /// \file Run.cc
 /// \brief Implementation of the Run class
@@ -47,7 +47,8 @@ Run::Run():
 G4Run(),
 fCollID_edep(-1),
 fEdep(0.),
-fEdep2(0.)
+fEdep2(0.),
+fGoodEvents(0)
 {
     //get an instance of the DetectorConstruction
     const DetectorConstruction* detectorConstruction = 
@@ -107,7 +108,6 @@ Run::~Run() {}
 
 void Run::RecordEvent(const G4Event* event)
 {
-
     //Retrieve total Edep in the Radiator Crystal
     if (fRadiator) {
         //Hit Detection System  
@@ -129,13 +129,21 @@ void Run::RecordEvent(const G4Event* event)
         //map iterator
         std::map<G4int,G4double*>::iterator itr;
 
-        //Energy deposit 
-        G4double edep = 0.;               
+        //scan the hits Collection with Energy deposit 
+        G4double edep = 0.;
+        G4double EdepEvent = 0.;   
         for (itr = evtMap->GetMap()->begin(); itr != evtMap->GetMap()->end(); itr++) {
             edep = *(itr->second);
+        
+            //accumulate Edep in the whole Run
             fEdep += edep;
-            fEdep2 += edep*edep;    
+            fEdep2 += edep*edep;
+                       
+            //accumulate Edep in the Event
+            EdepEvent += edep;
         }
+        if (EdepEvent > 0) fGoodEvents++;
+       
     }
 
 
@@ -152,6 +160,7 @@ void Run::Merge(const G4Run* aRun)
     const Run* localRun = static_cast<const Run*>(aRun);
     fEdep += localRun->fEdep;
     fEdep2 += localRun->fEdep2;
+    fGoodEvents += localRun->fGoodEvents;
 
       
     //score Edep through custom VoxelScorer (fEdepScorer)
