@@ -66,8 +66,7 @@ def get_scored_Edep_from_txt(path, set_list, add_to_all_pre, add_to_all_post, no
 
 def read_and_plot_Edep_thread(filename, beVerbose=True, doPlots=True, saveFigs=False):
     """
-    Function to read (and plot) Edep accumulated (through built-in scorer) 
-    per thread in two volumes (PS and CL).
+    Function to read (and plot) Edep accumulated per thread in two volumes (PS and CL).
     It returns [df_PS_thread_edep, df_CL_thread_edep, edep_sum_PS, edep_sum_CL].
     It does plots [by default].
     """
@@ -173,8 +172,7 @@ def read_and_plot_Edep_thread(filename, beVerbose=True, doPlots=True, saveFigs=F
 
 def read_and_plot_Edep_event(filename, normEvents, beVerbose=True, doPlots=True, saveFigs=False):
     """
-    Function to read (and plot) Edep accumulated (through built-in scorer) 
-    per event in two volumes (PS and CL).
+    Function to read (and plot) Edep accumulated per event in two volumes (PS and CL).
     It returns [edep_PS_event, edep_CL_event, edep_PS, edep_CL, df_PS_event, df_CL_event].
     It does plots [by default].
     """
@@ -644,7 +642,7 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     Function to read the total Edep accumulated through a built-in BoxMesh scorer.
     It is general. It returns [data, (x,y,z)], where:
     data is a dictionary with 10 columns defined as follows
-    {"ind_x", "ind_y", "ind_z", "eDep", "x", "y", "z", "r" ,"eDep", "eDepDensity"}
+    {"ind_x", "ind_y", "ind_z", "eDep", "x", "y", "z", "r" ,"eDep_err", "eDepDensity"}
     and (x,y,z) are the coordinates [mm] of the voxel centers.
     """
     
@@ -664,7 +662,7 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     )
     
     # calculate eDep uncertainty 
-    data["eDep_err"] = (data["eDep2"] - data["eDep"]**2/data["Nentry"])**0.5
+    data["eDep_err"] = (data["eDep2"] - data["eDep"]**2/data["Nentry"]**0.5
     data.fillna(0, inplace=True)
     data = data.drop(columns=['eDep2', 'Nentry'])
 

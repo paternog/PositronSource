@@ -98,6 +98,23 @@ def histc(x, edges):
     return res[:-1], map_to_bins
 
 
+def array_shift(my_array, th):
+    """
+    Function to shift a numpy array
+    based on a threshold value
+    """
+    N = my_array.shape[0]
+    shifted_array = np.zeros((N,))
+    jth = 0
+    for j in range(N):
+        if my_array[j] > th:
+            jth = j
+            break
+    for j in range(N):
+        shifted_array[j-jth] = my_array[j]
+    return shifted_array
+
+
 def TProfile2D(X, Y, NbinX, Xmin, Xmax, NbinY, Ymin, Ymax, Z):
     """
     My algorithm to mimic the root TPofile2D object.
@@ -200,11 +217,11 @@ def write_spectrum(Eedges, spectrum, output_file):
     """
     DE = Eedges[1] - Eedges[0]
     Ebin = Eedges[:-1] + DE*0.5
-    print("Energy bin width: %.4f MeV" % DE) 
+    print("Energy bin width: %.4f" % DE) 
     Eprob = spectrum * DE
     print("Spectrum integral:", round(sum(Eprob),4))
     with open(output_file, 'w') as f:
-        f.write('#energy[MeV] spectrum\n')
+        f.write('#energy spectrum\n')
         for i in range(len(spectrum)):
             f.write('%.4f %.8f\n' % (Ebin[i], Eprob[i]))
     print('Spectrum written to %s!\n' % output_file)
@@ -242,9 +259,9 @@ def calc_CAIN_beam_properties(df, m=0.511, beVerbose=True, \
     for electrons and revised by gpaterno.
     This version accepts a CAIN phase space given in the format:
     columns = ['x[m]', 'y[m]', 't[s]', 'E[eV]', 'px[eV/c]', 'py[eV/c]', 'pz[eV/c]']
-    and calculates the properties, ruturning the Twiss parameters.
+    and calculates the properties, returning the norm emittance and the Twiss parameters.
     The particle features can be saved to txt file at a given (passed) path.
-    The particle mass in MeV/c2 can be passed. Verbosity can be turned off.
+    The particle mass in MeV/c2 can be passed. The verbosity can be turned off.
     """
     
     import numpy as np
@@ -334,6 +351,7 @@ def calc_CAIN_beam_properties(df, m=0.511, beVerbose=True, \
         if exportname == '':
             exportname = 'ebeam_stat.txt'
         with open(exportpath+exportname, 'w') as f:
+            f.write('--------------------------------------------------\n')
             f.write('Beam non norm Emittances:\n')
             f.write('EmitX = %.5e m*rad\n' % e_em_x)
             f.write('EmitY = %.5e m*rad\n' % e_em_y)
@@ -365,14 +383,16 @@ def calc_CAIN_beam_properties(df, m=0.511, beVerbose=True, \
             f.write('beta_x = %.6f m\n' % beta_x)
             f.write('beta_y = %.6f m\n' % beta_y)
             f.write('gamma_x = %.4f m^-1\n' % gamma_x)
-            f.write('gamma_y = %.4f m^-1\n' % gamma_y)      
+            f.write('gamma_y = %.4f m^-1\n' % gamma_y)
+            f.write('--------------------------------------------------\n')
         print('Beam statistics written in %s file!\n' % (exportpath+exportname))
     
-    # retun Twiss parameters
-    return alpha_x, alpha_y, beta_x, beta_y, gamma_x, gamma_y
+    #return normalized emittance and Twiss parameters
+    return [norm_em_x, norm_em_y], [alpha_x, alpha_y, beta_x, beta_y, gamma_x, gamma_y]
 
 
-def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True):
+def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True, \
+                                 IWantSaveStat=False, exportpath='', exportname=''):
     
     """
     Function adapted form GenerateElectronBeamForCain.m (Matlab) script,
@@ -380,7 +400,7 @@ def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True):
     for electrons and revised by gpaterno.
     This version accepts an RF-Track phase space given in the format:
     columns = ["x[mm]", "xp[mrad]", "y[mm]", "yp[mrad]", "t[mm/c]", "p[MeV/c]", "ID"]
-    and calculates the properties, ruturning the Twiss parameters.
+    and calculates the properties, returning the norm emittance and the Twiss parameters.
     The particle mass in MeV/c2 can be passed. Verbosity can be turned off.
     """
     
@@ -492,9 +512,60 @@ def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True):
         print('gamma_x = %.4f m^-1' % gamma_x)
         print('gamma_y = %.4f m^-1' % gamma_y)
         print('--------------------------------------------------\n')
+        
+    #export results
+    if IWantSaveStat:
+        if exportname == '':
+            exportname = 'beam_stat.txt'
+        with open(exportpath+exportname, 'w') as f:
+            f.write('--------------------------------------------------\n')
+            f.write('Beam trace-space Emittances:')
+            f.write('em_x_tr = %.2e m*rad' % (em_x_tr))
+            f.write('em_y_tr = %.2e m*rad' % (em_y_tr))
+            f.write('Beam trace-space Emittances:')
+            f.write('em_x_n_tr = %.2e m*rad' % (norm_em_x_tr))
+            f.write('em_y_n_tr = %.2e m*rad' % (norm_em_y_tr))
+            f.write('Beam Emittances:')
+            f.write('em_x = %.2e m*rad' % (em_x))
+            f.write('em_y = %.2e m*rad' % (em_y))
+            f.write('Beam normalized Emittances:')
+            f.write('em_x_n = %.2e m*rad' % (norm_em_x))
+            f.write('em_y_n = %.2e m*rad' % (norm_em_y))
+            f.write('')
+            f.write('sigma_x = %.2f mm' % (sigma_x*1e3))
+            f.write('sigma_y = %.2f mm' % (sigma_y*1e3))
+            f.write('sigma_xp = %.2f mrad' % (sigma_xp*1e3))
+            f.write('sigma_yp = %.2f mrad' % (sigma_yp*1e3))
+            f.write('sigma_px = %.2f MeV/c' % sigma_px)
+            f.write('sigma_py = %.2f MeV/c' % sigma_py)
+            f.write('')
+            f.write('theta_mean = %.4e rad' % np.mean(theta))
+            f.write('theta_std = %.4e rad' % np.std(theta))
+            f.write('theta_rms = %.4e rad' % ((np.std(theta)**2+np.mean(theta)**2)**0.5))
+            f.write('theta_max = %.4e rad' % np.max(theta))
+            f.write('--------------------------------------------------\n')
+            f.write('bunch_length = %.2f mm' % np.std(bl))
+            f.write('')
+            f.write('mean_energy = %.4f MeV' % mean_E)
+            f.write('std_energy = %.4f MeV' % sigma_E)
+            f.write('energy_spread = %.4f' % energy_spread)
+            f.write('gamma = %.4f' % gamma)
+            f.write('delta_gamma = %.4f' % delta_gamma)
+            f.write('--------------------------------------------------\n')
+            f.write('NMP = %d\n' % n_m_p)
+            f.write('--------------------------------------------------\n')
+            f.write('Twiss parameters (calculated using em_x,y_tr):')
+            f.write('alpha_x = %.4f' % alpha_x)
+            f.write('alpha_y = %.4f' % alpha_y)
+            f.write('beta_x = %.6f m' % beta_x)
+            f.write('beta_y = %.6f m' % beta_y)
+            f.write('gamma_x = %.4f m^-1' % gamma_x)
+            f.write('gamma_y = %.4f m^-1' % gamma_y)
+            f.write('--------------------------------------------------\n')            
+        print('Beam statistics written in %s file!\n' % (exportpath+exportname))
     
-    # retun Twiss parameters
-    return alpha_x, alpha_y, beta_x, beta_y, gamma_x, gamma_y
+    #return normalized emittance and Twiss parameters
+    return [norm_em_x, norm_em_y], [alpha_x, alpha_y, beta_x, beta_y, gamma_x, gamma_y]
 
 
 def plot_RFTrack_transverse_phase_space(df, m=0.511, radius_sel=1e15, \
