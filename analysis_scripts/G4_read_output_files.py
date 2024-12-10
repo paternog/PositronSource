@@ -644,7 +644,7 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     Function to read the total Edep accumulated through a built-in BoxMesh scorer.
     It is general. It returns [data, (x,y,z)], where:
     data is a dictionary with 10 columns defined as follows
-    {"ind_x", "ind_y", "ind_z", "eDep", "x", "y", "z", "r" ,"eDep_err", "eDepDensity"}
+    {"ind_x", "ind_y", "ind_z", "eDep", "x", "y", "z", "r" ,"eDep", "eDepDensity"}
     and (x,y,z) are the coordinates [mm] of the voxel centers.
     """
     
@@ -664,10 +664,9 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     )
     
     # calculate eDep uncertainty 
-    data["eDep_err"] = (data["eDep2"]/data["Nentry"] - 
-                        (data["eDep"]/data["Nentry"])**2)**0.5
+    data["eDep_err"] = (data["eDep2"] - data["eDep"]**2/data["Nentry"])**0.5
     data.fillna(0, inplace=True)
-    data = data.drop(['eDep2', 'Nentry'])
+    data = data.drop(columns=['eDep2', 'Nentry'])
 
     # retrieve the number of voxels in each direction
     Nvoxel = len(data)
@@ -711,5 +710,4 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
         data["eDep_err"] = data["eDep_err"] / Nevents
     data["eDepDensity"] = data["eDep"] / (dz * dy * dx) #[MeV/mm**3] or [MeV/(mm**3 event)]
 
-    # return
     return data, (x,y,z)
