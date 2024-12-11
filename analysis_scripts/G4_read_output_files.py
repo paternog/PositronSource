@@ -662,7 +662,7 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     )
     
     # calculate eDep uncertainty 
-    data["eDep_err"] = (data["eDep2"] - data["eDep"]**2/data["Nentry"]**0.5
+    data["eDep_err"] = (data["eDep2"] - data["eDep"]**2/data["Nentry"])**0.5
     data.fillna(0, inplace=True)
     data = data.drop(columns=['eDep2', 'Nentry'])
 
