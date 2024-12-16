@@ -478,11 +478,9 @@ def read_and_plot_Edep_VoxelScorer(filename, normEvents, Nevents,
     if proj_type == 1:
         for j in range(nz):
             profileZ[j] = np.mean(proj_4profZ[j][ic-p2m:ic+p2m])
-            #profileZ[j] = np.mean(proj_4profZ[j])
     else:
         for j in range(nz):
             profileZ[j] = np.sum(proj_4profZ[j][ic-p2m:ic+p2m])
-            #profileZ[j] = np.sum(proj_4profZ[j])
                 
     # calculate the radial profile
     if proj_type == 1:
@@ -609,11 +607,9 @@ def read_VoxelScorer(filename, normEvents, Nevents, \
     if proj_type == 1:
         for j in range(nz):
             profileZ[j] = np.mean(proj_4profZ[j][ic-p2m:ic+p2m])
-            #profileZ[j] = np.mean(proj_4profZ[j])
     else:
         for j in range(nz):
             profileZ[j] = np.sum(proj_4profZ[j][ic-p2m:ic+p2m])
-            #profileZ[j] = np.sum(proj_4profZ[j])
                 
     # calculate the radial profile
     if proj_type == 1:

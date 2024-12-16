@@ -1,4 +1,7 @@
 def print_array_size(arr):
+    """
+    Function to print the size [MB] of a list.
+    """
     import numpy as np 
     x = np.array(arr)
     print("Size of the array = number of elements:", x.size)
@@ -8,7 +11,7 @@ def print_array_size(arr):
     
 def list_flatten(myList):
     """
-    flatten a list of lists
+    Function to flatten a list of lists
     """
     flat_list = [item for sublist in myList for item in sublist]
     return flat_list
@@ -16,7 +19,7 @@ def list_flatten(myList):
 
 def find(cond, N=1e9):
     """
-    function equivalent to Matlab's one that returns
+    Function equivalent to Matlab's one that returns
     a list with the indices of an array/matrix
     that satisfy a given condition.
     """
@@ -103,6 +106,7 @@ def array_shift(my_array, th):
     Function to shift a numpy array
     based on a threshold value
     """
+    import numpy as np
     N = my_array.shape[0]
     shifted_array = np.zeros((N,))
     jth = 0
@@ -123,15 +127,13 @@ def TProfile2D(X, Y, NbinX, Xmin, Xmax, NbinY, Ymin, Ymax, Z):
     import numpy as np       
     if (len(X) != len(Y) or len(X) != len(Z)):
         print('X, Y and Z must have the same length')
-    N = len(X)
-    """
+    N = len(X)    
     def histc(x, edges):
         map_to_bins = np.digitize(x, edges)
         res = np.zeros(edges.shape)
         for el in map_to_bins:
             res[el-1] += 1
-        return res[:-1], map_to_bins
-    """
+        return res[:-1], map_to_bins   
     XbinEdges = np.linspace(Xmin, Xmax, NbinX)
     YbinEdges = np.linspace(Ymin, Ymax, NbinY)  
     [nx, idx] = histc(X, XbinEdges)
@@ -212,7 +214,7 @@ def elliptical_selection(x, y, g_ell_center, g_ell_width, g_ell_height, angle, a
 def write_spectrum(Eedges, spectrum, output_file):
     """
     Function to write an energy spectrum obtained through an
-    histogram to a text file. 
+    histogram to a text file. Units are arbitrary.
     output_file must be complete: output_path + outname + extension.
     """
     DE = Eedges[1] - Eedges[0]
@@ -596,9 +598,9 @@ def plot_RFTrack_transverse_phase_space(df, m=0.511, radius_sel=1e15, \
     plt.subplot(1,2,1)
     hist_matrix1, x_edges, xp_edges = np.histogram2d(df_sel['x[mm]'], df_sel['xp[mrad]'], \
                                                      bins=(num_bins_x, num_bins_xp), \
-                                                     range=[xrange, xprange], \
+                                                     range=[xrange, xprange]
                                                     )  
-    img1 = plt.imshow(hist_matrix1.T, cmap=mymap, interpolation="None", aspect='auto', origin='lower', 
+    img1 = plt.imshow(hist_matrix1.T, cmap=mymap, interpolation="None", aspect='auto', origin='lower', \
                       extent=[x_edges[0], x_edges[-1], xp_edges[0], xp_edges[-1]]
                      )
     if use_log_scale:
@@ -613,7 +615,7 @@ def plot_RFTrack_transverse_phase_space(df, m=0.511, radius_sel=1e15, \
     plt.subplot(1,2,2)
     hist_matrix2, y_edges, yp_edges = np.histogram2d(df_sel['y[mm]'], df_sel['yp[mrad]'], \
                                                      bins=(num_bins_y, num_bins_yp), \
-                                                     range=[yrange, yprange], \
+                                                     range=[yrange, yprange]
                                                     )  
     img2 = plt.imshow(hist_matrix2.T, cmap=mymap, interpolation="None", aspect='auto', origin='lower', 
                       extent=[y_edges[0], y_edges[-1], yp_edges[0], yp_edges[-1]]
@@ -634,8 +636,7 @@ def plot_RFTrack_transverse_phase_space(df, m=0.511, radius_sel=1e15, \
     xp_sel = df_sel['xp[mrad]'].values
     yp_sel = df_sel['yp[mrad]'].values
     E_sel = np.sqrt(df_sel['p[MeV/c]']**2 + m**2).values
-    #df_sel['E[MeV]'] = np.sqrt(df_sel['p[MeV/c]']**2 + m**2)
-    
+    #df_sel['E[MeV]'] = np.sqrt(df_sel['p[MeV/c]']**2 + m**2)    
     Zmatrix, Zmatrix_norm, XbinEdges, YbinEdges = TProfile2D(xp_sel, yp_sel, \
                                                              num_bins_xp, *xprange, \
                                                              num_bins_yp, *yprange, \
@@ -646,9 +647,9 @@ def plot_RFTrack_transverse_phase_space(df, m=0.511, radius_sel=1e15, \
     plt.subplot(1,2,1)
     hist_matrix3, _, _ = np.histogram2d(df_sel['x[mm]'], df_sel['y[mm]'], \
                                         bins=(num_bins_x, num_bins_y), \
-                                        range=[xrange, yrange], \
+                                        range=[xrange, yrange]
                                        )  
-    img3 = plt.imshow(hist_matrix3.T, cmap=mymap, interpolation="None", aspect='auto', origin='lower', 
+    img3 = plt.imshow(hist_matrix3.T, cmap=mymap, interpolation="None", aspect='auto', origin='lower', \
                       extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]]
                      )
     if use_log_scale:
@@ -700,7 +701,7 @@ def plot_RFTrack_longitudinal_phase_space(df, \
                                                    bins=(num_bins_x, num_bins_y), \
                                                    range=myrange, \
                                                   )
-    img = ax.imshow(hist_matrix.T, cmap=mymap, interpolation="None", aspect='auto', origin='lower', 
+    img = ax.imshow(hist_matrix.T, cmap=mymap, interpolation="None", aspect='auto', origin='lower', \
                     extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]]
                    )
     if use_log_scale:
@@ -865,13 +866,65 @@ def plot_RFTrack_weighted_scatterplots(df1, df2, radius_sel=1e15, lbl1='', lbl2=
         plt.savefig(myoutpath + 'xy' + '.jpg')
     plt.show()    
 
-    
-def two_scatterplot_with_hist(x1, y1, x2, y2, \
-                              lbl1='', lbl2='', xlabel='', ylabel='', opacity=1, \
-                              nbins=100, myoutpath='', saveFigs=False):
+
+def plot_RFTrack_transverse_distributions(df, m=0.511, radius_sel=1e15, \
+                                          num_bins_x=50, num_bins_xp=50, \
+                                          num_bins_y=50, num_bins_yp=50, \
+                                          xrange=None, xprange=None, \
+                                          yrange=None, yprange=None, \
+                                          use_log_scale=False, mymap='jet', \
+                                          myoutpath='', saveFigs=False):
+
+    df_sel = df[df['x[mm]']**2 + df['y[mm]']**2 < radius_sel**2] #apply a selection
+
+    xp_sel = df_sel['xp[mrad]'].values
+    yp_sel = df_sel['yp[mrad]'].values
+    E_sel = np.sqrt(df_sel['p[MeV/c]']**2 + m**2).values
+    Zmatrix, Zmatrix_norm, XbinEdges, YbinEdges = TProfile2D(xp_sel, yp_sel, \
+                                                             num_bins_xp, *xprange, \
+                                                             num_bins_yp, *yprange, \
+                                                             E_sel)
+
+    plt.figure(figsize=(18, 6))
+    fs = 16
+    plt.subplot(1,2,1)
+    hist_matrix3, x_edges, y_edges = np.histogram2d(df_sel['x[mm]'], df_sel['y[mm]'], \
+                                        bins=(num_bins_x, num_bins_y), \
+                                        range=[xrange, yrange])  
+    img3 = plt.imshow(hist_matrix3.T, cmap=mymap, interpolation="None", aspect='auto', origin='lower', \
+                      extent=[x_edges[0], x_edges[-1], y_edges[0], y_edges[-1]])
+    if use_log_scale:
+        img3.set_norm(mcolors.LogNorm())
+    cbar = plt.colorbar(img3, ax=plt.gca(), label='Frequency')
+    cbar.set_label('counts (arb. units)', fontsize=fs, rotation=90)
+    cbar.ax.tick_params(labelsize=fs)
+    plt.xlabel('x (mm)', fontsize=fs)
+    plt.ylabel('y (mm)', fontsize=fs)
+    plt.xticks(fontsize=fs, rotation=0)
+    plt.yticks(fontsize=fs, rotation=0)
+    plt.axis('equal')
+    plt.subplot(1,2,2)
+    Nlev = 50
+    plt.contourf(XbinEdges, YbinEdges, Zmatrix_norm, Nlev, cmap=mymap)
+    cbar = plt.colorbar()
+    cbar.set_label('E (MeV)', fontsize=fs, rotation=90)
+    cbar.ax.tick_params(labelsize=fs)
+    plt.xlabel("$\\theta_{x}$ (mrad)", fontsize=fs)
+    plt.ylabel("$\\theta_{y}$ (mrad)", fontsize=fs)
+    plt.xticks(fontsize=fs, rotation=0)
+    plt.yticks(fontsize=fs, rotation=0)
+    plt.axis('equal')    
+    if saveFigs:
+        plt.savefig(myoutpath + 'IandE' + '.jpg')
+    plt.show()  
+
+
+def scatterplot_with_hist(x1, y1, x2=[0], y2=[0], lbl1='', lbl2='', \
+                          xlabel='', ylabel='', opacity=1, \
+                          nbins=100, myoutpath='', saveFigs=False):
     
     """
-    Superimposed scatter plot of two distributions x1 vs y1 and x2 vs y2. 
+    Superimposed scatter plot of one or two distributions x1 vs y1 and x2 vs y2. 
     It makes also the histograms of x1/x2 and y1/y2 (I can specify the number of bins).
     """
     
@@ -913,7 +966,8 @@ def two_scatterplot_with_hist(x1, y1, x2, y2, \
 
     # Make the main plot
     axMain.scatter(x1, y1, s=psize, alpha=opacity, label=lbl1, c=c1)
-    axMain.scatter(x2, y2, s=psize, alpha=opacity, label=lbl2, c=c2)
+    if len(x2) > 1: 
+        axMain.scatter(x2, y2, s=psize, alpha=opacity, label=lbl2, c=c2)
     axMain.legend(fontsize=fs*0.75)
     
     # Set up the axes/grid style
@@ -952,10 +1006,12 @@ def two_scatterplot_with_hist(x1, y1, x2, y2, \
     
     # Plot the histograms
     axHistx.hist(x1, bins=xbins, alpha=opacity, label=lbl1, color=c1)
-    axHistx.hist(x2, bins=xbins, alpha=opacity, label=lbl2, color=c2)
+    if len(x2) > 1:
+        axHistx.hist(x2, bins=xbins, alpha=opacity, label=lbl2, color=c2)
     #axHistx.legend(fontsize=fs*0.75)
     axHisty.hist(y1, bins=ybins, orientation='horizontal', alpha=opacity, label=lbl1, color=c1)
-    axHisty.hist(y2, bins=ybins, orientation='horizontal', alpha=opacity, label=lbl2, color=c2)
+    if len(x2) > 1:
+        axHisty.hist(y2, bins=ybins, orientation='horizontal', alpha=opacity, label=lbl2, color=c2)
     #axHisty.legend(fontsize=fs*0.75)
  
     # Set up the histogram limits
@@ -1031,8 +1087,7 @@ def plot_EorPspectrum(p, lbl='', \
         NormMax = False
     else:
         ylbl = 'Counts (arb. units)'
-        
-        
+               
     fig = plt.figure(figsize=(9, 6))
     fs = 16
     lw = 2
@@ -1040,7 +1095,7 @@ def plot_EorPspectrum(p, lbl='', \
     if solidPlot:
         spectrum, edges, _ = plt.hist(p, density=IWantDensity, bins=nbin_E, range=range_E, alpha=opacity, label=lbl)
         if len(p2)>0:     
-            spectrum2, _, _ = plt.hist(p2, density=IWantDensity, bins=nbin_E, range=range_E, alpha=opacity, label=lbl2)        
+            spectrum2, _, _ = plt.hist(p2, density=IWantDensity, bins=nbin_E, range=range_E, alpha=opacity, label=lbl2)       
     else:
         # code to plot only lines and not solid histograms 
         spectrum, edges = np.histogram(p, density=IWantDensity, bins=nbin_E, range=range_E)
