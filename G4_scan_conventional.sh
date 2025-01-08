@@ -55,7 +55,7 @@ do
 	
 	halfsize=$(echo ${t_array[$i]} '* 0.5' | bc) #mm
 	sed -i "s+/score/mesh/boxSize .*+/score/mesh/boxSize 10. 10. $halfsize mm+" $macro
-	var=$(echo ${t_array[$i]} '/' $binsize | bc)
+	var=$(echo "scale=2; ${t_array[$i]} / $binsize" | bc -l) #mm
 	ceil $var
 	int_var=$?
 	isEven $int_var

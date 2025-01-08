@@ -71,7 +71,7 @@ do
 			
 			halfsize_conv=$(echo ${t_conv_array[$j]} '* 0.5' | bc) #mm
 			sed -i "s+/score/mesh/boxSize .* #converter+/score/mesh/boxSize 50. 50. $halfsize_conv mm #converter+" $macro
-			var=$(echo ${t_conv_array[$j]} '/' $binsize | bc) #mm
+			var=$(echo "scale=2; ${t_conv_array[$j]} / $binsize" | bc -l) #mm
 			ceil $var
 			int_var=$?
 			isEven $int_var
@@ -94,7 +94,7 @@ do
 			
 			halfsize=$(echo ${t_array[$i]} '* 0.5' | bc) #mm
 			sed -i "s+/score/mesh/boxSize .* #radiator+/score/mesh/boxSize 10. 10. $halfsize mm #radiator+" $macro
-			var=$(echo ${t_array[$i]} '/' $binsize | bc) #mm
+			var=$(echo "scale=2; ${t_array[$i]} / $binsize" | bc -l) #mm
 			ceil $var
 			int_var=$?
 			isEven $int_var
