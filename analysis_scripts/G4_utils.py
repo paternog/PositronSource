@@ -1,3 +1,17 @@
+def weighted_avg_and_std(values, weights):
+    """
+    Return the weighted average and standard deviation.
+    They weights are in effect first normalized so that they 
+    sum to 1 (and so they must not all be 0).
+    values, weights -- NumPy ndarrays with the same shape.
+    The calculation is fast and numerically precise.
+    """
+    import numpy as np
+    average = np.average(values, weights=weights)
+    variance = np.average((values-average)**2, weights=weights)
+    return (average, np.sqrt(variance))
+    
+
 def print_array_size(arr):
     """
     Function to print the size [MB] of a list.

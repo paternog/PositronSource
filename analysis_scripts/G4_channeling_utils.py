@@ -18,6 +18,59 @@ from G4_utils import * #my custom functions of general utility
 
 #######################################################################################################
 ############ Custom functions useful for various Geant4 simulations related to channeling #############
+def get_photons_on_detector(file, Nevents, xlim_rad=(0, 1e10), \
+                            apply_collimation=False, cut_angle=3.14, \
+                            thetaC=0, beVerbose=True):
+    """
+    Function to open the root file obtained with the Geant4 FastSimChannelingRad app 
+    and get the data scored in the "photon_spectrum" ntuple, namely the features of the 
+    photons that impinge as the detector: ["E", "angle_x", "angle_y", eventID], with 
+    E is expressed in MeV and the angles in rad. 
+    The function returns the read root file and a dataframe with the selected photons.
+    The angular selection can be applied specifying a cut angle with respect to a center thetaC.
+    """
+    import numpy as np
+    import pandas as pd
+    import uproot
+    
+    rf = uproot.open(file)
+    rf_content = [item.split(';')[0] for item in rf.keys()]
+    print('rf_content:\n', rf_content, '\n')
+    
+    # get the simulated data
+    if 'photon_spectrum' in rf_content:
+        df_ph = rf['photon_spectrum'].arrays(library='pd')
+    else:
+        #Evalues = np.zeros(1)
+        df_root = rf['scoring_ntuple'].arrays(library='pd')
+        df_det_ph = df_root[(df_root.volume == "Detector") & (df_root.particle == "gamma")].copy()
+        df_ph = df_det_ph.drop(["particleID", "parentID", "particle", "volume"], axis=1)
+    Evalues = df_ph["E"].values #MeV
+    print("number of photons scored:", Evalues.shape[0])
+    
+    # Take only the photons inside the collimator acceptance
+    thetaX = df_ph["angle_x"].values #rad
+    thetaY = df_ph["angle_y"].values #rad
+    df_ph["theta"] = np.sqrt(thetaX**2 + thetaY**2)
+    if apply_collimation:
+        df_ph_sel = df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle]
+    else:
+        df_ph_sel = df_ph.copy()    
+    df_ph_sel = df_ph_sel[(df_ph_sel.E >= xlim_rad[0]) & (df_ph_sel.E <= xlim_rad[1])]
+    eventID_sel = list(df_ph_sel.eventID)
+
+    # Print number of photons emitted
+    if beVerbose:
+        print("number of collimated photons:", len(df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle]))
+        print("number of photons emitted within %.3f mrad with energy in [%.2f, %.2f] MeV: %d\n" % \
+              (cut_angle*1e3, *xlim_rad, len(df_ph_sel.E)))
+        print("\nnumber of photons emitted per particle: %.2f" % (len(df_ph)/Nevents))
+        print("number of photons emitted per particle within %.3f mrad with energy in [%.2f, %.2f] MeV: %.4f\n" % \
+              (cut_angle*1e3, *xlim_rad, len(df_ph_sel.E)/Nevents))
+
+    return rf, df_ph_sel
+
+
 def read_G4_BK_spectrum(filename, th=1.):
     """
     Function to read a text file with the photon spectrum emitted by an oriented crystal,
