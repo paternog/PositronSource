@@ -18,7 +18,7 @@ from G4_utils import * #my custom functions of general utility
 
 #######################################################################################################
 ############ Custom functions useful for various Geant4 simulations related to channeling #############
-def get_photons_on_detector(file, Nevents, xlim_rad=(0, 1e10), \
+def get_photons_on_detector(filename, Nevents, xlim_rad=(0, 1e10), \
                             apply_collimation=False, cut_angle=3.14, \
                             thetaC=0, beVerbose=True):
     """
@@ -33,7 +33,7 @@ def get_photons_on_detector(file, Nevents, xlim_rad=(0, 1e10), \
     import pandas as pd
     import uproot
     
-    rf = uproot.open(file)
+    rf = uproot.open(filename)
     rf_content = [item.split(';')[0] for item in rf.keys()]
     print('rf_content:\n', rf_content, '\n')
     
