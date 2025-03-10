@@ -720,7 +720,7 @@ def merge_ntuples_from_files_into_df(data_path, ntuple_name):
     return df_merged
 
 
-def merge_files_into_dfs(data_path, beVerbose=False, save_result=False):
+def merge_files_into_dfs(data_path, correct_particle=False, beVerbose=False, save_result=False):
     """
     Function to merge both the root and the txt files of a set of
     Geant4 simulations of particle interaction in Oriented Crystals.
@@ -765,40 +765,57 @@ def merge_files_into_dfs(data_path, beVerbose=False, save_result=False):
         z = []
         xx = []
         yy = []
-        file = os.path.join(data_path.replace('rad', 'tag'), filename.replace('root', 'txt'))     
-        with open(file, 'r') as txt_file:
-            for line in txt_file:
-                values = line.strip().split()
-                eventID.append(int(values[0]) + events_read)
-                trackID.append(int(values[1]))
-                x.append(float(values[2]))
-                tx.append(float(values[3]))
-                z.append(float(values[4]))
-                xx.append(float(values[5]))
-                #yy.append(float(values[6]))  
-        df = pd.DataFrame({
-            "volume": "Crystal",
-            "eventID": eventID,
-            "trackID": trackID,
-            "x": x,
-            "tx": tx,
-            "z": z,
-            "xx": xx
-            #"yy": yy
-        })
-        dataframes_txt_list.append(df)
+        file_tag = os.path.join(data_path.replace('rad', 'tag'), filename.replace('root', 'txt'))
+        try:
+            with open(file_tag, 'r') as txt_file:
+                if beVerbose:
+                    #print('opening', file_tag, '...')
+                    print('opening', filename.replace('root', 'txt'), '...')
+                for line in txt_file:
+                    values = line.strip().split()
+                    eventID.append(int(values[0]) + events_read)
+                    trackID.append(int(values[1]))
+                    x.append(float(values[2]))
+                    tx.append(float(values[3]))
+                    z.append(float(values[4]))
+                    xx.append(float(values[5]))
+                    if len(values) > 6:
+                        yy.append(float(values[6]))
+                    else:
+                        yy.append(0)
+            df = pd.DataFrame({
+                "volume": "Crystal",
+                "eventID": eventID,
+                "trackID": trackID,
+                "x": x,
+                "tx": tx,
+                "z": z,
+                "xx": xx,
+                "yy": yy
+            })
+            dataframes_txt_list.append(df)  
+        except:
+            if beVerbose:
+                print('file %s not found!' % filename.replace('root', 'txt'))
+            else:
+                continue      
         # increase te number of files read
         events_read += n_events
         nfiles += 1
     # merge the dataframes
     df_defl_merged = pd.concat(dataframes_defl_list, ignore_index=True)
-    df_defl_merged.particle = ["e-"]*len(df_defl_merged) #correction #<--- it may not be required!
-    df_rad_merged = pd.concat(dataframes_rad_list, ignore_index=True)   
-    df_txt_merged = pd.concat(dataframes_txt_list, ignore_index=True)
-    # save merged daftrame to files
+    if correct_particle:
+        df_defl_merged.particle = ["e-"]*len(df_defl_merged) #correction #<--- it may not be required!
+    df_rad_merged = pd.concat(dataframes_rad_list, ignore_index=True)
+    if not len(dataframes_txt_list) == 0:
+        df_txt_merged = pd.concat(dataframes_txt_list, ignore_index=True)
+    else:
+        df_txt_merged = pd.DataFrame({'eventID' : []})
+    # save merged dafatrames to proper files
+    save_result = True
     if save_result:
         # export merged defl and rad dataframes to root files
-        rf_merged = uproot.recreate(radfilespath + '../merged_root_file.root')
+        rf_merged = uproot.recreate(data_path + '../merged_root_file.root')
         tree_defl = rf_merged.mktree("scoring_ntuple", {
                                                  "eventID": np.int32, "volume": np.int32, \
                                                  "x": np.float64, "y": np.float64, \
@@ -806,15 +823,21 @@ def merge_files_into_dfs(data_path, beVerbose=False, save_result=False):
                                                  "Ekin": np.float64, "particle": np.int32, \
                                                  "particleID": np.int32, "parentID": np.int32
                                                 })
-        df_defl_merged = df_defl_merged.replace({"Crystal": 0, "Detector": 1}) #without this an error occurs 
-        df_defl_merged = df_defl_merged.replace({"e-": -1, "e+": 1, None: 0})  #without this an error occurs
+        df_defl_merged["volume"] = df_defl_merged["volume"].astype(str)
+        df_defl_merged["particle"] = df_defl_merged["particle"].astype(str) 
+        volume_dict = {item: i for i,item in enumerate(df_defl_merged.volume.unique())}
+        part_dict = {item: i for i,item in enumerate(df_defl_merged.particle.unique())}
+        df_defl_merged = df_defl_merged.replace(volume_dict) #without this an error occurs
+        df_defl_merged = df_defl_merged.replace(part_dict) #without this an error occurs
+        print("volume_dict merged:", volume_dict)
+        print("part_dict merged:", part_dict)
         tree_defl.extend({
                           "eventID": df_defl_merged.eventID.values, "volume": df_defl_merged.volume.values, \
                           "x": df_defl_merged.x.values, "y": df_defl_merged.y.values, \
                           "angle_x": df_defl_merged.angle_x.values, "angle_y": df_defl_merged.angle_y.values, 
                           "Ekin": df_defl_merged.Ekin.values, "particle": df_defl_merged.particle.values, \
                           "particleID": df_defl_merged.particleID.values, "parentID": df_defl_merged.parentID.values
-                         })
+                         })        
         tree_rad = rf_merged.mktree("photon_spectrum", {
                                                  "Ekin": np.float64, \
                                                  "angle_x": np.float64, "angle_y": np.float64, \
@@ -826,9 +849,10 @@ def merge_files_into_dfs(data_path, beVerbose=False, save_result=False):
                          "eventID": df_rad_merged.eventID.values
                         })
         # export merged txt dataframe to text file
-        with open(radfilespath + '../merged_txt_file.txt', 'a') as f:
-            df_string = df_txt_merged.to_string(header=False, index=False)
-            f.write(df_string)
+        if not df_txt_merged.empty:
+            with open(data_path + '../merged_txt_file.txt', 'a') as f:
+                df_string = df_txt_merged.to_string(header=False, index=False)
+                f.write(df_string)
     # return merged dataframes
     print('%d files merged!\n' % (nfiles))
     return df_defl_merged, df_rad_merged, df_txt_merged
