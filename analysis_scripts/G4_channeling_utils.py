@@ -74,7 +74,7 @@ def get_photons_on_detector(filename, Nevents, xlim_rad=(0, 1e10), \
 def read_G4_BK_spectrum(filename, th=1.):
     """
     Function to read a text file with the photon spectrum emitted by an oriented crystal,
-    analitically calculated in Geant4 through Baier-Katkov formula using virtual photons. 
+    analitically calculated in Geant4 through Baier-Katkov formula using sampling photons. 
     It returns [Esteps, spectrum, Nevents, Nspectra, Nbroken, Ne].
     """
     
@@ -152,7 +152,7 @@ def read_G4_BK_spectrum(filename, th=1.):
     Nevents = int(np.sum(weights))
     Ne = round(np.sum(spectrum), 2)
     print('Number of good events:', Nevents)
-    print('Number of photons emitted per primary (single-photon approx):', Ne)
+    print('Number of photons emitted per primary (single-photon approx):', Ne, '\n')
     
     return Esteps, spectrum, Nevents, Nspectra, Nbroken, Ne
 
@@ -699,10 +699,11 @@ def correct_trajectory_of_radiating_particles(df):
 
 #######################################################################################################
 ################## Merge the results of many simulations with few (even 1) events #####################
-def merge_ntuples_from_files_into_df(data_path, ntuple_name):
+def merge_root_ntuples(data_path, ntuple):
     """
     This function is quite general, it merges ntuples in python.
-    There are no constranints on the filenames. It returns a dataframe.
+    There are no constranints on the filenames nor on the ventID.
+    It returns a dataframe.
     """
     import uproot
     dataframes = []
@@ -712,7 +713,7 @@ def merge_ntuples_from_files_into_df(data_path, ntuple_name):
         if os.path.isfile(file_path):
             rf = uproot.open(file_path)
             rf_content = [item.split(';')[0] for item in rf.keys()]
-            if ntuple_name in rf_content:
+            if ntuple in rf_content:
                 df = rf[ntuple_name].arrays(library='pd')
             dataframes.append(df)
     df_merged = pd.concat(dataframes, ignore_index=True)
@@ -720,24 +721,84 @@ def merge_ntuples_from_files_into_df(data_path, ntuple_name):
     return df_merged
 
 
-def merge_files_into_dfs(data_path, correct_particle=False, beVerbose=False, save_result=False):
+def merge_root_ntuples_based_on_eventID(data_path, ntuple_name, beVerbose=False):
     """
-    Function to merge both the root and the txt files of a set of
-    Geant4 simulations of particle interaction in Oriented Crystals.
+    Function to merge an ntuple contained in many root files.
+    During the merging, it automatically corrects the eventID.
+    It returns a dataframe with the merged ntuple.
+    WARNING: if you have a file with more than one ntuple, 
+    by reading them separately, you'll lose the correlation.
+    """
+    import uproot
+    dataframes_list = []
+    add2eventIDc = 0
+    add2eventIDi = 0
+    events_read = 0
+    nfiles = 0
+    fIDs = [int(filename.split('.root')[0].split('_')[-1]) for filename in os.listdir(data_path)]
+    if beVerbose:
+        print("ID of files to merge:", fIDs, "\n")
+    for filename in os.listdir(data_path):
+        if beVerbose:
+            print('opening', filename, '...')    
+        # open a root file
+        file = os.path.join(data_path, filename)
+        rf = uproot.open(file)
+        rf_content = [item.split(';')[0] for item in rf.keys()]      
+        # retrieve the ntuple
+        df_root = rf[ntuple_name].arrays(library='pd')
+        # list of events        
+        event_list = list(df_root.eventID.unique()) 
+        n_events = len(event_list)
+        # correct the event number and create a dataframe
+        add2eventIDi = max([n_events, max(event_list)])        
+        add1 = 1 if (min(event_list)==0 and nfiles>0) else 0
+        for event in event_list:
+            df_root.loc[df_root.eventID == event, 'eventID'] += add2eventIDc + add1
+        dataframes_list.append(df_root)          
+        # increase te number of files read
+        add2eventIDc += add2eventIDi
+        events_read += n_events
+        nfiles += 1
+        if beVerbose:
+            print("n_events:", n_events)
+            print("add2eventIDc:", add2eventIDc)
+    # merge the dataframes
+    df_root_merged = pd.concat(dataframes_list, ignore_index=True)
+    # return the merged dataframe
+    print("\nevents_read:", events_read)
+    print('%d files merged!\n' % (nfiles))
+    return df_root_merged   
+
+
+def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbose=False, save_result=False):
+    """
+    Function to merge both the root and the txt files of a set of Geant4
+    simulations of particle interaction in Oriented Crystals, obatined with
+    FastSimChannelingRad application.
+    During the merging, it automatically corrects the eventID.
     The name of the corresponding root and txt files MUST be the same.
-    It returns two dataframes, but it can also create merged files.
+    It returns two dataframes (one for each ntuple) with the merged data, 
+    but it can also create a merged root file.
+    NOTE1: due to some issues in the creation of the output tree with
+    branches of strings, I converted strings in integers
+    (look at volume_dict and part_dict to know the coding).
     """
     import uproot
     dataframes_defl_list = []
     dataframes_rad_list = []
     dataframes_txt_list = []
+    add2eventIDc = 0
+    add2eventIDi = 0
     events_read = 0
     nfiles = 0
-    #IDs = [int(filename.split('.')[0]) for filename in os.listdir(data_path)]
+    fIDs = [int(filename.split('.root')[0].split('_')[-1]) for filename in os.listdir(data_path)]
+    if beVerbose:
+        print("ID of files to merge:", fIDs, "\n")
     for filename in os.listdir(data_path):
         if beVerbose:
             print('opening', filename, '...')    
-        # open root file
+        # open a root file
         file = os.path.join(data_path, filename)
         rf = uproot.open(file)
         rf_content = [item.split(';')[0] for item in rf.keys()]      
@@ -749,13 +810,16 @@ def merge_files_into_dfs(data_path, correct_particle=False, beVerbose=False, sav
         # list of events
         event_list = list(df_defl.eventID.unique())
         n_events = len(event_list)
-        # correct the event number
+        # correct the event number and create a dataframe
+        add2eventIDi = max([n_events, max(event_list)])        
+        add1 = 1 if (min(event_list)==0 and nfiles>0) else 0
         for event in event_list:
-            df_defl.loc[df_defl.eventID == event, 'eventID'] += events_read
-            dataframes_defl_list.append(df_defl)
+            df_defl.loc[df_defl.eventID == event, 'eventID'] += add2eventIDc + add1
             if not df_rad.empty:
-                df_rad.loc[df_rad.eventID == event, 'eventID'] += events_read
-                dataframes_rad_list.append(df_rad)           
+                df_rad.loc[df_rad.eventID == event, 'eventID'] += add2eventIDc + add1
+        dataframes_defl_list.append(df_defl)
+        if not df_rad.empty:
+            dataframes_rad_list.append(df_rad)           
         # open txt file
         volume = []
         eventID = []
@@ -800,19 +864,22 @@ def merge_files_into_dfs(data_path, correct_particle=False, beVerbose=False, sav
             else:
                 continue      
         # increase te number of files read
+        add2eventIDc += add2eventIDi
         events_read += n_events
         nfiles += 1
+        if beVerbose:
+            print("n_events:", n_events)
+            print("add2eventIDc:", add2eventIDc)
     # merge the dataframes
     df_defl_merged = pd.concat(dataframes_defl_list, ignore_index=True)
     if correct_particle:
-        df_defl_merged.particle = ["e-"]*len(df_defl_merged) #correction #<--- it may not be required!
+        df_defl_merged.particle = ["e-"]*len(df_defl_merged) #correction #<-- it may not be required!
     df_rad_merged = pd.concat(dataframes_rad_list, ignore_index=True)
     if not len(dataframes_txt_list) == 0:
         df_txt_merged = pd.concat(dataframes_txt_list, ignore_index=True)
     else:
         df_txt_merged = pd.DataFrame({'eventID' : []})
     # save merged dafatrames to proper files
-    save_result = True
     if save_result:
         # export merged defl and rad dataframes to root files
         rf_merged = uproot.recreate(data_path + '../merged_root_file.root')
@@ -823,14 +890,13 @@ def merge_files_into_dfs(data_path, correct_particle=False, beVerbose=False, sav
                                                  "Ekin": np.float64, "particle": np.int32, \
                                                  "particleID": np.int32, "parentID": np.int32
                                                 })
+        # conversion of string columns into integer columns (without this an error occurs)
         df_defl_merged["volume"] = df_defl_merged["volume"].astype(str)
         df_defl_merged["particle"] = df_defl_merged["particle"].astype(str) 
         volume_dict = {item: i for i,item in enumerate(df_defl_merged.volume.unique())}
         part_dict = {item: i for i,item in enumerate(df_defl_merged.particle.unique())}
-        df_defl_merged = df_defl_merged.replace(volume_dict) #without this an error occurs
-        df_defl_merged = df_defl_merged.replace(part_dict) #without this an error occurs
-        print("volume_dict merged:", volume_dict)
-        print("part_dict merged:", part_dict)
+        df_defl_merged = df_defl_merged.replace(volume_dict)
+        df_defl_merged = df_defl_merged.replace(part_dict)
         tree_defl.extend({
                           "eventID": df_defl_merged.eventID.values, "volume": df_defl_merged.volume.values, \
                           "x": df_defl_merged.x.values, "y": df_defl_merged.y.values, \
@@ -853,7 +919,117 @@ def merge_files_into_dfs(data_path, correct_particle=False, beVerbose=False, sav
             with open(data_path + '../merged_txt_file.txt', 'a') as f:
                 df_string = df_txt_merged.to_string(header=False, index=False)
                 f.write(df_string)
-    # return merged dataframes
+    # return the merged dataframes
+    print("\n")
+    print("volume_dict merged:", volume_dict)
+    print("part_dict merged:", part_dict)    
+    print("events_read:", events_read)
     print('%d files merged!\n' % (nfiles))
     return df_defl_merged, df_rad_merged, df_txt_merged
+
+
+def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
+    """
+    Function to merge the root files of a set of Geant4 simulations 
+    of particle interaction in Oriented Crystals, obatined with
+    TestBeamPS or TestBeamOC applications.
+    During the merging, it automatically corrects the eventID.
+    It returns two dataframes (one for each ntuple) with the merged data, 
+    but it can also create a merged root file.
+    NOTE1: due to some issues in the creation of the output tree with
+    branches of strings, I converted strings in integers
+    (look at part_dict to know the coding).   
+    NOTE2: Even if ntuples of TestBeamOC output file contain more columns 
+    than those of TestBeamPS, the merged output file contains the columns 
+    of TestBeamPS only. Please, use directly the merged dataframe, 
+    if the additional columns are required for the analysis.
+    """
+    import uproot
+    dataframes_out_list = []
+    dataframes_scr_list = []
+    add2eventIDc = 0
+    add2eventIDi = 0
+    events_read = 0
+    nfiles = 0
+    fIDs = [int(filename.split('.root')[0].split('_')[-1]) for filename in os.listdir(data_path)]
+    if beVerbose:
+        print("ID of files to merge:", fIDs, "\n")
+    for filename in os.listdir(data_path):
+        if beVerbose:
+            print('opening', filename, '...')    
+        # open a root file
+        file = os.path.join(data_path, filename)
+        rf = uproot.open(file)
+        rf_content = [item.split(';')[0] for item in rf.keys()]      
+        # outData ntuple
+        df_out = rf['outData'].arrays(library='pd')
+        # scoringScreen ntuple
+        df_scr = rf['scoringScreen'].arrays(library='pd')
+        # list of events        
+        event_list = list(df_scr.eventID.unique())
+        n_events = len(event_list)
+        # correct the event number and create a dataframe
+        add2eventIDi = max([n_events, max(event_list)])
+        add1 = 1 if (min(event_list)==0 and nfiles>0) else 0 
+        for event in event_list:
+            df_out.loc[df_out.eventID == event, 'eventID'] += add2eventIDc + add1
+            df_scr.loc[df_scr.eventID == event, 'eventID'] += add2eventIDc + add1
+        dataframes_out_list.append(df_out)
+        dataframes_scr_list.append(df_scr)            
+        # increase te number of files read
+        add2eventIDc += add2eventIDi
+        events_read += n_events
+        nfiles += 1
+        if beVerbose:
+            print("n_events:", n_events)
+            print("add2eventIDc:", add2eventIDc)
+    # merge the dataframes
+    df_out_merged = pd.concat(dataframes_out_list, ignore_index=True)
+    df_scr_merged = pd.concat(dataframes_scr_list, ignore_index=True)
+    # save merged dafatrames to proper files
+    if save_result:
+        # export merged defl and rad dataframes to root files
+        rf_merged = uproot.recreate(data_path + '../merged_root_file.root')
+        tree_out = rf_merged.mktree("outData", {
+                                                "eventID": np.int32, \
+                                                "Tracker_NHit_X_1": np.int32, "Tracker_NHit_Y_1": np.int32, \
+                                                "Tracker_NHit_X_2": np.int32, "Tracker_NHit_Y_2": np.int32, \
+                                                "Tracker_X_1": np.float64, "Tracker_Y_1": np.float64, \
+                                                "Tracker_X_2": np.float64, "Tracker_Y_2": np.float64, \
+                                                "Ekin": np.float64, \
+                                                "edep_APC1": np.float64, "edep_APC2": np.float64, \
+                                                "edep_calo": np.float64, "edep_screen": np.float64,
+                                               })
+        tree_out.extend({
+                         "eventID": df_out_merged.eventID.values, \
+                         "Tracker_NHit_X_1": df_out_merged.Tracker_NHit_X_1.values, "Tracker_NHit_Y_1": df_out_merged.Tracker_NHit_Y_1.values, \
+                         "Tracker_NHit_X_2": df_out_merged.Tracker_NHit_X_2.values, "Tracker_NHit_Y_2": df_out_merged.Tracker_NHit_Y_2.values, \
+                         "Tracker_X_1": df_out_merged.Tracker_X_1.values, "Tracker_Y_1": df_out_merged.Tracker_Y_1.values, \
+                         "Tracker_X_2": df_out_merged.Tracker_X_2.values, "Tracker_Y_2": df_out_merged.Tracker_Y_2.values, \
+                         "Ekin": df_out_merged.Ekin.values, \
+                         "edep_APC1": df_out_merged.edep_APC1.values, "edep_APC2": df_out_merged.edep_APC2.values, \
+                         "edep_calo": df_out_merged.edep_calo.values, "edep_screen": df_out_merged.edep_screen.values, \
+                        })
+        tree_scr = rf_merged.mktree("scoringScreen", {
+                                                "eventID": np.int32, "particle": np.int32, \
+                                                "x": np.float64, "y": np.float64, \
+                                                "px": np.float64, "py": np.float64, "pz": np.float64, \
+                                                "t": np.float64, "E": np.float64, "parentID": np.int32,
+                                               })
+        # conversion of string columns into integer columns (without this an error occurs)
+        df_scr_merged["particle"] = df_scr_merged["particle"].astype(str) 
+        part_dict = {item: i for i,item in enumerate(df_scr_merged.particle.unique())}
+        df_scr_merged = df_scr_merged.replace(part_dict)    
+        tree_scr.extend({
+                         "eventID": df_scr_merged.eventID.values, "particle": df_scr_merged.particle.values, \
+                         "x": df_scr_merged.x.values, "y": df_scr_merged.y.values, \
+                         "px": df_scr_merged.px.values, "py": df_scr_merged.py.values, "pz": df_scr_merged.py.values, \
+                         "t": df_scr_merged.t.values, "E": df_scr_merged.E.values, "parentID": df_scr_merged.parentID.values, \
+                       })
+    # return merged dataframes
+    print("\n")
+    print("part_dict merged:", part_dict)    
+    print("events_read:", events_read)
+    print('%d files merged!\n' % (nfiles))
+    return df_out_merged, df_scr_merged
 #######################################################################################################
