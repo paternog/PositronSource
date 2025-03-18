@@ -735,6 +735,7 @@ def merge_root_ntuples_based_on_eventID(data_path, ntuple_name, beVerbose=False)
     add2eventIDi = 0
     events_read = 0
     nfiles = 0
+    add1 = 0
     fIDs = [int(filename.split('.root')[0].split('_')[-1]) for filename in os.listdir(data_path)]
     if beVerbose:
         print("ID of files to merge:", fIDs, "\n")
@@ -748,13 +749,16 @@ def merge_root_ntuples_based_on_eventID(data_path, ntuple_name, beVerbose=False)
         # retrieve the ntuple
         df_root = rf[ntuple_name].arrays(library='pd')
         # list of events        
-        event_list = list(df_root.eventID.unique()) 
+        event_list = list(df_root.eventID.unique())
+        #print("event_list:", event_list)
         n_events = len(event_list)
         # correct the event number and create a dataframe
-        add2eventIDi = max([n_events, max(event_list)])        
-        add1 = 1 if (min(event_list)==0 and nfiles>0) else 0
+        add2eventIDi = max([n_events, max(event_list)])
+        #add1 = 1 if (min(event_list)==0 and nfiles>0) else 0
         for event in event_list:
-            df_root.loc[df_root.eventID == event, 'eventID'] += add2eventIDc + add1
+            df_root.loc[df_root.eventID == event, 'eventID'] += add2eventIDc + add1 if min(event_list)==0 else 0
+        add1 = 1 if (n_events < max(event_list)) else 0
+        #print("add1:", add1)
         dataframes_list.append(df_root)          
         # increase te number of files read
         add2eventIDc += add2eventIDi
@@ -768,7 +772,7 @@ def merge_root_ntuples_based_on_eventID(data_path, ntuple_name, beVerbose=False)
     # return the merged dataframe
     print("\nevents_read:", events_read)
     print('%d files merged!\n' % (nfiles))
-    return df_root_merged   
+    return df_root_merged 
 
 
 def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbose=False, save_result=False):
@@ -792,6 +796,7 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
     add2eventIDi = 0
     events_read = 0
     nfiles = 0
+    add1 = 0
     fIDs = [int(filename.split('.root')[0].split('_')[-1]) for filename in os.listdir(data_path)]
     if beVerbose:
         print("ID of files to merge:", fIDs, "\n")
@@ -809,14 +814,16 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
         df_rad = df_rad.rename(columns={"E": "Ekin"})            
         # list of events
         event_list = list(df_defl.eventID.unique())
+        #print("event_list:", event_list)
         n_events = len(event_list)
         # correct the event number and create a dataframe
-        add2eventIDi = max([n_events, max(event_list)])        
-        add1 = 1 if (min(event_list)==0 and nfiles>0) else 0
+        add2eventIDi = max([n_events, max(event_list)])
         for event in event_list:
-            df_defl.loc[df_defl.eventID == event, 'eventID'] += add2eventIDc + add1
+            df_defl.loc[df_defl.eventID == event, 'eventID'] += add2eventIDc + add1 if min(event_list)==0 else 0
             if not df_rad.empty:
-                df_rad.loc[df_rad.eventID == event, 'eventID'] += add2eventIDc + add1
+                df_rad.loc[df_rad.eventID == event, 'eventID'] += add2eventIDc + add1 if min(event_list)==0 else 0
+        add1 = 1 if (n_events < max(event_list)) else 0
+        #print("add1:", add1)
         dataframes_defl_list.append(df_defl)
         if not df_rad.empty:
             dataframes_rad_list.append(df_rad)           
@@ -951,6 +958,7 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
     add2eventIDi = 0
     events_read = 0
     nfiles = 0
+    add1 = 0
     fIDs = [int(filename.split('.root')[0].split('_')[-1]) for filename in os.listdir(data_path)]
     if beVerbose:
         print("ID of files to merge:", fIDs, "\n")
@@ -967,13 +975,15 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
         df_scr = rf['scoringScreen'].arrays(library='pd')
         # list of events        
         event_list = list(df_scr.eventID.unique())
+        #print("event_list:", event_list)
         n_events = len(event_list)
         # correct the event number and create a dataframe
         add2eventIDi = max([n_events, max(event_list)])
-        add1 = 1 if (min(event_list)==0 and nfiles>0) else 0 
         for event in event_list:
-            df_out.loc[df_out.eventID == event, 'eventID'] += add2eventIDc + add1
-            df_scr.loc[df_scr.eventID == event, 'eventID'] += add2eventIDc + add1
+            df_out.loc[df_out.eventID == event, 'eventID'] += add2eventIDc + add1 if min(event_list)==0 else 0
+            df_scr.loc[df_scr.eventID == event, 'eventID'] += add2eventIDc + add1 if min(event_list)==0 else 0
+        add1 = 1 if (n_events < max(event_list)) else 0
+        #print("add1:", add1)
         dataframes_out_list.append(df_out)
         dataframes_scr_list.append(df_scr)            
         # increase te number of files read
