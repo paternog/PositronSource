@@ -1,5 +1,8 @@
-# Set of functions to read (and plot) Edep in various volumes, scored in different ways.
-# These functions were conceived for (oriented) calorimeters, thus Edep is scored in GeV.  
+#######################################################################################################
+####### Set of functions to read (and plot) Edep in various volumes, scored in different ways. ########
+####### These functions were conceived for (oriented) calorimeters, thus Edep is scored in GeV. #######
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 20/03/2025 ######################
+#######################################################################################################
 
 # Import the required libraries
 import numpy as np
@@ -19,7 +22,8 @@ def get_scored_Edep_from_txt(path, set_list, add_to_all_pre, add_to_all_post, no
     Function to read the total Edep (saved in txt files) for many runs (given by set_list).
     Pass always a list (set_list), even with if you have only one element.
     For each run, it foresees a file with 2 header rows (the 1st with Nevents and the 2nd
-    with the column labels) and and many columns with volumeID, elementID, Edep, stdEdep.   
+    with the column labels) and many columns with volumeID, elementID, Edep, stdEdep.
+    This kind of file is produced by Geant4 OCalo4Sat app if /det/setBIscoring is True.
     It returns [volumeID, elementID, Edep, stdEdep], namely a list with each of element 
     being a dictionary with items of set_list as keys and values suggested by the name.
     """
@@ -67,6 +71,7 @@ def get_scored_Edep_from_txt(path, set_list, add_to_all_pre, add_to_all_post, no
 def read_and_plot_Edep_thread(filename, beVerbose=True, doPlots=True, saveFigs=False):
     """
     Function to read (and plot) Edep accumulated per thread in two volumes (PS and CL).
+    These volumes are present in Geant4 OCalo4Sat app.
     It returns [df_PS_thread_edep, df_CL_thread_edep, edep_sum_PS, edep_sum_CL].
     It does plots [by default].
     """
@@ -173,6 +178,7 @@ def read_and_plot_Edep_thread(filename, beVerbose=True, doPlots=True, saveFigs=F
 def read_and_plot_Edep_event(filename, normEvents, beVerbose=True, doPlots=True, saveFigs=False):
     """
     Function to read (and plot) Edep accumulated per event in two volumes (PS and CL).
+    These volumes are present in Geant4 OCalo4Sat app.
     It returns [edep_PS_event, edep_CL_event, edep_PS, edep_CL, df_PS_event, df_CL_event].
     It does plots [by default].
     """
@@ -282,7 +288,7 @@ def read_and_plot_Edep_event(filename, normEvents, beVerbose=True, doPlots=True,
 def read_Edep_event(filename, normEvents, beVerbose=True):
     """
     Function to read Edep accumulated (through SteppingAction) 
-    per event in various Volumes. It is general.
+    per event in various volumes. It is general.
     It returns [edep_event, edep, df_event, Nvolumes, Nevents].
     """
     

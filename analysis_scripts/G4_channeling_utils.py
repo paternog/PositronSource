@@ -1,4 +1,7 @@
-# Set of functions used during the analysis of channeling simulations with Geant4.
+#######################################################################################################
+####### Set of functions used during the analysis of channeling simulations with Geant4 ###############
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 20/03/2025 ######################
+#######################################################################################################
 
 # Import the required libraries
 import numpy as np
@@ -18,6 +21,7 @@ from G4_utils import * #my custom functions of general utility
 
 #######################################################################################################
 ############ Custom functions useful for various Geant4 simulations related to channeling #############
+#######################################################################################################
 def get_photons_on_detector(filename, Nevents, xlim_rad=(0, 1e10), \
                             apply_collimation=False, cut_angle=3.14, \
                             thetaC=0, beVerbose=True):
@@ -204,7 +208,7 @@ def filter_photon_emission_with_defl_cut(DthetaX, DthetaY, good_events, df_ph, \
     """
     Filter the photon emission from a crystal based on the cuts on deflection. A squared (selType=0)
     or circular (selType=1) cut with parameters passed as arguments (in urad) can be applied.
-    I updated the function to consider also 2 or 3 circular selctions, as in the BentGe<110> article. 
+    I updated the function to consider also 2 or 3 circular selctions, as in the Bent Ge<110> article. 
     DthetaX, DthetaY, good_events are lists or numpy arrays. good_events lists some events that were 
     previously selected according to some criteria (i.e. previous angular/spatial cuts).
     df_ph is the dataframe of emitted photons. It contains ['eventID', 'Ekin', 'angle_x', 'angle_y'].
@@ -272,6 +276,7 @@ def filter_photon_emission_with_defl_cut(DthetaX, DthetaY, good_events, df_ph, \
 
 #######################################################################################################
 #### Functions implemented by R. Negrello to fit theta_out curve considering various contributions ####
+#######################################################################################################
 path_file_json = "parameters.json"
 if os.path.exists(path_file_json):
     with open(path_file_json, 'r') as file:
@@ -324,6 +329,7 @@ def voigt(x, A, mu, sigma, gamma):
 
 #######################################################################################################
 ################################ Functions for particle tagging #######################################
+#######################################################################################################
 def my_dataframe_split(df, events, len_traj, Nparts_desired=500):
     """
     Custom method (by gpaterno) to split a dataframe in chunks/parts on the basis of
@@ -469,7 +475,7 @@ def classify_particles(df_part):
     """
     Function to classify particle trajectories with or without parallel calculation 
     (by R. Negrello). It returns a dataframe with two columns [eventID', 'category']. 
-    To avoid future disambiguations, I changed the second column name from 'state' to
+    To avoid future ambiguity, I changed the second column name from 'state' to
     'category' and the returned dataframe name from 'df_state' to 'df_category'.
     In order to correctly use this function, include here (or before calling):
     from collections import Counter
@@ -699,10 +705,11 @@ def correct_trajectory_of_radiating_particles(df):
 
 #######################################################################################################
 ################## Merge the results of many simulations with few (even 1) events #####################
+#######################################################################################################
 def merge_root_ntuples(data_path, ntuple):
     """
     This function is quite general, it merges ntuples in python.
-    There are no constranints on the filenames nor on the ventID.
+    There are no constranints on the filenames nor on the eventID.
     It returns a dataframe.
     """
     import uproot
@@ -724,7 +731,8 @@ def merge_root_ntuples(data_path, ntuple):
 def merge_root_ntuples_based_on_eventID(data_path, ntuple_name, beVerbose=False):
     """
     Function to merge an ntuple contained in many root files.
-    During the merging, it automatically corrects the eventID.
+    During the merging, it automatically corrects the eventID, 
+    based on the number of events progressively read.
     It returns a dataframe with the merged ntuple.
     WARNING: if you have a file with more than one ntuple, 
     by reading them separately, you'll lose the correlation.
@@ -754,7 +762,6 @@ def merge_root_ntuples_based_on_eventID(data_path, ntuple_name, beVerbose=False)
         n_events = len(event_list)
         # correct the event number and create a dataframe
         add2eventIDi = max([n_events, max(event_list)])
-        #add1 = 1 if (min(event_list)==0 and nfiles>0) else 0
         for event in event_list:
             df_root.loc[df_root.eventID == event, 'eventID'] += add2eventIDc + add1 if min(event_list)==0 else 0
         add1 = 1 if (n_events < max(event_list)) else 0
@@ -946,10 +953,11 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
     NOTE1: due to some issues in the creation of the output tree with
     branches of strings, I converted strings in integers
     (look at part_dict to know the coding).   
-    NOTE2: Even if ntuples of TestBeamOC output file contain more columns 
+    NOTE2: Even if ntuples of TestBeamOC output file contains more columns 
     than those of TestBeamPS, the merged output file contains the columns 
-    of TestBeamPS only. Please, use directly the merged dataframe, 
-    if the additional columns are required for the analysis.
+    of TestBeamPS, plus some important variables useful for analysis, 
+    such as detID. Please, use directly the merged dataframe, 
+    if the all the TestBeamOC columns are required for the analysis.
     """
     import uproot
     dataframes_out_list = []
@@ -1008,7 +1016,8 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
                                                 "Tracker_X_2": np.float64, "Tracker_Y_2": np.float64, \
                                                 "Ekin": np.float64, \
                                                 "edep_APC1": np.float64, "edep_APC2": np.float64, \
-                                                "edep_calo": np.float64, "edep_screen": np.float64,
+                                                "edep_calo": np.float64, "edep_screen": np.float64, \
+                                                "edep_calo2": np.float64, "edep_calo3": np.float64, \
                                                })
         tree_out.extend({
                          "eventID": df_out_merged.eventID.values, \
@@ -1019,12 +1028,15 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
                          "Ekin": df_out_merged.Ekin.values, \
                          "edep_APC1": df_out_merged.edep_APC1.values, "edep_APC2": df_out_merged.edep_APC2.values, \
                          "edep_calo": df_out_merged.edep_calo.values, "edep_screen": df_out_merged.edep_screen.values, \
+                         "edep_calo2": df_out_merged.edep_calo2.values if 'edep_calo2' in df_out_merged.columns else np.nan , \
+                         "edep_calo3": df_out_merged.edep_calo3.values if 'edep_calo3' in df_out_merged.columns else np.nan
                         })
         tree_scr = rf_merged.mktree("scoringScreen", {
                                                 "eventID": np.int32, "particle": np.int32, \
-                                                "x": np.float64, "y": np.float64, \
+                                                "x": np.float64, "y": np.float64, "z": np.float64, \
                                                 "px": np.float64, "py": np.float64, "pz": np.float64, \
-                                                "t": np.float64, "E": np.float64, "parentID": np.int32,
+                                                "t": np.float64, "E": np.float64, "parentID": np.int32, \
+                                                "trackID": np.int32, "detID": np.int32
                                                })
         # conversion of string columns into integer columns (without this an error occurs)
         df_scr_merged["particle"] = df_scr_merged["particle"].astype(str) 
@@ -1032,9 +1044,11 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
         df_scr_merged = df_scr_merged.replace(part_dict)    
         tree_scr.extend({
                          "eventID": df_scr_merged.eventID.values, "particle": df_scr_merged.particle.values, \
-                         "x": df_scr_merged.x.values, "y": df_scr_merged.y.values, \
+                         "x": df_scr_merged.x.values, "y": df_scr_merged.y.values, "z": df_scr_merged.z.values, \
                          "px": df_scr_merged.px.values, "py": df_scr_merged.py.values, "pz": df_scr_merged.py.values, \
                          "t": df_scr_merged.t.values, "E": df_scr_merged.E.values, "parentID": df_scr_merged.parentID.values, \
+                         "trackID": df_scr_merged.trackID.values if 'trackID' in df_scr.columns else np.nan, \
+                         "detID": df_scr_merged.detID.values if 'detID' in df_scr.columns else np.nan
                        })
     # return merged dataframes
     print("\n")

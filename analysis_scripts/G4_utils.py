@@ -1,3 +1,9 @@
+#######################################################################################################
+####### Set of functions useful to analyse Geant4 simulations #########################################
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 20/03/2025 ######################
+#######################################################################################################
+
+
 def weighted_avg_and_std(values, weights):
     """
     Return the weighted average and standard deviation.
@@ -167,11 +173,150 @@ def TProfile2D(X, Y, NbinX, Xmin, Xmax, NbinY, Ymin, Ymax, Z):
     return Zmatrix, Zmatrix_norm, XbinEdges, YbinEdges
 
 
+def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
+                       p2m=5, plot_mrad=False, IWantFit=False, IWantPlot=False, \
+                       lblpltX="data", lblpltY="data", lblfitX="fit", lblfitY="fit", \
+                       lblX="", lblY="", plot_title="", \
+                       saveFig=False, outputFile="TH2D_profiles"):
+
+    """
+    Function to calculate and plot the profile of a 2D histogram (TH2D).
+    It is general, but it was conceived for the deflection distribution
+    of a charged particle beam by an oriented crystal. For this reason, 
+    the labels set by default refer to this case. If this is not the case,
+    provide the proper labels, in particular lblX and lblY.
+    It returns the profiles and the parameters of their Gaussian+Linear fit.
+    Developed by gpaterno.
+    """
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+    from matplotlib.ticker import AutoMinorLocator
+    from scipy.optimize import curve_fit
+
+    if plot_mrad:
+        cmr = 1e-3
+    else:
+        cmr = 1
+
+    # Calculate profiles
+    NbinX = len(XBinEdges)-1
+    profileX = np.zeros(NbinX)
+    ic = int(TH2D.shape[1]/2+1)
+    
+    for j in range(NbinX):
+        profileX[j] = np.mean(TH2D[ic-p2m:ic+p2m,j])
+    XBinC = XBinEdges[:-1] + (XBinEdges[2]-XBinEdges[1])*0.5
+
+    NbinY = len(YBinEdges)-1
+    profileY = np.zeros(NbinY)
+    ic = int(TH2D.shape[0]/2+1)
+    for j in range(NbinY):
+        profileY[j] = np.mean(TH2D[j,ic-p2m:ic+p2m])    
+    YBinC = YBinEdges[:-1] + (YBinEdges[2]-YBinEdges[1])*0.5
+    
+    # Fit profiles
+    if IWantFit:
+        def GaussLin(x, a, b, c, d, e):
+            return a*np.exp(-np.power(x - b, 2)/(2*np.power(c, 2))) + (d*x+e)
+        
+        parsX, covX = curve_fit(f=GaussLin, xdata=XBinC, ydata=profileX, \
+                                p0=[1, (xlimH+xlimL)*0.5, (xlimH-xlimL)*0.5, 0, 0], \
+                                bounds=(-np.inf, np.inf))    
+        fitX = GaussLin(XBinC, *parsX)
+        print('Gaussian+Linear fit parsX:\n', parsX)
+        resX = profileX - fitX
+        stdevsX = np.sqrt(np.diag(covX))
+        muX_value = parsX[1]
+        sigmaX_value = parsX[2]
+        
+        parsY, covY = curve_fit(f=GaussLin, xdata=YBinC, ydata=profileY, \
+                                p0=[1, (ylimH+ylimL)*0.5, (ylimH-ylimL)*0.5, 0, 0], \
+                                bounds=(-np.inf, np.inf))    
+        fitY = GaussLin(YBinC, *parsY)
+        print('Gaussian+Linear fit parsY:\n', parsY, '\n')
+        resY = profileY - fitY
+        stdevsY = np.sqrt(np.diag(covY))
+        muY_value = parsY[1]
+        sigmaY_value = parsY[2]
+    
+    # Calculate main statistical values of the selected region
+    muX_data, sigmaX_data = weighted_avg_and_std(XBinC, profileX)
+    muY_data, sigmaY_data = weighted_avg_and_std(YBinC, profileY)
+
+    if lblX == "":
+        if plot_mrad:
+            lblpltX = 'data ($\\mu_{data}=%.3f$ mrad, $\\sigma_{data}=%.3f$ xrad)' % (muX_data*cmr, sigmaX_data*cmr)
+            lblpltY = 'data ($\\mu_{data}=%.3f$ mrad, $\\sigma_{data}=%.3f$ xrad)' % (muY_data*cmr, sigmaY_data*cmr)
+            lblfitX = 'fit ($\\mu_{fit}=%.3f$ mrad, $\\sigma_{fit}=%.3f$ mrad)' % (muX_value*cmr, sigmaX_value*cmr)
+            lblfitY = 'fit ($\\mu_{fit}=%.3f$ mrad, $\\sigma_{fit}=%.3f$ mrad)' % (muY_value*cmr, sigmaY_value*cmr)
+            lblX = '$\\Delta\\theta_{x}$ (mrad)'
+            lblY = '$\\Delta\\theta_{y}$ (mrad)'
+        else:
+            lblpltX = 'data ($\\mu_{data}=%.0f$ $\\mu$rad, $\\sigma_{data}=%.0f$ $\\mu$rad)' % (muX_data*cmr, sigmaX_data*cmr)
+            lblpltY = 'data ($\\mu_{data}=%.0f$ $\\mu$rad, $\\sigma_{data}=%.0f$ $\\mu$rad)' % (muY_data*cmr, sigmaY_data*cmr)
+            lblfitX = 'fit ($\\mu_{fit}=%.0f$ $\\mu$rad, $\\sigma_{fit}=%.0f$ $\\mu$rad)' % (muX_value*cmr, sigmaX_value*cmr)
+            lblfitY = 'fit ($\\mu_{fit}=%.0f$ $\\mu$rad, $\\sigma_{fit}=%.0f$ $\\mu$rad)' % (muY_value*cmr, sigmaY_value*cmr)
+            lblX = '$\\Delta\\theta_{x}$ ($\\mu$rad)'
+            lblY = '$\\Delta\\theta_{y}$ ($\\mu$rad)'
+    else:
+        print("\nset passed labels!\n")
+        if lblY == "": lblY = "Y"
+    
+    # Plot profiles
+    if IWantPlot:
+        fig = plt.figure(figsize=(17, 6))
+        fs = 16
+        ms = 8
+        plt.subplot(1,2,1)
+        plt.plot(XBinC*cmr, profileX, linestyle='-', linewidth=2, color='blue', \
+                 marker='', markersize=ms, markerfacecolor='blue', label=lblpltX)
+        if IWantFit:
+            plt.plot(XBinC*cmr, fitX, linestyle='--', linewidth=2, color='black', label=lblfitX)
+        plt.legend(fontsize=fs*0.7)
+        plt.title(plot_title, fontsize=fs)
+        plt.xlabel(lblX, fontsize=fs)
+        plt.ylabel("Counts (arb. units)", fontsize=fs, wrap=True)
+        plt.xticks(fontsize=fs, rotation=0)
+        plt.yticks(fontsize=fs, rotation=0)
+        plt.gca().xaxis.set_minor_locator(AutoMinorLocator(5))
+        plt.gca().yaxis.set_minor_locator(AutoMinorLocator(5))
+        plt.gca().tick_params(axis="both", which='major', direction='in', length=8)
+        plt.gca().tick_params(axis="both", which='minor', direction='in', length=4)
+        plt.grid('on')
+        plt.subplot(1,2,2)
+        plt.plot(YBinC*cmr, profileY, linestyle='-', linewidth=2, color='blue', \
+                 marker='', markersize=ms, markerfacecolor='blue', label=lblpltY)
+        if IWantFit:
+            plt.plot(YBinC*cmr, fitY, linestyle='--', linewidth=2, color='black', label=lblfitY)
+        plt.legend(fontsize=fs*0.7)
+        plt.title(plot_title, fontsize=fs)
+        plt.xlabel(lblY, fontsize=fs)
+        plt.ylabel("Counts (arb. units)", fontsize=fs, wrap=True)
+        plt.xticks(fontsize=fs, rotation=0)
+        plt.yticks(fontsize=fs, rotation=0)
+        plt.gca().xaxis.set_minor_locator(AutoMinorLocator(5))
+        plt.gca().yaxis.set_minor_locator(AutoMinorLocator(5))
+        plt.gca().tick_params(axis="both", which='major', direction='in', length=8)
+        plt.gca().tick_params(axis="both", which='minor', direction='in', length=4)
+        plt.grid('on')
+        if saveFig:
+            plt.savefig(outputFile + ".jpg")
+        plt.show()
+        #plt.close()
+
+    # Return the profiles and the fit parameters
+    return profileX, parsX, profileY, parsY
+
+
 def proj2Dinto1D(space, lims, axis, bAverage):
     """
-    Function to project a 2d distribution into 1d array.
-    space = (x, y, z) from a x, y vs z plot     
-    axis = "x" ("y") to sum along the x (y) axis
+    Function to project a 2D distribution into 1D array.
+    It does not produce plots.
+    space = (x, y, z) from a x, y vs z plot.
+    lims defines the space limits.
+    axis = "x" ("y") to sum along the x (y) axis.
+    bAverage you get the mean along the selected axis.
     Developed by R. Negrello.
     """
     import numpy as np
@@ -266,6 +411,7 @@ def write_spectrum_to_G4file(Eedges_MeV, spectrum, output_file):
 
 #######################################################################################################
 ############# Set of functions to calculate and plot the phase space of particle beams ################
+#######################################################################################################
 def calc_CAIN_beam_properties(df, m=0.511, beVerbose=True, \
                               IWantSaveStat=False, exportpath='', exportname=''):
     
@@ -276,6 +422,7 @@ def calc_CAIN_beam_properties(df, m=0.511, beVerbose=True, \
     This version accepts a CAIN phase space given in the format:
     columns = ['x[m]', 'y[m]', 't[s]', 'E[eV]', 'px[eV/c]', 'py[eV/c]', 'pz[eV/c]']
     and calculates the properties, returning the norm emittance and the Twiss parameters.
+    The emittance calculation is based on (xp, yp), which is valid at small energy spread.
     The particle features can be saved to txt file at a given (passed) path.
     The particle mass in MeV/c2 can be passed. The verbosity can be turned off.
     """
@@ -417,6 +564,8 @@ def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True, \
     This version accepts an RF-Track phase space given in the format:
     columns = ["x[mm]", "xp[mrad]", "y[mm]", "yp[mrad]", "t[mm/c]", "p[MeV/c]", "ID"]
     and calculates the properties, returning the norm emittance and the Twiss parameters.
+    The emittance calculation is based on (px, py), which is the most general (RF-Track).
+    The particle features can be saved to txt file at a given (passed) path.
     The particle mass in MeV/c2 can be passed. Verbosity can be turned off.
     """
     
@@ -479,8 +628,8 @@ def calc_RFTrack_beam_properties(df, m=0.511, beVerbose=True, \
     ypy_rms = np.mean((y-np.mean(y))*(yp-np.mean(yp)))
     alpha_x = -xpx_rms/em_x_tr
     alpha_y = -ypy_rms/em_y_tr
-    #alpha_x = np.sqrt(beta_x*gamma_x-1) #equivalent is we use em_x_tr
-    #alpha_y = np.sqrt(beta_y*gamma_y-1) #equivalent is we use em_y_tr
+    #alpha_x = np.sqrt(beta_x*gamma_x-1) #it is equivalent, if we use em_x_tr
+    #alpha_y = np.sqrt(beta_y*gamma_y-1) #it is equivalent, if we use em_y_tr
 
     #print results
     if beVerbose:
@@ -938,7 +1087,8 @@ def scatterplot_with_hist(x1, y1, x2=[0], y2=[0], lbl1='', lbl2='', \
                           nbins=100, myoutpath='', saveFigs=False):
     
     """
-    Superimposed scatter plot of one or two distributions x1 vs y1 and x2 vs y2. 
+    Scatter plot of one or two distributions x1 vs y1 and x2 vs y2. If the distributions
+    to plot are actually two, the scatter plots are superimposed.
     It makes also the histograms of x1/x2 and y1/y2 (I can specify the number of bins).
     """
     
@@ -1081,7 +1231,7 @@ def plot_EorPspectrum(p, lbl='', \
     
     """
     It takes one or two vectors of p [MeV/c] and plot the histogram.
-    It can plot p or E by setting properly isE variable.
+    It can plot momentum p or energy E by setting properly isE variable.
     """
 
     import numpy as np
