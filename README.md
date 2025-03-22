@@ -43,7 +43,7 @@ In order to plot the trajectory use z and xx variables, while for tagging use x,
 
 Some important parameters of the Bair-Katkov (BK) model for radiation simulation can also be set (see the run.mac macro), for instance the minimum photon energy the crystal can emit (`/crystal/setLEth 0.3 MeV`) or the number of small steps of the particle trajectory before radiation probability is evualeted with BK (`/crystal/setNSmallTrajectorySteps 1000`).
 
-The FastSim channeling model can be deactivated through the macro command: `/crystal/setOCeffects false`. This is very useful to simulate the random/amorphous case without changing the angles with respect to selected orientation (with `/crystal/setCrystalAngleX angX_rad`, `/crystal/setCrystalAngleY angY_rad` commands).
+The [G4ChannelingFastSimModel] (http://www.geant4.org/geant4/) can be deactivated through the macro command: `/crystal/setOCeffects false`. This is very useful to simulate the random/amorphous case without changing the angles with respect to selected orientation (with `/crystal/setCrystalAngleX angX_rad`, `/crystal/setCrystalAngleY angY_rad` commands).
 
 For the other interactions, standard Geant4 physics model are used. In particular `FTFP_BERT` has been selected as base physics list and the electromagnetic models has been chosen among the `Livermore` ones.
 
@@ -115,7 +115,8 @@ Run the app GUI which will show you a default geometry. You could also launch a 
 version: 1.0,
 date: 10-12-2024
 
-## Contact
-Please, if you make some modifications, does not push them directly on the main branch.
+## Acknowledgement
+The code has been developed in collaboration with Alexei Sytov, who acknowledges support from H2020-MSCA-GF TRILLION (G.A. 101032975) project. We also acknowledges support from the INFN-CSN5 (GEANT4INFN project) and the European Union – NextGenerationEU – Project Title : ‘‘Intense positron source Based On Oriented crySTals - e+BOOST’’ 2022Y87K7X – CUP I53D23001510006.
 
+## Contact
 For any question, comment, suggestion or bug report, please contact me at <paterno@fe.infn.it>. 
