@@ -266,7 +266,7 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
     # Plot profiles
     if IWantPlot:
         fig = plt.figure(figsize=(17, 6))
-        fs = 16
+        fs = 14
         ms = 8
         plt.subplot(1,2,1)
         plt.plot(XBinC*cmr, profileX, linestyle='-', linewidth=2, color='blue', \
