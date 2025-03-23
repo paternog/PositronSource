@@ -1016,8 +1016,18 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
                                                 "Tracker_X_2": np.float64, "Tracker_Y_2": np.float64, \
                                                 "Ekin": np.float64, \
                                                 "edep_APC1": np.float64, "edep_APC2": np.float64, \
-                                                "edep_calo": np.float64, "edep_screen": np.float64, \
-                                                "edep_calo2": np.float64, "edep_calo3": np.float64, \
+                                                "edep_calo": np.float64, "edep_calo2": np.float64, \
+                                                "edep_calo3": np.float64, "edep_screen": np.float64, \
+                                                "edep_bending_screen": np.float64, "edep_bending_screen2": np.float64, \
+                                                "edep_C1": np.float64, "edep_C2": np.float64, "edep_C3": np.float64, \
+                                                "edep_C4": np.float64, "edep_C5": np.float64, "edep_C6": np.float64, \
+                                                "edep_C7": np.float64, "edep_C8": np.float64, "edep_C9": np.float64, \
+                                                "edep_C10": np.float64, "edep_C11": np.float64, "edep_C12": np.float64, \
+                                                "edep_C13": np.float64, "edep_C14": np.float64, "edep_C15": np.float64, \
+                                                "edep_C16": np.float64, "edep_C17": np.float64, "edep_C18": np.float64, \
+                                                "edep_C19": np.float64, "edep_C20": np.float64, "edep_C21": np.float64, \
+                                                "edep_C22": np.float64, "edep_C23": np.float64, "edep_C24": np.float64, \
+                                                "edep_C25": np.float64
                                                })
         tree_out.extend({
                          "eventID": df_out_merged.eventID.values, \
@@ -1029,7 +1039,34 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
                          "edep_APC1": df_out_merged.edep_APC1.values, "edep_APC2": df_out_merged.edep_APC2.values, \
                          "edep_calo": df_out_merged.edep_calo.values, "edep_screen": df_out_merged.edep_screen.values, \
                          "edep_calo2": df_out_merged.edep_calo2.values if 'edep_calo2' in df_out_merged.columns else np.nan , \
-                         "edep_calo3": df_out_merged.edep_calo3.values if 'edep_calo3' in df_out_merged.columns else np.nan
+                         "edep_calo3": df_out_merged.edep_calo3.values if 'edep_calo3' in df_out_merged.columns else np.nan, \
+                         "edep_bending_screen": df_out_merged.edep_bending_screen.values if 'edep_bending_screen' in df_out_merged.columns else np.nan, \
+                         "edep_bending_screen2": df_out_merged.edep_bending_screen2.values if 'edep_bending_screen2' in df_out_merged.columns else np.nan, \
+                         "edep_C1": df_out_merged.edep_C1.values if 'edep_C1' in df_out_merged.columns else np.nan, \
+                         "edep_C2": df_out_merged.edep_C2.values if 'edep_C2' in df_out_merged.columns else np.nan, \
+                         "edep_C3": df_out_merged.edep_C3.values if 'edep_C3' in df_out_merged.columns else np.nan, \
+                         "edep_C4": df_out_merged.edep_C4.values if 'edep_C4' in df_out_merged.columns else np.nan, \
+                         "edep_C5": df_out_merged.edep_C5.values if 'edep_C5' in df_out_merged.columns else np.nan, \
+                         "edep_C6": df_out_merged.edep_C6.values if 'edep_C6' in df_out_merged.columns else np.nan, \
+                         "edep_C7": df_out_merged.edep_C7.values if 'edep_C7' in df_out_merged.columns else np.nan, \
+                         "edep_C8": df_out_merged.edep_C8.values if 'edep_C8' in df_out_merged.columns else np.nan, \
+                         "edep_C9": df_out_merged.edep_C9.values if 'edep_C9' in df_out_merged.columns else np.nan, \
+                         "edep_C10": df_out_merged.edep_C10.values if 'edep_C10' in df_out_merged.columns else np.nan, \
+                         "edep_C11": df_out_merged.edep_C11.values if 'edep_C11' in df_out_merged.columns else np.nan, \
+                         "edep_C12": df_out_merged.edep_C12.values if 'edep_C12' in df_out_merged.columns else np.nan, \
+                         "edep_C13": df_out_merged.edep_C13.values if 'edep_C13' in df_out_merged.columns else np.nan, \
+                         "edep_C14": df_out_merged.edep_C14.values if 'edep_C14' in df_out_merged.columns else np.nan, \
+                         "edep_C15": df_out_merged.edep_C15.values if 'edep_C15' in df_out_merged.columns else np.nan, \
+                         "edep_C16": df_out_merged.edep_C16.values if 'edep_C16' in df_out_merged.columns else np.nan, \
+                         "edep_C17": df_out_merged.edep_C17.values if 'edep_C17' in df_out_merged.columns else np.nan, \
+                         "edep_C18": df_out_merged.edep_C18.values if 'edep_C18' in df_out_merged.columns else np.nan, \
+                         "edep_C19": df_out_merged.edep_C19.values if 'edep_C19' in df_out_merged.columns else np.nan, \
+                         "edep_C20": df_out_merged.edep_C20.values if 'edep_C20' in df_out_merged.columns else np.nan, \
+                         "edep_C21": df_out_merged.edep_C21.values if 'edep_C21' in df_out_merged.columns else np.nan, \
+                         "edep_C22": df_out_merged.edep_C22.values if 'edep_C22' in df_out_merged.columns else np.nan, \
+                         "edep_C23": df_out_merged.edep_C23.values if 'edep_C23' in df_out_merged.columns else np.nan, \
+                         "edep_C24": df_out_merged.edep_C24.values if 'edep_C24' in df_out_merged.columns else np.nan, \
+                         "edep_C25": df_out_merged.edep_C25.values if 'edep_C25' in df_out_merged.columns else np.nan, \
                         })
         tree_scr = rf_merged.mktree("scoringScreen", {
                                                 "eventID": np.int32, "particle": np.int32, \

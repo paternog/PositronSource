@@ -43,7 +43,7 @@ In order to plot the trajectory use z and xx variables, while for tagging use x,
 
 Some important parameters of the Bair-Katkov (BK) model for radiation simulation can also be set (see the run.mac macro), for instance the minimum photon energy the crystal can emit (`/crystal/setLEth 0.3 MeV`) or the number of small steps of the particle trajectory before radiation probability is evualeted with BK (`/crystal/setNSmallTrajectorySteps 1000`).
 
-The [G4ChannelingFastSimModel] (http://www.geant4.org/geant4/) can be deactivated through the macro command: `/crystal/setOCeffects false`. This is very useful to simulate the random/amorphous case without changing the angles with respect to selected orientation (with `/crystal/setCrystalAngleX angX_rad`, `/crystal/setCrystalAngleY angY_rad` commands).
+The [G4ChannelingFastSimModel](https://geant4-userdoc.web.cern.ch/UsersGuides/PhysicsReferenceManual/html/solidstate/channeling/channeling_fastsim.html) can be deactivated through the macro command: `/crystal/setOCeffects false`. This is very useful to simulate the random/amorphous case without changing the angles with respect to selected orientation (with `/crystal/setCrystalAngleX angX_rad`, `/crystal/setCrystalAngleY angY_rad` commands).
 
 For the other interactions, standard Geant4 physics model are used. In particular `FTFP_BERT` has been selected as base physics list and the electromagnetic models has been chosen among the `Livermore` ones.
 
