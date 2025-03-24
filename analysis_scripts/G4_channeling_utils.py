@@ -899,9 +899,9 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
         # export merged defl and rad dataframes to root files
         last_file = file_list[-1].replace(".root", "")
         if '_' in last_file:
-            outputfile = last_file[:last_file.find("_", -1)] + 'merged' + str(nfiles )+ 'files'
+            outputfile = last_file[:last_file.find("_", -1)] + 'merged' + str(nfiles ) + 'files'
         else:
-            outputfile = 'merged' + str(nfiles )+ 'files'
+            outputfile = 'merged' + str(nfiles ) + 'files'
         rf_merged = uproot.recreate(data_path + '../' + outputfile + '.root')
         tree_defl = rf_merged.mktree("scoring_ntuple", {
                                                  "eventID": np.int32, "volume": np.int32, \
@@ -1012,9 +1012,9 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
         # export merged defl and rad dataframes to root files
         last_file = file_list[-1].replace(".root", "")
         if '_' in last_file:
-            outputfile = last_file[:last_file.find("_", -1)] + 'merged' + str(nfiles )+ 'files'
+            outputfile = last_file[:last_file.find("_", -1)] + 'merged' + str(nfiles ) + 'files'
         else:
-            outputfile = 'merged' + str(nfiles )+ 'files'
+            outputfile = 'merged' + str(nfiles ) + 'files'
         rf_merged = uproot.recreate(data_path + '../' + outputfile + '.root')
         tree_out = rf_merged.mktree("outData", {
                                                 "eventID": np.int32, \
