@@ -804,10 +804,11 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
     events_read = 0
     nfiles = 0
     add1 = 0
-    fIDs = [int(filename.split('.root')[0].split('_')[-1]) for filename in os.listdir(data_path)]
+    file_list = os.listdir(data_path)
+    fIDs = [int(filename.split('.root')[0].split('_')[-1]) for filename in file_list]
     if beVerbose:
         print("ID of files to merge:", fIDs, "\n")
-    for filename in os.listdir(data_path):
+    for filename in file_list:
         if beVerbose:
             print('opening', filename, '...')    
         # open a root file
@@ -896,7 +897,9 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
     # save merged dafatrames to proper files
     if save_result:
         # export merged defl and rad dataframes to root files
-        rf_merged = uproot.recreate(data_path + '../merged_root_file.root')
+        last_file = file_list[-1].replace(".root", "")
+        outputfile = last_file[:last_file.find("_", -1)] + 'merged' + str(nfiles )+ 'files'
+        rf_merged = uproot.recreate(data_path + '../' + outputfile + '.root')
         tree_defl = rf_merged.mktree("scoring_ntuple", {
                                                  "eventID": np.int32, "volume": np.int32, \
                                                  "x": np.float64, "y": np.float64, \
@@ -930,13 +933,14 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
                         })
         # export merged txt dataframe to text file
         if not df_txt_merged.empty:
-            with open(data_path + '../merged_txt_file.txt', 'a') as f:
+            with open(data_path + '../' + outputfile + '.txt', 'a') as f:
                 df_string = df_txt_merged.to_string(header=False, index=False)
                 f.write(df_string)
     # return the merged dataframes
     print("\n")
-    print("volume_dict merged:", volume_dict)
-    print("part_dict merged:", part_dict)    
+    if save_result:
+        print("volume_dict merged:", volume_dict)
+        print("part_dict merged:", part_dict)    
     print("events_read:", events_read)
     print('%d files merged!\n' % (nfiles))
     return df_defl_merged, df_rad_merged, df_txt_merged
@@ -952,12 +956,7 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
     but it can also create a merged root file.
     NOTE1: due to some issues in the creation of the output tree with
     branches of strings, I converted strings in integers
-    (look at part_dict to know the coding).   
-    NOTE2: Even if ntuples of TestBeamOC output file contains more columns 
-    than those of TestBeamPS, the merged output file contains the columns 
-    of TestBeamPS, plus some important variables useful for analysis, 
-    such as detID. Please, use directly the merged dataframe, 
-    if the all the TestBeamOC columns are required for the analysis.
+    (look at part_dict to know the coding).
     """
     import uproot
     dataframes_out_list = []
@@ -967,10 +966,11 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
     events_read = 0
     nfiles = 0
     add1 = 0
-    fIDs = [int(filename.split('.root')[0].split('_')[-1]) for filename in os.listdir(data_path)]
+    file_list = os.listdir(data_path)
+    fIDs = [int(filename.split('.root')[0].split('_')[-1]) for filename in file_list]
     if beVerbose:
         print("ID of files to merge:", fIDs, "\n")
-    for filename in os.listdir(data_path):
+    for filename in file_list:
         if beVerbose:
             print('opening', filename, '...')    
         # open a root file
@@ -1007,7 +1007,9 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
     # save merged dafatrames to proper files
     if save_result:
         # export merged defl and rad dataframes to root files
-        rf_merged = uproot.recreate(data_path + '../merged_root_file.root')
+        last_file = file_list[-1].replace(".root", "")
+        outputfile = last_file[:last_file.find("_", -1)] + 'merged' + str(nfiles )+ 'files'
+        rf_merged = uproot.recreate(data_path + '../' + outputfile + '.root')
         tree_out = rf_merged.mktree("outData", {
                                                 "eventID": np.int32, \
                                                 "Tracker_NHit_X_1": np.int32, "Tracker_NHit_Y_1": np.int32, \
@@ -1089,7 +1091,8 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
                        })
     # return merged dataframes
     print("\n")
-    print("part_dict merged:", part_dict)    
+    if save_result:
+        print("part_dict merged:", part_dict)
     print("events_read:", events_read)
     print('%d files merged!\n' % (nfiles))
     return df_out_merged, df_scr_merged
