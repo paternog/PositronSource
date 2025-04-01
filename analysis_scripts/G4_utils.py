@@ -216,6 +216,8 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
     YBinC = YBinEdges[:-1] + (YBinEdges[2]-YBinEdges[1])*0.5
     
     # Fit profiles
+    parsX = []
+    parsY = []
     if IWantFit:
         def GaussLin(x, a, b, c, d, e):
             return a*np.exp(-np.power(x - b, 2)/(2*np.power(c, 2))) + (d*x+e)
@@ -227,8 +229,8 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
         print('Gaussian+Linear fit parsX:\n', parsX)
         resX = profileX - fitX
         stdevsX = np.sqrt(np.diag(covX))
-        muX_value = parsX[1]
-        sigmaX_value = parsX[2]
+        muX_fit = parsX[1]
+        sigmaX_fit = parsX[2]
         
         parsY, covY = curve_fit(f=GaussLin, xdata=YBinC, ydata=profileY, \
                                 p0=[1, (ylimH+ylimL)*0.5, (ylimH-ylimL)*0.5, 0, 0], \
@@ -237,8 +239,8 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
         print('Gaussian+Linear fit parsY:\n', parsY, '\n')
         resY = profileY - fitY
         stdevsY = np.sqrt(np.diag(covY))
-        muY_value = parsY[1]
-        sigmaY_value = parsY[2]
+        muY_fit = parsY[1]
+        sigmaY_fit = parsY[2]
     
     # Calculate main statistical values of the selected region
     muX_data, sigmaX_data = weighted_avg_and_std(XBinC, profileX)
@@ -246,17 +248,17 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
 
     if lblX == "":
         if plot_mrad:
-            lblpltX = 'data ($\\mu_{data}=%.3f$ mrad, $\\sigma_{data}=%.3f$ xrad)' % (muX_data*cmr, sigmaX_data*cmr)
-            lblpltY = 'data ($\\mu_{data}=%.3f$ mrad, $\\sigma_{data}=%.3f$ xrad)' % (muY_data*cmr, sigmaY_data*cmr)
-            lblfitX = 'fit ($\\mu_{fit}=%.3f$ mrad, $\\sigma_{fit}=%.3f$ mrad)' % (muX_value*cmr, sigmaX_value*cmr)
-            lblfitY = 'fit ($\\mu_{fit}=%.3f$ mrad, $\\sigma_{fit}=%.3f$ mrad)' % (muY_value*cmr, sigmaY_value*cmr)
+            lblpltX = 'data ($\\mu_{data}=%.3f$ mrad, $\\sigma_{data}=%.3f$ xrad)'
+            lblpltY = 'data ($\\mu_{data}=%.3f$ mrad, $\\sigma_{data}=%.3f$ xrad)'
+            lblfitX = 'fit ($\\mu_{fit}=%.3f$ mrad, $\\sigma_{fit}=%.3f$ mrad)'
+            lblfitY = 'fit ($\\mu_{fit}=%.3f$ mrad, $\\sigma_{fit}=%.3f$ mrad)'
             lblX = '$\\Delta\\theta_{x}$ (mrad)'
             lblY = '$\\Delta\\theta_{y}$ (mrad)'
         else:
-            lblpltX = 'data ($\\mu_{data}=%.0f$ $\\mu$rad, $\\sigma_{data}=%.0f$ $\\mu$rad)' % (muX_data*cmr, sigmaX_data*cmr)
-            lblpltY = 'data ($\\mu_{data}=%.0f$ $\\mu$rad, $\\sigma_{data}=%.0f$ $\\mu$rad)' % (muY_data*cmr, sigmaY_data*cmr)
-            lblfitX = 'fit ($\\mu_{fit}=%.0f$ $\\mu$rad, $\\sigma_{fit}=%.0f$ $\\mu$rad)' % (muX_value*cmr, sigmaX_value*cmr)
-            lblfitY = 'fit ($\\mu_{fit}=%.0f$ $\\mu$rad, $\\sigma_{fit}=%.0f$ $\\mu$rad)' % (muY_value*cmr, sigmaY_value*cmr)
+            lblpltX = 'data ($\\mu_{data}=%.0f$ $\\mu$rad, $\\sigma_{data}=%.0f$ $\\mu$rad)'
+            lblpltY = 'data ($\\mu_{data}=%.0f$ $\\mu$rad, $\\sigma_{data}=%.0f$ $\\mu$rad)'
+            lblfitX = 'fit ($\\mu_{fit}=%.0f$ $\\mu$rad, $\\sigma_{fit}=%.0f$ $\\mu$rad)'
+            lblfitY = 'fit ($\\mu_{fit}=%.0f$ $\\mu$rad, $\\sigma_{fit}=%.0f$ $\\mu$rad)'
             lblX = '$\\Delta\\theta_{x}$ ($\\mu$rad)'
             lblY = '$\\Delta\\theta_{y}$ ($\\mu$rad)'
     else:
@@ -270,9 +272,11 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
         ms = 8
         plt.subplot(1,2,1)
         plt.plot(XBinC*cmr, profileX, linestyle='-', linewidth=2, color='blue', \
-                 marker='', markersize=ms, markerfacecolor='blue', label=lblpltX)
+                 marker='', markersize=ms, markerfacecolor='blue', \
+                 label=lblpltX % (muX_data*cmr, sigmaX_data*cmr))
         if IWantFit:
-            plt.plot(XBinC*cmr, fitX, linestyle='--', linewidth=2, color='black', label=lblfitX)
+            plt.plot(XBinC*cmr, fitX, linestyle='--', linewidth=2, color='black', \
+                     label=lblfitX % (muX_fit*cmr, sigmaX_fit*cmr))
         plt.legend(fontsize=fs*0.7)
         plt.title(plot_title, fontsize=fs)
         plt.xlabel(lblX, fontsize=fs)
@@ -286,9 +290,11 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
         plt.grid('on')
         plt.subplot(1,2,2)
         plt.plot(YBinC*cmr, profileY, linestyle='-', linewidth=2, color='blue', \
-                 marker='', markersize=ms, markerfacecolor='blue', label=lblpltY)
+                 marker='', markersize=ms, markerfacecolor='blue', \
+                 label=lblpltY  % (muY_data*cmr, sigmaY_data*cmr))
         if IWantFit:
-            plt.plot(YBinC*cmr, fitY, linestyle='--', linewidth=2, color='black', label=lblfitY)
+            plt.plot(YBinC*cmr, fitY, linestyle='--', linewidth=2, color='black', \
+                     label=lblfitY % (muY_fit*cmr, sigmaY_fit*cmr))
         plt.legend(fontsize=fs*0.7)
         plt.title(plot_title, fontsize=fs)
         plt.xlabel(lblY, fontsize=fs)

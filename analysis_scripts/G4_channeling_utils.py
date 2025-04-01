@@ -1090,7 +1090,7 @@ def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
         tree_scr.extend({
                          "eventID": df_scr_merged.eventID.values, "particle": df_scr_merged.particle.values, \
                          "x": df_scr_merged.x.values, "y": df_scr_merged.y.values, "z": df_scr_merged.z.values, \
-                         "px": df_scr_merged.px.values, "py": df_scr_merged.py.values, "pz": df_scr_merged.py.values, \
+                         "px": df_scr_merged.px.values, "py": df_scr_merged.py.values, "pz": df_scr_merged.pz.values, \
                          "t": df_scr_merged.t.values, "E": df_scr_merged.E.values, "parentID": df_scr_merged.parentID.values, \
                          "trackID": df_scr_merged.trackID.values if 'trackID' in df_scr.columns else np.nan, \
                          "detID": df_scr_merged.detID.values if 'detID' in df_scr.columns else np.nan
