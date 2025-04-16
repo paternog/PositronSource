@@ -1305,10 +1305,11 @@ def plot_EvsTheta(theta, energy, \
                   num_bins_theta=50, num_bins_energy=50, \
                   theta_range=None, energy_range=None,\
                   use_log_scale=False, mymap='jet', \
+                  xlbl='$\\theta$ (mrad)', ttl='', \
                   myoutpath='', saveFigs=False):
     
     """
-    It takes theta [mrad] and energy in [MeV] and plot a 2Dhist,
+    It takes theta/thetax [mrad] and energy in [MeV] and plot a 2Dhist,
     namely a mustage plot in the case of ICS.
     """
 
@@ -1330,7 +1331,8 @@ def plot_EvsTheta(theta, energy, \
     cbar = plt.colorbar(img, ax=ax, label='Frequency')
     cbar.set_label('counts (arb. units)', fontsize=fs, rotation=90)
     cbar.ax.tick_params(labelsize=fs)
-    ax.set_xlabel('$\\theta$ (mrad)', fontsize=fs)
+    ax.set_title(ttl, fontsize=fs)
+    ax.set_xlabel(xlbl, fontsize=fs)
     ax.set_ylabel('E (MeV)', fontsize=fs)
     plt.xticks(fontsize=fs, rotation=0)
     plt.yticks(fontsize=fs, rotation=0)
