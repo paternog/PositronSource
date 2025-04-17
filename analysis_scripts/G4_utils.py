@@ -315,6 +315,25 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
     return profileX, parsX, profileY, parsY
 
 
+def radial_profile_app1(data, r):
+    """
+    Calculate the radial profile of a 2D Matrix (data).
+    It returns the radius (dists) and the profile (mean_data)
+    """
+    import numpy as np
+    
+    mid = data.shape[0]//2
+    ids = np.rint((r**2)/r[mid-1,mid]**2).astype(int).ravel()
+    count = np.bincount(ids)
+
+    R = data.shape[0]//2 #Radial profile radius
+    R0 = R+1
+    dists = np.unique(r[:R0,:R0][np.tril(np.ones((R0,R0),dtype=bool))])
+
+    mean_data = (np.bincount(ids, data.ravel())/count)[count!=0]
+    return dists, mean_data
+
+
 def proj2Dinto1D(space, lims, axis, bAverage):
     """
     Function to project a 2D distribution into 1D array.
@@ -1042,6 +1061,7 @@ def plot_RFTrack_transverse_distributions(df, m=0.511, radius_sel=1e15, \
                                           xrange=None, xprange=None, \
                                           yrange=None, yprange=None, \
                                           use_log_scale=False, mymap='jet', \
+                                          ttlSD='', ttlE='', \
                                           myoutpath='', saveFigs=False):
 
     df_sel = df[df['x[mm]']**2 + df['y[mm]']**2 < radius_sel**2] #apply a selection
@@ -1067,6 +1087,7 @@ def plot_RFTrack_transverse_distributions(df, m=0.511, radius_sel=1e15, \
     cbar = plt.colorbar(img3, ax=plt.gca(), label='Frequency')
     cbar.set_label('counts (arb. units)', fontsize=fs, rotation=90)
     cbar.ax.tick_params(labelsize=fs)
+    plt.title(ttlSD, fontsize=fs)
     plt.xlabel('x (mm)', fontsize=fs)
     plt.ylabel('y (mm)', fontsize=fs)
     plt.xticks(fontsize=fs, rotation=0)
@@ -1078,6 +1099,7 @@ def plot_RFTrack_transverse_distributions(df, m=0.511, radius_sel=1e15, \
     cbar = plt.colorbar()
     cbar.set_label('E (MeV)', fontsize=fs, rotation=90)
     cbar.ax.tick_params(labelsize=fs)
+    plt.title(ttlE, fontsize=fs)
     plt.xlabel("$\\theta_{x}$ (mrad)", fontsize=fs)
     plt.ylabel("$\\theta_{y}$ (mrad)", fontsize=fs)
     plt.xticks(fontsize=fs, rotation=0)
@@ -1085,7 +1107,9 @@ def plot_RFTrack_transverse_distributions(df, m=0.511, radius_sel=1e15, \
     plt.axis('equal')    
     if saveFigs:
         plt.savefig(myoutpath + 'IandE' + '.jpg')
-    plt.show()  
+    plt.show()
+
+    return hist_matrix3.T, Zmatrix_norm
 
 
 def scatterplot_with_hist(x1, y1, x2=[0], y2=[0], lbl1='', lbl2='', \
