@@ -234,7 +234,7 @@ void RunAction::EndOfRunAction(const G4Run* run)
         //write results of Edep in the VoxelScorer to a text file
         std::string pureFileName = fFileName.substr(0, fFileName.find(".root"));
         if (pureFileName.length() == fFileName.length())
-        	pureFileName = fFileName.substr(0, fFileName.find(".csv"));       
+            pureFileName = fFileName.substr(0, fFileName.find(".csv"));       
         //G4cout << "pureFileName: " << pureFileName << G4endl;        
         G4bool Voxelization = detectorConstruction->GetVoxelization();
         if (Voxelization) { 

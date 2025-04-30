@@ -180,9 +180,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     G4Material* Tungsten = nist->FindOrBuildMaterial("G4_W");
     G4Material* Iridium = nist->FindOrBuildMaterial("G4_W");
     G4Material* Germanium = nist->FindOrBuildMaterial("G4_Ge");
-    G4Element* elBi  = nist->FindOrBuildElement("Bi");    
-    G4Element* elGe  = nist->FindOrBuildElement("Ge");
-    G4Element* elO  = nist->FindOrBuildElement("O");
+    G4Element* elBi = nist->FindOrBuildElement("Bi");    
+    G4Element* elGe = nist->FindOrBuildElement("Ge");
+    G4Element* elO = nist->FindOrBuildElement("O");
     G4Material* BGO = new G4Material("G4_BGO", 7.13*g/cm3, 3);
     BGO->AddElement(elBi, 0.671054);
     BGO->AddElement(elGe, 0.17482);
@@ -202,15 +202,15 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                                         temperature, 
                                         pressure);
 /*
-  	//Air
-  	G4double d = 1.29*mg/cm3;
-  	G4int nel = 2;
-	G4double tair = 293.15 * CLHEP::kelvin;  //20° Celsius
-    G4double pair = 1.*CLHEP::atmosphere; 	 //1 atm
-	G4Material* Air = new G4Material("Air", d, nel, kStateGas, tair, pair);
+    //Air
+    G4double d = 1.29*mg/cm3;
+    G4int nel = 2;
+    G4double tair = 293.15 * CLHEP::kelvin;  //20° Celsius
+    G4double pair = 1.*CLHEP::atmosphere;      //1 atm
+    G4Material* Air = new G4Material("Air", d, nel, kStateGas, tair, pair);
     G4Element* elN  = nist->FindOrBuildElement("N");
-  	Air->AddElement(elN, 0.7);
-  	Air->AddElement(elO, 0.3);
+    Air->AddElement(elN, 0.7);
+    Air->AddElement(elO, 0.3);
 */    
 
     // ------------------- World -------------------------
