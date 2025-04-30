@@ -949,11 +949,11 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
     return df_defl_merged, df_rad_merged, df_txt_merged
 
 
-def merge_TestBeamPS_files(data_path, beVerbose=False, save_result=False):
+def merge_TestBeamOC_files(data_path, beVerbose=False, save_result=False):
     """
     Function to merge the root files of a set of Geant4 simulations 
     of particle interaction in Oriented Crystals, obatined with
-    TestBeamPS or TestBeamOC applications.
+    TestBeamOC or TestBeamPS applications.
     During the merging, it automatically corrects the eventID.
     It returns two dataframes (one for each ntuple) with the merged data, 
     but it can also create a merged root file.
