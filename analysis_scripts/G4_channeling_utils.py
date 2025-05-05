@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import os
 import uproot
 import math
-from tqdm import tqdm
+from tqdm.notebook import tqdm
 import scipy
 from scipy.special import voigt_profile
 from scipy.special import erf
