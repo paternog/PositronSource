@@ -912,11 +912,11 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
                                                 })
         # conversion of string columns into integer columns (without this an error occurs)
         df_defl_merged["volume"] = df_defl_merged["volume"].astype(str)
-        df_defl_merged["particle"] = df_defl_merged["particle"].astype(str) 
         volume_dict = {item: i for i,item in enumerate(df_defl_merged.volume.unique())}
+        df_defl_merged["volume"] = df_defl_merged["volume"].replace(volume_dict)
+        df_defl_merged["particle"] = df_defl_merged["particle"].astype(str) 
         part_dict = {item: i for i,item in enumerate(df_defl_merged.particle.unique())}
-        df_defl_merged = df_defl_merged.replace(volume_dict)
-        df_defl_merged = df_defl_merged.replace(part_dict)
+        df_defl_merged["particle"] = df_defl_merged["particle"].replace(part_dict)
         tree_defl.extend({
                           "eventID": df_defl_merged.eventID.values, "volume": df_defl_merged.volume.values, \
                           "x": df_defl_merged.x.values, "y": df_defl_merged.y.values, \
@@ -1086,7 +1086,7 @@ def merge_TestBeamOC_files(data_path, beVerbose=False, save_result=False):
         # conversion of string columns into integer columns (without this an error occurs)
         df_scr_merged["particle"] = df_scr_merged["particle"].astype(str) 
         part_dict = {item: i for i,item in enumerate(df_scr_merged.particle.unique())}
-        df_scr_merged = df_scr_merged.replace(part_dict)    
+        df_scr_merged["particle"] = df_scr_merged["particle"].replace(part_dict)    
         tree_scr.extend({
                          "eventID": df_scr_merged.eventID.values, "particle": df_scr_merged.particle.values, \
                          "x": df_scr_merged.x.values, "y": df_scr_merged.y.values, "z": df_scr_merged.z.values, \
