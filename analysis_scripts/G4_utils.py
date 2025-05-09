@@ -193,7 +193,13 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
     import matplotlib.pyplot as plt
     from matplotlib.ticker import AutoMinorLocator
     from scipy.optimize import curve_fit
-
+    
+    # Sanity check
+    if not lblX == "":
+        print("Set passed labels! plot_mrad set to False, be sure to pass correct values!\n")
+        plot_mrad = False
+    
+    # Set mult coeff for mrad plots
     if plot_mrad:
         cmr = 1e-3
     else:
@@ -248,22 +254,28 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
 
     if lblX == "":
         if plot_mrad:
-            lblpltX = 'data ($\\mu_{data}=%.3f$ mrad, $\\sigma_{data}=%.3f$ xrad)'
-            lblpltY = 'data ($\\mu_{data}=%.3f$ mrad, $\\sigma_{data}=%.3f$ xrad)'
-            lblfitX = 'fit ($\\mu_{fit}=%.3f$ mrad, $\\sigma_{fit}=%.3f$ mrad)'
-            lblfitY = 'fit ($\\mu_{fit}=%.3f$ mrad, $\\sigma_{fit}=%.3f$ mrad)'
+            lblpltX = 'data ($\\mu_{data}=%.3f$ mrad, $\\sigma_{data}=%.3f$ mrad)' % (muX_data*cmr, sigmaX_data*cmr)
+            lblpltY = 'data ($\\mu_{data}=%.3f$ mrad, $\\sigma_{data}=%.3f$ mrad)' % (muY_data*cmr, sigmaY_data*cmr)
+            if IWantFit:
+                lblfitX = 'fit ($\\mu_{fit}=%.3f$ mrad, $\\sigma_{fit}=%.3f$ mrad)' % (muX_fit*cmr, sigmaX_fit*cmr)
+                lblfitY = 'fit ($\\mu_{fit}=%.3f$ mrad, $\\sigma_{fit}=%.3f$ mrad)' % (muY_fit*cmr, sigmaY_fit*cmr)
             lblX = '$\\Delta\\theta_{x}$ (mrad)'
             lblY = '$\\Delta\\theta_{y}$ (mrad)'
         else:
-            lblpltX = 'data ($\\mu_{data}=%.0f$ $\\mu$rad, $\\sigma_{data}=%.0f$ $\\mu$rad)'
-            lblpltY = 'data ($\\mu_{data}=%.0f$ $\\mu$rad, $\\sigma_{data}=%.0f$ $\\mu$rad)'
-            lblfitX = 'fit ($\\mu_{fit}=%.0f$ $\\mu$rad, $\\sigma_{fit}=%.0f$ $\\mu$rad)'
-            lblfitY = 'fit ($\\mu_{fit}=%.0f$ $\\mu$rad, $\\sigma_{fit}=%.0f$ $\\mu$rad)'
+            lblpltX = 'data ($\\mu_{data}=%.0f$ $\\mu$rad, $\\sigma_{data}=%.0f$ $\\mu$rad)' % (muX_data*cmr, sigmaX_data*cmr)
+            lblpltY = 'data ($\\mu_{data}=%.0f$ $\\mu$rad, $\\sigma_{data}=%.0f$ $\\mu$rad)' % (muY_data*cmr, sigmaY_data*cmr)
+            if IWantFit:
+                lblfitX = 'fit ($\\mu_{fit}=%.0f$ $\\mu$rad, $\\sigma_{fit}=%.0f$ $\\mu$rad)' % (muX_fit*cmr, sigmaX_fit*cmr)
+                lblfitY = 'fit ($\\mu_{fit}=%.0f$ $\\mu$rad, $\\sigma_{fit}=%.0f$ $\\mu$rad)' % (muY_fit*cmr, sigmaY_fit*cmr)
             lblX = '$\\Delta\\theta_{x}$ ($\\mu$rad)'
             lblY = '$\\Delta\\theta_{y}$ ($\\mu$rad)'
     else:
-        print("\nset passed labels!\n")
         if lblY == "": lblY = "Y"
+        lblpltX = 'data ($\\mu_{data}=%.3f$, $\\sigma_{data}=%.3f$)' % (muX_data*cmr, sigmaX_data*cmr)
+        lblpltY = 'data ($\\mu_{data}=%.3f$, $\\sigma_{data}=%.3f$)' % (muY_data*cmr, sigmaY_data*cmr)
+        if IWantFit:
+            lblfitX = 'fit ($\\mu_{fit}=%.3f$, $\\sigma_{fit}=%.3f$)' % (muX_fit*cmr, sigmaX_fit*cmr)
+            lblfitY = 'fit ($\\mu_{fit}=%.3f$, $\\sigma_{fit}=%.3f$)' % (muY_fit*cmr, sigmaY_fit*cmr)
     
     # Plot profiles
     if IWantPlot:
@@ -273,10 +285,10 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
         plt.subplot(1,2,1)
         plt.plot(XBinC*cmr, profileX, linestyle='-', linewidth=2, color='blue', \
                  marker='', markersize=ms, markerfacecolor='blue', \
-                 label=lblpltX % (muX_data*cmr, sigmaX_data*cmr))
+                 label=lblpltX)
         if IWantFit:
             plt.plot(XBinC*cmr, fitX, linestyle='--', linewidth=2, color='black', \
-                     label=lblfitX % (muX_fit*cmr, sigmaX_fit*cmr))
+                     label=lblfitX)
         plt.legend(fontsize=fs*0.7)
         plt.title(plot_title, fontsize=fs)
         plt.xlabel(lblX, fontsize=fs)
@@ -291,10 +303,10 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
         plt.subplot(1,2,2)
         plt.plot(YBinC*cmr, profileY, linestyle='-', linewidth=2, color='blue', \
                  marker='', markersize=ms, markerfacecolor='blue', \
-                 label=lblpltY  % (muY_data*cmr, sigmaY_data*cmr))
+                 label=lblpltY)
         if IWantFit:
             plt.plot(YBinC*cmr, fitY, linestyle='--', linewidth=2, color='black', \
-                     label=lblfitY % (muY_fit*cmr, sigmaY_fit*cmr))
+                     label=lblfitY)
         plt.legend(fontsize=fs*0.7)
         plt.title(plot_title, fontsize=fs)
         plt.xlabel(lblY, fontsize=fs)

@@ -733,16 +733,17 @@ for itemi in rad_th:
             Eth = 100 # MeV
             NposEth = len(E_pos.values[E_pos.values < Eth]) / len(E_pos.values)
             NsigmaEth = Eth / (Emean_pos + Estdev)
-            print("fraction of positrons with energy < %.0f MeV (%.2f*sigma): %.2f" % (Eth, NsigmaEth, NposEth))
+            print("fraction of positrons with energy < %.0f MeV (%.2f*sigma): %.2f\n" % (Eth, NsigmaEth, NposEth))
 
             # Plot histogram of positrons energy
             nbin_pos = 100
-            range_pos = (0, 2450)
+            range_pos = (0, 100)
+            IWantDensity = False
             plt.figure(figsize=(9, 6))
-            h = plt.hist(E_pos, density=False, bins=nbin_pos, range=range_pos, alpha=0.5, \
+            h = plt.hist(E_pos, density=IWantDensity, bins=nbin_pos, range=range_pos, alpha=0.5, \
                          label='positron spectrum')
-            h2 = plt.hist(E_pos_cut, density=False, bins=nbin_pos, range=range_pos, alpha=0.5, \
-                          label='positron spectrum (within %.2f mrad)' % (angle_cut))
+            h2 = plt.hist(E_pos_cut, density=IWantDensity, bins=nbin_pos, range=range_pos, alpha=0.5, \
+                          label='positron spectrum within %.2f mrad' % (angle_cut))
             plt.legend()
             plt.xlabel('Energy [MeV]')
             plt.ylabel('Counts [arb. units]')
@@ -752,6 +753,12 @@ for itemi in rad_th:
             if saveFigs:
                 plt.savefig(outpath + 'eplusBeam_E_distrib_' + purename + '.jpg')
             plt.show()
+
+            if not IWantDensity:
+                print("sum of positron spectrum: %d" % sum(h[0]))
+                print("sum of positron spectrum within %.2f mrad: %d\n" % (angle_cut, sum(h2[0])))
+            else:
+                print("\n")
             """
             Eedges, spectrum = h[1], h[0]
             output_file = outpath + 'positron_spectrum_' + purename + '.txt'
