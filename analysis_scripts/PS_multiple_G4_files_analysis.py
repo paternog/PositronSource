@@ -121,11 +121,11 @@ useFullname = True
 
 ## Settings to read the built-in a BoxMesh scorer with Edep in the Absorber (Converter or Radiator)
 if "crystalline" in path or "conventional" in path:
-    tranvsizeX = 20.     #volume tranversal X size (mm)
-    tranvsizeY = 20.     #volume tranversal Y size (mm)
+    tranvsizeX = 20      #volume tranversal X size (mm)
+    tranvsizeY = 20      #volume tranversal Y size (mm)
 else:
-    tranvsizeX = 100.    #volume tranversal X size (mm)
-    tranvsizeY = 100.    #volume tranversal Y size (mm)
+    tranvsizeX = 100     #volume tranversal X size (mm)
+    tranvsizeY = 100     #volume tranversal Y size (mm)
 #tranvsizeZ = conv_th    #volume tranversal Z size (mm) -> automatically retrieved below for each file!
 IWantPlotVoxel = False
 IWantPlotX0fract = False
@@ -253,9 +253,9 @@ for itemi in rad_th:
                     data_in = df_rad_out.copy() #set an empty dataframe, because this is a single-volume (crystalline or conventional) source  
 
             data_in["P"] = (data_in.px*data_in.px + data_in.py*data_in.py + data_in.pz*data_in.pz)**0.5 #MeV
-            data_in = data_in[data_in.pz >= 0]  #selecting only events (that should be) from the input beam
+            data_in = data_in[data_in.pz >= 0] #selecting only events (that should be) from the input beam
             if bCutOnMomentum:
-                data_in = data_in[data_in.P >= MomentumCut]  #selecting only events with momentum > MomentumCut
+                data_in = data_in[data_in.P >= MomentumCut] #selecting only events with momentum > MomentumCut
             data_in.pz = data_in.pz/1000 #MeV -> GeV
             data_in.x = data_in.x/10 #mm -> cm
             data_in.y = data_in.y/10 #mm -> cm
@@ -271,11 +271,11 @@ for itemi in rad_th:
 
             data_out["P"] = (data_out.px*data_out.px+data_out.py*data_out.py+data_out.pz*data_out.pz)**0.5 #MeV
             if bCutOnMomentum:
-                data_out = data_out[data_out.P >= MomentumCut]  #selecting only events with momentum > MomentumCut
+                data_out = data_out[data_out.P >= MomentumCut] #selecting only events with momentum > MomentumCut
             data_out.pz = data_out.pz/1000 #MeV -> GeV
             data_out.x = data_out.x/10 #mm -> cm
             data_out.y = data_out.y/10 #mm -> cm
-            data_out["pt"] = (data_out.px**2 + data_out.py**2)**0.5  #MeV
+            data_out["pt"] = (data_out.px**2 + data_out.py**2)**0.5 #MeV
             data_out["thx"] = np.arctan(data_out.px/1000 / data_out.pz)*1000 #mrad
             data_out["thy"] = np.arctan(data_out.py/1000 / data_out.pz)*1000 #mrad
             data_out["tht"] = np.arctan(data_out.pt/1000 / data_out.pz)*1000 #mrad
