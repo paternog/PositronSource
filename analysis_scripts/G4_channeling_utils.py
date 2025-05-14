@@ -211,7 +211,7 @@ def get_deflection_angles2(df_merged,
     thetaX_in = [] #rad
     thetaY_in = [] #rad
     good_events = []
-    df_groped = df_merged.groupby('eventID')
+    df_grouped = df_merged.groupby('eventID')
     #for i in tqdm(pot_good_events):
     #    df_i = df_merged[df_merged["eventID"] == i].copy()
     for i, df_i in tqdm(df_grouped):
