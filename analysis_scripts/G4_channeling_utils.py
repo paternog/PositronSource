@@ -1,6 +1,6 @@
 #######################################################################################################
 ####### Set of functions used during the analysis of channeling simulations with Geant4 ###############
-####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 20/03/2025 ######################
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 14/05/2025 ######################
 #######################################################################################################
 
 # Import the required libraries
@@ -191,6 +191,41 @@ def get_deflection_angles(df_out, df_in, pot_good_events,
             DthetaY.append(np.random.normal(DthetaY_mean, res_DthetaY, 1)[0])
             good_events.append(i)
         del df_out_i, df_in_i
+    return DthetaX, DthetaY, thetaX_in, thetaY_in, good_events
+
+
+def get_deflection_angles2(df_merged, 
+                           res_thetaX_in=0, res_thetaY_in=0, \
+                           res_DthetaX=0, res_DthetaY=0, \
+                           ang_cut=np.pi*1e6, cut_center=[0., 0.]):
+    """
+    Calculate the deflection for events whose transverse
+    deviation angle is within a given angular cut.
+    Experimental resolution can be taken into account.
+    Input angles must be given in [urad]. However, the angles
+    in the passed dataframes (df_out, df_in) are expressed in [rad].
+    """
+    pot_good_events = df_merged.eventID.unique()
+    DthetaX = [] #urad
+    DthetaY = [] #urad
+    thetaX_in = [] #rad
+    thetaY_in = [] #rad
+    good_events = []
+    df_groped = df_merged.groupby('eventID')
+    #for i in tqdm(pot_good_events):
+    #    df_i = df_merged[df_merged["eventID"] == i].copy()
+    for i, df_i in tqdm(df_grouped):
+        thX_in = np.random.normal(df_i['angle_x_in'].values[0]*1e6, res_thetaX_in, 1)[0] #urad
+        thY_in = np.random.normal(df_i['angle_y_in'].values[0]*1e6, res_thetaY_in, 1)[0] #urad
+        if np.sqrt((thX_in-cut_center[0])**2 + (thY_in-cut_center[1])**2) < ang_cut: #urad
+            thetaX_in.append(thX_in)
+            thetaY_in.append(thY_in)
+            DthetaX_mean = (df_i['angle_x_out'].values[0] - df_i['angle_x_in'].values[0])*1e6 #urad
+            DthetaY_mean = (df_i['angle_y_out'].values[0] - df_i['angle_y_in'].values[0])*1e6 #urad  
+            DthetaX.append(np.random.normal(DthetaX_mean, res_DthetaX, 1)[0])
+            DthetaY.append(np.random.normal(DthetaY_mean, res_DthetaY, 1)[0])
+            good_events.append(i)
+        #del df_i
     return DthetaX, DthetaY, thetaX_in, thetaY_in, good_events
 
 

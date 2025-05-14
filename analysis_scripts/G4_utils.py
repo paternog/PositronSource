@@ -1,12 +1,12 @@
 #######################################################################################################
 ####### Set of functions useful to analyse Geant4 simulations #########################################
-####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 20/03/2025 ######################
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 14/05/2025 ######################
 #######################################################################################################
 
 
 def weighted_avg_and_std(values, weights):
     """
-    Return the weighted average and standard deviation.
+    Return the weighted average and standard deviation of an array.
     They weights are in effect first normalized so that they 
     sum to 1 (and so they must not all be 0).
     values, weights -- NumPy ndarrays with the same shape.
@@ -176,7 +176,8 @@ def TProfile2D(X, Y, NbinX, Xmin, Xmax, NbinY, Ymin, Ymax, Z):
 def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
                        p2m=5, plot_mrad=False, IWantFit=False, IWantPlot=False, \
                        lblpltX="data", lblpltY="data", lblfitX="fit", lblfitY="fit", \
-                       lblX="", lblY="", plot_title="", \
+                       lblX="", lblY="", lblC="Counts (arb. units)", \
+                       plot_title="", lgnd_loc="best", \
                        saveFig=False, outputFile="TH2D_profiles"):
 
     """
@@ -208,17 +209,16 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
     # Calculate profiles
     NbinX = len(XBinEdges)-1
     profileX = np.zeros(NbinX)
-    ic = int(TH2D.shape[1]/2+1)
-    
+    ic = int(TH2D.shape[1]/2+1) 
     for j in range(NbinX):
         profileX[j] = np.mean(TH2D[ic-p2m:ic+p2m,j])
     XBinC = XBinEdges[:-1] + (XBinEdges[2]-XBinEdges[1])*0.5
 
     NbinY = len(YBinEdges)-1
     profileY = np.zeros(NbinY)
-    ic = int(TH2D.shape[0]/2+1)
-    for j in range(NbinY):
-        profileY[j] = np.mean(TH2D[j,ic-p2m:ic+p2m])    
+    jc = int(TH2D.shape[0]/2+1)
+    for i in range(NbinY):
+        profileY[i] = np.mean(TH2D[i,jc-p2m:jc+p2m])    
     YBinC = YBinEdges[:-1] + (YBinEdges[2]-YBinEdges[1])*0.5
     
     # Fit profiles
@@ -289,10 +289,10 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
         if IWantFit:
             plt.plot(XBinC*cmr, fitX, linestyle='--', linewidth=2, color='black', \
                      label=lblfitX)
-        plt.legend(fontsize=fs*0.7)
+        plt.legend(loc=lgnd_loc, fontsize=fs*0.7)
         plt.title(plot_title, fontsize=fs)
         plt.xlabel(lblX, fontsize=fs)
-        plt.ylabel("Counts (arb. units)", fontsize=fs, wrap=True)
+        plt.ylabel(lblC, fontsize=fs, wrap=True)
         plt.xticks(fontsize=fs, rotation=0)
         plt.yticks(fontsize=fs, rotation=0)
         plt.gca().xaxis.set_minor_locator(AutoMinorLocator(5))
@@ -307,10 +307,10 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
         if IWantFit:
             plt.plot(YBinC*cmr, fitY, linestyle='--', linewidth=2, color='black', \
                      label=lblfitY)
-        plt.legend(fontsize=fs*0.7)
+        plt.legend(loc=lgnd_loc, fontsize=fs*0.7)
         plt.title(plot_title, fontsize=fs)
         plt.xlabel(lblY, fontsize=fs)
-        plt.ylabel("Counts (arb. units)", fontsize=fs, wrap=True)
+        plt.ylabel(lblC, fontsize=fs, wrap=True)
         plt.xticks(fontsize=fs, rotation=0)
         plt.yticks(fontsize=fs, rotation=0)
         plt.gca().xaxis.set_minor_locator(AutoMinorLocator(5))

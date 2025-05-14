@@ -1,7 +1,7 @@
 #######################################################################################################
 ####### Set of functions to read (and plot) Edep in various volumes, scored in different ways. ########
 ####### These functions were conceived for (oriented) calorimeters, thus Edep is scored in GeV. #######
-####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 20/03/2025 ######################
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 14/05/2025 ######################
 #######################################################################################################
 
 # Import the required libraries
@@ -338,14 +338,14 @@ def read_and_plot_Edep_VoxelScorer(filename, normEvents, Nevents,
     It returns [SLICES, proj, profileZ, (x,y,z), profileR, cum_profileR, r_list].
     """
     
-    # infere the path of the file (for figure saving)
+    # Infere the path of the file (for figure saving)
     path_split = filename.split('/')[1:-1]
     path = ""
     for item in path_split:
         path = path + '/' + item
     path = path + '/'
 
-    # read the file
+    # Read the file
     temp_list = []
     full_list = []
     with open(filename, 'r') as f:
@@ -359,12 +359,12 @@ def read_and_plot_Edep_VoxelScorer(filename, normEvents, Nevents,
             full_list.append(temp_list)
     full_array = np.array(full_list)
 
-    # print the total value
+    # Print the total value
     total = np.sum(full_array)
     if beVerbose:
         print('total Edep (before normalization): %.2f GeV' % total)
 
-    # set title string
+    # Set title string
     if "PreShower" in filename:
         ttlstr = 'PreShower'
     elif "Calorimeter" in filename:
@@ -372,17 +372,17 @@ def read_and_plot_Edep_VoxelScorer(filename, normEvents, Nevents,
     else:
         ttlstr = ''
 
-    # normalize edep per event
+    # Normalize edep per event
     if normEvents:
         full_array = full_array / Nevents
         clblabel='Edep per event (GeV)'
     else:
         clblabel='Edep (GeV)'
 
-    # generate 3D data matrix
+    # Generate 3D data matrix
     SLICES = full_array.reshape(nz, nx, ny)
     
-    # set geometrical size
+    # Set geometrical size
     Xmin = -tranvsizeX*0.5        
     Xmax = tranvsizeX*0.5         
     Ymin = -tranvsizeY*0.5        
@@ -390,7 +390,7 @@ def read_and_plot_Edep_VoxelScorer(filename, normEvents, Nevents,
     Zmin = 0
     Zmax = tranvsizeZ
 
-    # generate vectors of points linearly spaced (corrected in 24/12/2023)
+    # Generate vectors of points linearly spaced (corrected in 24/12/2023)
     Xedges = np.linspace(Xmin, Xmax, nx+1) #[mm]
     Yedges = np.linspace(Ymin, Ymax, ny+1) #[mm]
     Zedges = np.linspace(Zmin, Zmax, nz+1) #[mm]
@@ -402,7 +402,7 @@ def read_and_plot_Edep_VoxelScorer(filename, normEvents, Nevents,
     y = Yedges[:-1] + dy*0.5
     z = Zedges[:-1] + dz*0.5  
 
-    # mean/sum distribution in the desired projection
+    # Mean/sum distribution in the desired projection
     if proj_type == 1:
         proj = np.mean(SLICES, axis=axis_proj)
         projstr = 'projection type: mean'
@@ -410,7 +410,7 @@ def read_and_plot_Edep_VoxelScorer(filename, normEvents, Nevents,
         proj = np.sum(SLICES, axis=axis_proj)
         projstr = 'projection type: sum'
     
-    # set x,y labels
+    # Set x,y labels
     if axis_proj == 0:
         if beVerbose:
             print('projection: axial')
@@ -443,7 +443,7 @@ def read_and_plot_Edep_VoxelScorer(filename, normEvents, Nevents,
             ylbl='Z (mm)'
         X, Y = np.meshgrid(x, z)
 
-    # plot the desired projection
+    # Plot the desired projection
     if (doPlots and X.shape[0]>1 and X.shape[1]>1):
         print(projstr);
         print('projection shape:', proj.shape, 'voxel')      
@@ -469,26 +469,18 @@ def read_and_plot_Edep_VoxelScorer(filename, normEvents, Nevents,
             plt.savefig(path + 'Edep_proj_voxelscorer.jpg')
         plt.show()  
         #plt.close()
-
-    # calculate the profile along Z direction
+        
+    # Calculate the profile along Z direction
     profileZ = np.zeros(proj.shape[0])
     if axis_proj > 0:
         proj_4profZ = proj
-    else:
-        print('Since axial projection was selected, profileZ is arbitrarly calculted w.r.t coronal projection.')
-        if proj_type == 1:
-            proj_4profZ = np.mean(SLICES, axis=2)
-        else:
-            proj_4profZ = np.sum(SLICES, axis=2)
-    ic = int(proj.shape[1]/2+1)
-    if proj_type == 1:
+        ic = int(proj.shape[1]/2+1)
         for j in range(nz):
             profileZ[j] = np.mean(proj_4profZ[j][ic-p2m:ic+p2m])
     else:
-        for j in range(nz):
-            profileZ[j] = np.sum(proj_4profZ[j][ic-p2m:ic+p2m])
+        print('Since axial projection was selected, profileZ is identically null.')
                 
-    # calculate the radial profile
+    # Calculate the radial profile
     if proj_type == 1:
         axial_proj = np.mean(SLICES, axis=0)
     else:
@@ -504,7 +496,7 @@ def read_and_plot_Edep_VoxelScorer(filename, normEvents, Nevents,
         profileR[i] = np.nanmean(sel)
         cum_profileR[i] = np.sum(sel)
         
-    # return a set of variables
+    # Return a set of variables
     return SLICES, proj, profileZ, (x,y,z), profileR, cum_profileR, r_list
 
 
@@ -519,14 +511,14 @@ def read_VoxelScorer(filename, normEvents, Nevents, \
     It returns [SLICES, proj, profileZ, (x,y,z), profileR, cum_profileR, r_list].
     """
     
-    # infere the path of the file (for figure saving)
+    # Infere the path of the file (for figure saving)
     path_split = filename.split('/')[1:-1]
     path = ""
     for item in path_split:
         path = path + '/' + item
     path = path + '/'
 
-    # read the file
+    # Read the file
     temp_list = []
     full_list = []
     with open(filename, 'r') as f:
@@ -540,19 +532,19 @@ def read_VoxelScorer(filename, normEvents, Nevents, \
             full_list.append(temp_list)
     full_array = np.array(full_list)
 
-    # print the total value
+    # Print the total value
     total = np.sum(full_array)
     if beVerbose:
         print('total value (before normalization): %.4e' % total)
 
-    # normalize quantity per event
+    # Normalize quantity per event
     if normEvents:
         full_array = full_array / Nevents
 
-    # generate 3D data matrix
+    # Generate 3D data matrix
     SLICES = full_array.reshape(nz, nx, ny)
     
-    # set geometrical size
+    # Set geometrical size
     Xmin = -tranvsizeX*0.5        
     Xmax = tranvsizeX*0.5         
     Ymin = -tranvsizeY*0.5        
@@ -560,7 +552,7 @@ def read_VoxelScorer(filename, normEvents, Nevents, \
     Zmin = 0
     Zmax = tranvsizeZ
 
-    # generate vectors of points linearly spaced (corrected in 24/12/2023)
+    # Generate vectors of points linearly spaced (corrected in 24/12/2023)
     Xedges = np.linspace(Xmin, Xmax, nx+1) #[mm]
     Yedges = np.linspace(Ymin, Ymax, ny+1) #[mm]
     Zedges = np.linspace(Zmin, Zmax, nz+1) #[mm]
@@ -580,7 +572,7 @@ def read_VoxelScorer(filename, normEvents, Nevents, \
         proj = np.sum(SLICES, axis=axis_proj)
         projstr = 'projection type: sum'
     
-    # set x,y labels
+    # Set x,y labels
     if axis_proj == 0:
         if beVerbose:
             print('projection: axial')
@@ -595,29 +587,21 @@ def read_VoxelScorer(filename, normEvents, Nevents, \
             print('projection: coronal')
         X, Y = np.meshgrid(x, z)
 
-    # print the projection shape
+    # Print the projection shape
     print(projstr);
     print('projection shape:', proj.shape, 'voxel')      
-
-    # calculate the profile along Z direction
+           
+    # Calculate the profile along Z direction
     profileZ = np.zeros(proj.shape[0])
     if axis_proj > 0:
         proj_4profZ = proj
-    else:
-        print('Since axial projection was selected, profileZ is arbitrarly calculted w.r.t coronal projection.')
-        if proj_type == 1:
-            proj_4profZ = np.mean(SLICES, axis=2)
-        else:
-            proj_4profZ = np.sum(SLICES, axis=2)
-    ic = int(proj.shape[1]/2+1)
-    if proj_type == 1:
+        ic = int(proj.shape[1]/2+1)
         for j in range(nz):
             profileZ[j] = np.mean(proj_4profZ[j][ic-p2m:ic+p2m])
     else:
-        for j in range(nz):
-            profileZ[j] = np.sum(proj_4profZ[j][ic-p2m:ic+p2m])
+        print('Since axial projection was selected, profileZ is identically null.')
                 
-    # calculate the radial profile
+    # Calculate the radial profile
     if proj_type == 1:
         axial_proj = np.mean(SLICES, axis=0)
     else:
@@ -633,7 +617,7 @@ def read_VoxelScorer(filename, normEvents, Nevents, \
         profileR[i] = np.nanmean(sel)
         cum_profileR[i] = np.sum(sel)
         
-    # return a set of variables
+    # Return a set of variables
     return SLICES, proj, profileZ, (x,y,z), profileR, cum_profileR, r_list
 
 
@@ -658,17 +642,17 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
         index = list(np.argwhere(cond).ravel())
         return index[:N]
     
-    # retrieve data and put them into a dataframe
+    # Retrieve data and put them into a dataframe
     data = pd.read_csv(
         filename, skiprows=3, names=["ind_x", "ind_y", "ind_z", "eDep", "eDep2", "Nentry"]
     )
     
-    # calculate eDep uncertainty 
+    # Calculate eDep uncertainty 
     data["eDep_err"] = (data["eDep2"] - data["eDep"]**2/data["Nentry"])**0.5
     data.fillna(0, inplace=True)
     data = data.drop(columns=['eDep2', 'Nentry'])
 
-    # retrieve the number of voxels in each direction
+    # Retrieve the number of voxels in each direction
     Nvoxel = len(data)
     zzzz = find(np.array(data["ind_z"]) == 0, 2)
     if len(zzzz) > 1:
@@ -678,7 +662,7 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     ny = np.max([round((np.max(find(np.array(data["ind_y"])==0, nz+1))-1)/nz), 1])
     nx = max(np.array(data["ind_x"]))+1
     
-    # set geometrical size
+    # Set geometrical size
     Xmin = -tranvsizeX*0.5        
     Xmax = tranvsizeX*0.5         
     Ymin = -tranvsizeY*0.5        
@@ -686,7 +670,7 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     Zmin = 0
     Zmax = tranvsizeZ
 
-    # generate vectors of points linearly spaced (corrected in 24/12/2023)
+    # Generate vectors of points linearly spaced (corrected in 24/12/2023)
     Xedges = np.linspace(Xmin, Xmax, nx+1) #[mm]
     Yedges = np.linspace(Ymin, Ymax, ny+1) #[mm]
     Zedges = np.linspace(Zmin, Zmax, nz+1) #[mm]
@@ -698,7 +682,7 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     y = Yedges[:-1] + dy*0.5
     z = Zedges[:-1] + dz*0.5
 
-    # physical position inside the mesh data
+    # Physical position inside the mesh data
     data["x"] = dx * (data["ind_x"] + 0.5) - tranvsizeX*0.5 #central x [mm]
     data["y"] = dy * (data["ind_y"] + 0.5) - tranvsizeY*0.5 #central y [mm]
     data["z"] = dz * (data["ind_z"] + 0.5)                  #central z [mm]
