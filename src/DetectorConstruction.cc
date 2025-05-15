@@ -734,29 +734,47 @@ void DetectorConstruction::ConstructSDandField()
         ChannelingModel->SetTaggingFilename(fTaggingFilename);
         ChannelingModel->SetTaggingInterval(fTaggingInterval);
 
-        ChannelingModel->SetLowKineticEnergyLimit(1.*GeV, "e-"); //deafult 200.*MeV (5.*GeV -> much faster)
-        ChannelingModel->SetLowKineticEnergyLimit(1.*GeV, "e+");
-        ChannelingModel->SetLindhardAngleNumberHighLimit(10., "e-"); //default 100
-        ChannelingModel->SetLindhardAngleNumberHighLimit(10., "e+"); 
+        G4double fParticleLEth = 1.*GeV; //deafult 200.*MeV (5.*GeV -> much faster)
+        G4double fLindhardAngles = 10; //default 100
+        ChannelingModel->SetLowKineticEnergyLimit(fParticleLEth, "e-"); 
+        ChannelingModel->SetLowKineticEnergyLimit(fParticleLEth, "e+");
+        ChannelingModel->SetLindhardAngleNumberHighLimit(fLindhardAngles, "e-");
+        ChannelingModel->SetLindhardAngleNumberHighLimit(fLindhardAngles, "e+"); 
         
         G4cout << G4endl;
         G4cout << "Oriented Crystal effects set through FastSim model" << G4endl;
         G4cout << "Crystal bending angle: " << fBendingAngle << " rad" << G4endl;
         G4cout << "Crystal Lattice: " << fLattice << G4endl;
         G4cout << "Crystal AngleX: " << fAngleX << " rad" << G4endl;   
-        G4cout << "Crystal AngleY: " << fAngleY << " rad" << G4endl;          
-        G4cout << "ActivateRadiationModel: " << fActivateRadiationModel << G4endl;
+        G4cout << "Crystal AngleY: " << fAngleY << " rad" << G4endl;
         if (fTagging)
             G4cout << "Tagging activated in the Crystal region!" << G4endl;
+        G4cout << "fParticleLEth: " << fParticleLEth/MeV << " MeV" << G4endl;
+        G4cout << "fLindhardAngles: " << fLindhardAngles << G4endl;
+        G4cout << "ActivateRadiationModel: " << fActivateRadiationModel << G4endl;
         
         if (fActivateRadiationModel) {
             ChannelingModel->RadiationModelActivate();
-            //ChannelingModel->GetRadiationModel()->SetSamplingPhotonsNumber(50); //default 150
-            //ChannelingModel->GetRadiationModel()->SetNSmallTrajectorySteps(10000); //default 10000
-            //ChannelingModel->GetRadiationModel()->SetVirtualCollimator(0.0023183);
-            //ChannelingModel->GetRadiationModel()->SetRadiationAngleFactor(4.); //deafult 4
-            //ChannelingModel->GetRadiationModel()->SetSpectrumEnergyRange(1*MeV, 210*GeV, 100);                 
-        }    
+            G4int fSamplingPhotonsNumber = 150; //default 150
+            G4int fNSmallTrajectorySteps = 10000; //default 10000
+            G4double fRadiactionAngleFactor = 4.; //deafult 4
+            G4double fLEthreshold = 1.*MeV;
+            ChannelingModel->GetRadiationModel()->SetSamplingPhotonsNumber(fSamplingPhotonsNumber);
+            ChannelingModel->GetRadiationModel()->SetNSmallTrajectorySteps(fNSmallTrajectorySteps);
+            ChannelingModel->GetRadiationModel()->SetRadiationAngleFactor(fRadiactionAngleFactor);
+            ChannelingModel->GetRadiationModel()->SetSpectrumEnergyRange(fLEthreshold, 20.*GeV, 100);
+            
+            G4cout << "SamplingPhotonsNumber: " 
+                   << fSamplingPhotonsNumber << G4endl;
+            G4cout << "NSmallTrajectorySteps: " 
+                   << fNSmallTrajectorySteps << G4endl;                    
+            G4cout << "fRadiactionAngleFactor: " 
+                   << fRadiactionAngleFactor << G4endl;    
+            G4cout << "LE threshold to emit photons and record their energy: " 
+                   << fLEthreshold/MeV << " MeV" << G4endl << G4endl;               
+        } else {
+            G4cout << G4endl;
+        }   
     }
     
 
