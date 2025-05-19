@@ -65,12 +65,13 @@ def get_photons_on_detector(filename, Nevents, xlim_rad=(0, 1e10), \
 
     # Print number of photons emitted
     if beVerbose:
-        print("number of collimated photons:", len(df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle]))
-        print("number of photons emitted within %.3f mrad with energy in [%.2f, %.2f] MeV: %d\n" % \
-              (cut_angle*1e3, *xlim_rad, len(df_ph_sel.E)))
+        print("number of collimated |theta - %.3f mrad| < %.3f mrad photons: %d" % \
+              (cut_angle*1e3, thetaC*1e3, len(df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle])))
+        print("number of photons emitted within %.3f mrad (w.r.t %.3f mrad) with energy in [%.2f, %.2f] MeV: %d\n" % \
+              (cut_angle*1e3, thetaC*1e3, *xlim_rad, len(df_ph_sel.E)))
         print("\nnumber of photons emitted per particle: %.2f" % (len(df_ph)/Nevents))
-        print("number of photons emitted per particle within %.3f mrad with energy in [%.2f, %.2f] MeV: %.4f\n" % \
-              (cut_angle*1e3, *xlim_rad, len(df_ph_sel.E)/Nevents))
+        print("number of photons emitted per particle within %.3f mrad (w.r.t %.3f mrad) with energy in [%.2f, %.2f] MeV: %.4f\n" % \
+              (cut_angle*1e3, thetaC*1e3, *xlim_rad, len(df_ph_sel.E)/Nevents))
 
     return rf, df_ph_sel
 
