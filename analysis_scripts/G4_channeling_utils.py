@@ -24,7 +24,7 @@ from G4_utils import * #my custom functions of general utility
 #######################################################################################################
 def get_photons_on_detector(filename, Nevents, xlim_rad=(0, 1e10), \
                             apply_collimation=False, cut_angle=3.14, \
-                            thetaC=0, beVerbose=True):
+                            thetaC=0, cutOnAngleX=False, beVerbose=True):
     """
     Function to open the root file obtained with the Geant4 FastSimChannelingRad app 
     and get the data scored in the "photon_spectrum" ntuple, namely the features of the 
@@ -55,9 +55,12 @@ def get_photons_on_detector(filename, Nevents, xlim_rad=(0, 1e10), \
     # Take only the photons inside the collimator acceptance
     thetaX = df_ph["angle_x"].values #rad
     thetaY = df_ph["angle_y"].values #rad
-    df_ph["theta"] = np.sqrt(thetaX**2 + thetaY**2)
+    df_ph["theta"] = np.sqrt(thetaX**2 + thetaY**2) #rad
     if apply_collimation:
-        df_ph_sel = df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle]
+        if cutOnAngleX:
+            df_ph_sel = df_ph[np.abs(df_ph["angle_x"] - thetaC) < cut_angle]
+        else:
+            df_ph_sel = df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle]
     else:
         df_ph_sel = df_ph.copy()    
     df_ph_sel = df_ph_sel[(df_ph_sel.E >= xlim_rad[0]) & (df_ph_sel.E <= xlim_rad[1])]
@@ -65,8 +68,12 @@ def get_photons_on_detector(filename, Nevents, xlim_rad=(0, 1e10), \
 
     # Print number of photons emitted
     if beVerbose:
-        print("number of collimated |theta - %.3f mrad| < %.3f mrad photons: %d" % \
-              (cut_angle*1e3, thetaC*1e3, len(df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle])))
+        if cutOnAngleX:
+            strcoll = "number of collimated (|angle_x - %.3f mrad| < %.3f mrad) photons: %d"
+        else:
+            strcoll = "number of collimated (|theta - %.3f mrad| < %.3f mrad) photons: %d"
+        print(strcoll % \
+              (thetaC*1e3, cut_angle*1e3, len(df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle])))
         print("number of photons emitted within %.3f mrad (w.r.t %.3f mrad) with energy in [%.2f, %.2f] MeV: %d\n" % \
               (cut_angle*1e3, thetaC*1e3, *xlim_rad, len(df_ph_sel.E)))
         print("\nnumber of photons emitted per particle: %.2f" % (len(df_ph)/Nevents))
