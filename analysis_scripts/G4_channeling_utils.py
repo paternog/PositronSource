@@ -41,14 +41,7 @@ def get_photons_on_detector(filename, Nevents, xlim_rad=(0, 1e10), \
     rf = uproot.open(filename)
     rf_content = [item.split(';')[0] for item in rf.keys()]
     print('rf_content:\n', rf_content, '\n')
-    
-    # Calculation of dtheta to have the same solid angle with both centered or decentralized cut
-    if thetaC > 0:
-        dtheta = cut_angle**2 / (2*thetaC) 
-        print("Since it is a decentralized cut, instead of cut_angle, we use dtheta = cut_angle**2/(2*thetaC) = %.3f mrad" % (dtheta*1e3))
-    else:
-        dtheta = cut_angle    
-    
+       
     # Get the simulated data
     if 'photon_spectrum' in rf_content:
         df_ph = rf['photon_spectrum'].arrays(library='pd')
@@ -68,9 +61,9 @@ def get_photons_on_detector(filename, Nevents, xlim_rad=(0, 1e10), \
     # Apply a collimation
     if apply_collimation:
         if cutOnAngleX:
-            df_ph_sel = df_ph[np.abs(df_ph["angle_x"] - thetaC) < dtheta]
+            df_ph_sel = df_ph[((df_ph["angle_x"] - thetaC)**2 + df_ph["angle_y"]**2)**0.5 < cut_angle]
         else:
-            df_ph_sel = df_ph[np.abs(df_ph["theta"] - thetaC) < dtheta]
+            df_ph_sel = df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle]
     else:
         df_ph_sel = df_ph.copy()    
     df_ph_sel = df_ph_sel[(df_ph_sel.E >= xlim_rad[0]) & (df_ph_sel.E <= xlim_rad[1])]
@@ -79,16 +72,16 @@ def get_photons_on_detector(filename, Nevents, xlim_rad=(0, 1e10), \
     # Print number of photons emitted
     if beVerbose:
         if cutOnAngleX:
-            strcoll = "number of collimated (|angle_x - %.3f mrad| < %.3f mrad) photons: %d"
+            strcoll = "number of collimated [sqrt((angle_x - %.3f mrad)^2 + angle_y^2) < %.3f mrad] photons: %d"
         else:
             strcoll = "number of collimated (|theta - %.3f mrad| < %.3f mrad) photons: %d"
         print(strcoll % \
-              (thetaC*1e3, dtheta*1e3, len(df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle])))
+              (thetaC*1e3, cut_angle*1e3, len(df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle])))
         print("number of photons emitted within %.3f mrad (w.r.t %.3f mrad) with energy in [%.2f, %.2f] MeV: %d\n" % \
-              (dtheta*1e3, thetaC*1e3, *xlim_rad, len(df_ph_sel.E)))
+              (cut_angle*1e3, thetaC*1e3, *xlim_rad, len(df_ph_sel.E)))
         print("\nnumber of photons emitted per particle: %.2f" % (len(df_ph)/Nevents))
         print("number of photons emitted per particle within %.3f mrad (w.r.t %.3f mrad) with energy in [%.2f, %.2f] MeV: %.4f\n" % \
-              (dtheta*1e3, thetaC*1e3, *xlim_rad, len(df_ph_sel.E)/Nevents))
+              (cut_angle*1e3, thetaC*1e3, *xlim_rad, len(df_ph_sel.E)/Nevents))
 
     return rf, df_ph_sel
 
