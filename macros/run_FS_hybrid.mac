@@ -1,0 +1,46 @@
+
+#Radiator Crystal settings
+/crystal/setCrystalMaterial W               #PWO, BGO, W, Ir, C, Ge, Si (default)
+/crystal/setCrystalSize 7.5 7.5 1.50 mm
+/crystal/setCrystalLattice <111>            #planes (e.g. (111)) or axes (e.g. <111>)
+/det/setRadiator true                       #default is false
+
+#Converter Crystal settings
+/det/setRadiatorConverterSepDistance 0.1 cm
+/det/setConverterSize 22 22 10.5 mm
+
+#further settings
+#/det/setScoringCrystalExit true             #default is false
+
+/run/initialize
+
+/run/verbose 1                              #to see the Couples CutsVsRegion
+
+/run/setfilenamesave output/output_2.86GeV_W1.50mm_D0.1cm_target10.50mm.root
+
+#/gun/UseGPS true                            #default false. It works only if ReadFromFile is false.
+#/control/execute macros/beam_6GeV.mac        #old GPS macro
+/control/execute macros/setPrimaryBeam.mac  #new custom ParticleGun commands        
+
+/score/create/boxMesh boxMesh1                
+/score/mesh/boxSize 11 11 5.00 mm #converter
+/score/mesh/nBin 45 45 21 #converter
+/score/mesh/translate/xyz 0 0 6.28 mm #converter #CHECK!
+/score/quantity/energyDeposit Edep          #[MeV]        
+/score/close
+/score/list    
+
+/score/create/boxMesh boxMesh2                
+/score/mesh/boxSize 3.75 3.75 0.75 mm #radiator
+/score/mesh/nBin 15 15 3 #radiator
+/score/mesh/translate/xyz 0 0 -0.75 mm #radiator
+/score/quantity/energyDeposit Edep          #[MeV]        
+/score/close
+/score/list             
+
+#statistics
+/run/printProgress 100
+/run/beamOn 10000                             
+
+/score/dumpQuantityToFile boxMesh1 Edep output/Edep_2.86GeV_W1.50mm_D0.1cm_target10.50mm.txt
+/score/dumpQuantityToFile boxMesh2 Edep output/Edep_2.86GeV_W1.50mm_D0.1cm_target10.50mm_rad.txt
