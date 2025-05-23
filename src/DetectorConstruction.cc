@@ -758,10 +758,12 @@ void DetectorConstruction::ConstructSDandField()
             G4int fSamplingPhotonsNumber = 150; //default 150
             G4int fNSmallTrajectorySteps = 10000; //default 10000
             G4double fRadiactionAngleFactor = 4.; //deafult 4
+            G4double fSinglePhotonRadProbLimit = 0.25; //default 0.25
             G4double fLEthreshold = 1.*MeV;
             ChannelingModel->GetRadiationModel()->SetSamplingPhotonsNumber(fSamplingPhotonsNumber);
             ChannelingModel->GetRadiationModel()->SetNSmallTrajectorySteps(fNSmallTrajectorySteps);
             ChannelingModel->GetRadiationModel()->SetRadiationAngleFactor(fRadiactionAngleFactor);
+            ChannelingModel->GetRadiationModel()->SetSinglePhotonRadiationProbabilityLimit(fSinglePhotonRadProbLimit);
             ChannelingModel->GetRadiationModel()->SetSpectrumEnergyRange(fLEthreshold, 20.*GeV, 100);
             
             G4cout << "SamplingPhotonsNumber: " 
@@ -769,7 +771,9 @@ void DetectorConstruction::ConstructSDandField()
             G4cout << "NSmallTrajectorySteps: " 
                    << fNSmallTrajectorySteps << G4endl;                    
             G4cout << "fRadiactionAngleFactor: " 
-                   << fRadiactionAngleFactor << G4endl;    
+                   << fRadiactionAngleFactor << G4endl;
+            G4cout << "fSinglePhotonRadProbLimit: " 
+                   << fSinglePhotonRadProbLimit << G4endl;    
             G4cout << "LE threshold to emit photons and record their energy: " 
                    << fLEthreshold/MeV << " MeV" << G4endl << G4endl;               
         } else {
