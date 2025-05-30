@@ -174,7 +174,7 @@ def TProfile2D(X, Y, NbinX, Xmin, Xmax, NbinY, Ymin, Ymax, Z):
 
 
 def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
-                       p2m=5, plot_mrad=False, IWantFit=False, IWantPlot=False, \
+                       p2m=5, plot_mrad=False, IWantFit=False, useP0=False, IWantPlot=False, \
                        lblpltX="data", lblpltY="data", lblfitX="fit", lblfitY="fit", \
                        lblX="", lblY="", lblC="Counts (arb. units)", \
                        plot_title="", lgnd_loc="best", \
@@ -229,7 +229,7 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
             return a*np.exp(-np.power(x - b, 2)/(2*np.power(c, 2))) + (d*x+e)
         
         parsX, covX = curve_fit(f=GaussLin, xdata=XBinC, ydata=profileX, \
-                                p0=[1, (xlimH+xlimL)*0.5, (xlimH-xlimL)*0.5, 0, 0], \
+                                p0=[1, (xlimH+xlimL)*0.5, (xlimH-xlimL)*0.5, 0, 0] if useP0 else None, \
                                 bounds=(-np.inf, np.inf))    
         fitX = GaussLin(XBinC, *parsX)
         print('Gaussian+Linear fit parsX:\n', parsX)
@@ -239,7 +239,7 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
         sigmaX_fit = parsX[2]
         
         parsY, covY = curve_fit(f=GaussLin, xdata=YBinC, ydata=profileY, \
-                                p0=[1, (ylimH+ylimL)*0.5, (ylimH-ylimL)*0.5, 0, 0], \
+                                p0=[1, (ylimH+ylimL)*0.5, (ylimH-ylimL)*0.5, 0, 0] if useP0 else None, \
                                 bounds=(-np.inf, np.inf))    
         fitY = GaussLin(YBinC, *parsY)
         print('Gaussian+Linear fit parsY:\n', parsY, '\n')
