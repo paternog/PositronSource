@@ -80,9 +80,11 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     //get pre and post step points
     G4StepPoint* preStepPoint = step->GetPreStepPoint();
     G4StepPoint* postStepPoint = step->GetPostStepPoint();
-    
-    //get pre step position
+        
+    //get the current and next particle postion
     G4ThreeVector preStepPos = preStepPoint->GetPosition();
+    G4ThreeVector postStepPos = postStepPoint->GetPosition();
+    G4ThreeVector pos = preStepPos + G4UniformRand()*(postStepPos - preStepPos);
           
     //get the volume of the current step
     G4LogicalVolume* volume = 
@@ -111,7 +113,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     
     //declaration of variables useful for the scoring 
     //of the features of the particles exiting the crystals
-    G4ThreeVector postStepPos;
+    //G4ThreeVector postStepPos;
     G4ThreeVector postStepMom;
     G4double postStepTime;
     G4LogicalVolume* volumeNext;
@@ -123,7 +125,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
         
         //score the features of the particle exiting the volume
         //if (scoreCrystalExit && postStepPoint->GetStepStatus() == fGeomBoundary) { //it doesn't work...
-        postStepPos = postStepPoint->GetPosition();
+        //postStepPos = postStepPoint->GetPosition();
 		postStepMom = postStepPoint->GetMomentum(); 
 		postStepTime = postStepPoint->GetGlobalTime();
 		volumeNext = 
@@ -151,7 +153,7 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
         fEventAction->AddEdepConv(edep);
         
         //score the features of the particle exiting the volume
-        postStepPos = postStepPoint->GetPosition();
+        //postStepPos = postStepPoint->GetPosition();
 		postStepMom = postStepPoint->GetMomentum(); 
 		postStepTime = postStepPoint->GetGlobalTime();
 		volumeNext = 
@@ -176,9 +178,9 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
     //score the Edep in the voxelized volume (the Absorber)
     if (volume == fAbsorberVolume) {     
         if (edep > 0 && Voxelization) {
-            fEventAction->AddEdep(preStepPos.x(), 
-                                  preStepPos.y(),
-                                  preStepPos.z(),
+            fEventAction->AddEdep(pos.x(), 
+                                  pos.y(),
+                                  pos.z(),
                                   edep);
         }  
     }
@@ -193,9 +195,9 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
             } 
             
             if (edep > 0 && Voxelization) {
-                fEventAction->AddEdep(preStepPos.x(),
-                                      preStepPos.y(),
-                                      preStepPos.z(),
+                fEventAction->AddEdep(pos.x(),
+                                      pos.y(),
+                                      pos.z(),
                                       edep);
             }            
         }
