@@ -64,6 +64,9 @@ public:
     void SetMaterialProperties(const G4Material* crystal,
                                const G4String &lattice,
                                const G4String &filePath);
+                               
+    //read crystal internal geometry
+    void ReadCrystalInternalGeometry();
 
     ///calculate the coordinates in the co-rotating reference system
     ///within a channel (periodic cell)

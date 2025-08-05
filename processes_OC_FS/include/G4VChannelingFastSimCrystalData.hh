@@ -110,14 +110,33 @@ public:
     G4double GetMiscutAngle(){return fMiscutAngle;}
 
     ///get crystal curvature
-    ///for crystalline undulator the curvature is a function, otherwise it's a constant
-    G4double GetCurv(G4double z){return fCU ? -fCUK2*GetCUx(z) : fCurv;}
+    ///for crystalline undulator the curvature is a function, otherwise it's a constant (gpaterno)
+    G4double GetCurv(G4double z) {
+        if (!fImportCrystalGeometry)
+            return fCU ? -fCUK2*GetCUx(z) : fCurv;
+        else
+            return fCU ? fCUCurv->GetIF(z<0 ? 0. : z,0) : fCurv;
+    }
 
-    ///get crystalline undulator wave function
-    G4double GetCUx(G4double z){return fCUAmplitude*std::cos(fCUK*z+fCUPhase);}
-    ///get crystalline undulator wave 1st derivative function
-    G4double GetCUtetax(G4double z){
-        return fCU ? -fCUAmplitudeK*std::sin(fCUK*z+fCUPhase) : 0;}
+    ///get crystalline undulator wave function (gpaterno)
+    G4double GetCUx(G4double z) {
+        if (!fImportCrystalGeometry) 
+            return fCUAmplitude*std::cos(fCUK*z+fCUPhase);
+        else
+            return fCUx->GetIF(z<0 ? 0. : z,0);        
+    }
+    ///get crystalline undulator wave 1st derivative function (gpaterno)
+    G4double GetCUtetax(G4double z) {
+        if (!fImportCrystalGeometry) 
+            return fCU ? -fCUAmplitudeK*std::sin(fCUK*z+fCUPhase) : 0;
+        else
+            return fCU ? fCUtetax->GetIF(z<0 ? 0. : z,0) : 0;
+    }
+        
+    /// Set/Get methods for importing CU geometry from file (gpaterno)
+    void SetImportCrystalGeometry(G4bool bval) {fImportCrystalGeometry = bval;}
+    void SetCrystalGeometryFilename(G4String filename) {fCrystalGeometryFilename = filename;}
+    G4String GetCrystalGeometryFilename() const {return fCrystalGeometryFilename;}         
 
     ///find and upload crystal lattice input files, calculate all the basic values
     ///(to do only once)
@@ -245,6 +264,15 @@ protected:
     G4double fCUPhase=0.;//Phase of a crystalline undulator
     G4double fCUAmplitudeK=0.;//fCUAmplitude*fCUK
     G4double fCUK2=0.;   //fCUK^2
+    G4bool fImportCrystalGeometry = false; //gpaterno
+    G4String fCrystalGeometryFilename = "CUgeometry.dat"; //gpaterno
+    
+    //crystalline undulator wave function data (realistic CU)
+    G4ChannelingFastSimInterpolation* fCUx{nullptr};
+    //crystalline undulator 1st derivative wave function data (realistic CU)
+    G4ChannelingFastSimInterpolation* fCUtetax{nullptr};
+    //crystalline undulator curvature (realistic CU)
+    G4ChannelingFastSimInterpolation* fCUCurv{nullptr};
 
     ///values related to the crystal lattice
     G4int fNelements=1;//number of nuclear elements in a crystal

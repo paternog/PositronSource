@@ -104,7 +104,7 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
     vfilein.open(filename);
     G4cout << "opening " << filename << " ..." << G4endl;
     //check if the input file was found, otherwise return an exception
-    if(!vfilein.is_open())
+    if (!vfilein.is_open())
     {
         G4String outputMessage="Input file " +
                                filename +
@@ -286,6 +286,8 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
     }
 
     vfilein.close();
+    
+    if (fImportCrystalGeometry) ReadCrystalInternalGeometry();
 
     //set special values and coefficients
     G4double alphahbarc2=std::pow(CLHEP::fine_structure_const*CLHEP::hbarc ,2.);
@@ -370,7 +372,7 @@ G4ThreeVector G4ChannelingFastSimCrystalData::CoordinatesFromBoxToLattice
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
 G4ThreeVector G4ChannelingFastSimCrystalData::CoordinatesFromLatticeToBox(
-        const G4ThreeVector &pos)
+                                                     const G4ThreeVector &pos)
 {
    G4double x=pos.x(),y=pos.y(),z=pos.z();
 
@@ -409,8 +411,8 @@ G4ThreeVector G4ChannelingFastSimCrystalData::CoordinatesFromLatticeToBox(
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
 G4ThreeVector G4ChannelingFastSimCrystalData::ChannelChange(G4double& x,
-							    G4double& y,
-							    G4double& z)
+							                                G4double& y,
+							                                G4double& z)
 {
 
     //test of enter in other channel
@@ -445,3 +447,52 @@ G4ThreeVector G4ChannelingFastSimCrystalData::ChannelChange(G4double& x,
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
+
+void G4ChannelingFastSimCrystalData::ReadCrystalInternalGeometry()
+{
+    std::ifstream vfilein;
+    vfilein.open(fCrystalGeometryFilename); //gpaterno
+    
+    G4cout << "Importing the Crystal geometry from the file: "  
+           << fCrystalGeometryFilename << G4endl;
+
+    //read crystal length (within interpolation period)
+    G4double culength = 0.;
+    vfilein >> culength;
+    culength *= cm;
+    //read the number of nodes of interpolation
+    G4int npointsx = 1;
+    vfilein >> npointsx;
+
+    fCUx =     new G4ChannelingFastSimInterpolation(culength,0,npointsx,1,1);
+    fCUtetax = new G4ChannelingFastSimInterpolation(culength,0,npointsx,1,1);
+    fCUCurv =  new G4ChannelingFastSimInterpolation(culength,0,npointsx,1,1);
+
+    G4double unitIF = 1.; //unit of interpolation function
+    G4double ai, bi, ci, di;
+    for(G4int i=0; i<npointsx; i++)
+    {
+        //reading the coefficients of cubic spline
+        vfilein >> ai >> bi >> ci >> di;
+        //setting spline coefficients for electric field
+        unitIF = cm;
+        fCUx->SetCoefficients1D(ai*unitIF, bi*unitIF, ci*unitIF, di*unitIF, i);
+
+        //reading the coefficients of cubic spline
+        vfilein >> ai >> bi >> ci >> di;
+        //setting spline coefficients for nuclear density (first element)
+        unitIF = 1.;
+        fCUtetax->SetCoefficients1D(ai*unitIF, bi*unitIF, ci*unitIF, di*unitIF, i);
+
+        //reading the coefficients of cubic spline
+        vfilein >> ai >> bi >> ci >> di;
+        //setting spline coefficients for electron density
+        unitIF = 1./cm;
+        fCUCurv->SetCoefficients1D(ai*unitIF, bi*unitIF, ci*unitIF, di*unitIF, i);
+    }
+
+    vfilein.close();
+}
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
+
