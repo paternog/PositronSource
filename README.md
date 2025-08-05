@@ -50,6 +50,8 @@ For the other interactions, standard Geant4 physics model are used. In particula
 ### Event generation
 The beam features (primary particles) have to be set through standard `G4GeneralParticleSource` (gps) commands as in the run.mac macro.
 
+Alternatively the phase-space from a previous simulation (performed with CRYSTAL code) can be read. This can be useful to avoid simulating many times very time consuming interactions in the oriented crystals. This can be done by setting in the macro /gun/ReadFromFile false.
+
 ### Output
 PositronSource is optimised for an ntuple-based output, in which data from sensitive detectors are written event by event. The default output file format is the [ROOT](https://root.cern/) file (`.root`), which contains the ntuples as [tree objects](https://root.cern.ch/doc/master/classTTree.html). The output file is saved in `output/` (in the build path) at the end of the program execution; its name can be set in through the command `/run/setfilenamesave output/NAME_YOU_WANT.root`. Alternatively, different file formats can be chosen, e.g. the CSV. 
 
@@ -113,7 +115,7 @@ Run the app GUI which will show you a default geometry. You could also launch a 
 
 ## Version
 version: 1.0,
-date: 10-12-2024
+date: 05-08-2025
 
 ## Acknowledgement
 The code has been developed in collaboration with Alexei Sytov, who acknowledges support from H2020-MSCA-GF TRILLION (G.A. 101032975) project. We also acknowledges support from the INFN-CSN5 (GEANT4INFN project) and the European Union – NextGenerationEU – Project Title : ‘‘Intense positron source Based On Oriented crySTals - e+BOOST’’ 2022Y87K7X – CUP I53D23001510006.
