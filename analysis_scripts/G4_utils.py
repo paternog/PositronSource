@@ -416,12 +416,13 @@ def write_spectrum(Eedges, spectrum, output_file):
     DE = Eedges[1] - Eedges[0]
     Ebin = Eedges[:-1] + DE*0.5
     print("Energy bin width: %.4f" % DE) 
-    Eprob = spectrum * DE
-    print("Spectrum integral:", round(sum(Eprob),4))
+    #Eprob = spectrum * DE
+    #print("Spectrum integral:", round(sum(Eprob),4))
     with open(output_file, 'w') as f:
         f.write('#energy spectrum\n')
         for i in range(len(spectrum)):
-            f.write('%.4f %.8f\n' % (Ebin[i], Eprob[i]))
+            #f.write('%.4f %.8f\n' % (Ebin[i], Eprob[i]))
+            f.write('%.4f %.8f\n' % (Ebin[i], spectrum[i]))
     print('Spectrum written to %s!\n' % output_file)
 
 
@@ -436,7 +437,7 @@ def write_spectrum_to_G4file(Eedges_MeV, spectrum, output_file):
     Ebin = Eedges_MeV[:-1] + DE*0.5
     print("Energy bin width: %.4f MeV" % DE)    
     Eprob = spectrum * DE
-    print("Spectrum integral:", round(sum(Eprob), 4))
+    print("Spectrum integral (sum(h_i)*DE):", round(sum(Eprob), 4))
     with open(output_file, 'w') as f:
         f.write('#energy spectrum\n')
         f.write('/gps/ene/type User\n')
