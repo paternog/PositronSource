@@ -1,13 +1,11 @@
 ## PositronSource
-PositronSource is a [Geant4](http://www.geant4.org/geant4/) application to simulate a positron source following the conventional approach, which relies on an amorphous target, and a positron source based on oriented crystals. In the latter case, both the single-crystal and the hybrid scheme can be investigated. 
+PositronSource is a [Geant4](http://www.geant4.org/geant4/) application for the simulation of a positron source. Although the conventional approach based on an **amorphous target** is possible, the application is primarily designed to simulate positron sources based on oriented crystals. In the latter case, both the **single-crystal** and the **hybrid scheme** can be investigated. **A revised version of this application has been incorporated with the name `ch5` among the official Geant4 extended examples**.
 
 <p align="center">
     <img src="./readme_pics/schemes.png" alt="" width="900" height="450">
 </p>
 
 Both Geant4 and [CMake](https://cmake.org/) need to be installed on your machine in order to compile and run the software.
-Tested with:
-[![Geant4](https://img.shields.io/badge/Geant4-11.02.p01-blue.svg)](https://geant4.web.cern.ch/) [![CMake](https://img.shields.io/badge/CMake-3.22.1-blue.svg)](https://cmake.org/)
 
 The source code can be downloaded either as a ZIP archive, from the Code drop-down menu (look at the green box above), or directly from the terminal (open in your project working directory) via:
 ```
@@ -50,7 +48,7 @@ For the other interactions, standard Geant4 physics model are used. In particula
 ### Event generation
 The beam features (primary particles) have to be set through standard `G4GeneralParticleSource` (gps) commands as in the run.mac macro.
 
-Alternatively the phase-space from a previous simulation (performed with CRYSTAL code) can be read. This can be useful to avoid simulating many times very time consuming interactions in the oriented crystals. This can be done by setting in the macro /gun/ReadFromFile false.
+Alternatively the phase-space from a previous simulation (performed with CRYSTAL code) can be read. This can be useful to avoid simulating many times very time consuming interactions in the oriented crystals. This can be done by setting in the macro `/gun/ReadFromFile false`.
 
 ### Output
 PositronSource is optimised for an ntuple-based output, in which data from sensitive detectors are written event by event. The default output file format is the [ROOT](https://root.cern/) file (`.root`), which contains the ntuples as [tree objects](https://root.cern.ch/doc/master/classTTree.html). The output file is saved in `output/` (in the build path) at the end of the program execution; its name can be set in through the command `/run/setfilenamesave output/NAME_YOU_WANT.root`. Alternatively, different file formats can be chosen, e.g. the CSV. 
@@ -91,7 +89,7 @@ Which represents:
 - the event ID (column 8),
 - the track ID (column 9).
 
-The three-dimensional distributions of energy deposition in the converter (radiator if the converter is not present)  can be scored through the custom `VoxelScorer` class, which is similar to the native box mesh scorer, but, unlike the latter, is intrinsically linked to a volume, thus it is less prone to positioning errors. This modality can be turned on and off through the macro command: `/det/setVoxelization true or false`. Also, specific commands allow the user to define the number of voxels in the three directions (see the general macro: macos/run.mac). The same quantity can also be scored through the standard box mesh scorer defined in the attached macros.
+The three-dimensional distributions of energy deposition in the converter (radiator if the converter is not present) can be scored through the custom `VoxelScorer` class, which is similar to the native box mesh scorer, but, unlike the latter, is intrinsically linked to a volume, thus it is less prone to positioning errors. This modality can be turned on and off through the macro command: `/det/setVoxelization true or false`. Also, specific commands allow the user to define the number of voxels in the three directions (see the general macro: macos/run.mac). The same quantity can also be scored through the standard box mesh scorer defined in the attached macros.
 
 ## Analysis scripts
 A series of python notebooks and custom libraries useful for the simulation result analysis is provided. The code is commented and require only the setting of proper input parameters, which are mainly located at the beginning of the notebook, well separed from calculations. 
@@ -118,7 +116,7 @@ version: 1.0,
 date: 05-08-2025
 
 ## Acknowledgement
-The code has been developed in collaboration with Alexei Sytov, who acknowledges support from H2020-MSCA-GF TRILLION (G.A. 101032975) project. We also acknowledges support from the INFN-CSN5 (GEANT4INFN project) and the European Union – NextGenerationEU – Project Title : ‘‘Intense positron source Based On Oriented crySTals - e+BOOST’’ 2022Y87K7X – CUP I53D23001510006.
+The code has been developed in collaboration with Alexei Sytov, who acknowledges financial support from H2020-MSCA-GF TRILLION (G.A. 101032975) project. We also acknowledge finacial support from the INFN-CSN5 (GEANT4INFN and CORAL projects) and financial support under the National Recovery and Resilience Plan (NRRP), Call for tender No. 104 published on 02.02.2022 by the Italian Ministry of University and Research (MUR), funded by the European Union – NextGenerationEU – Project Title : "Intense positron source Based On Oriented crySTals - e+BOOST" 2022Y87K7X– CUP I53D23001510006. 
 
 ## Contact
 For any question, comment, suggestion or bug report, please contact me at <paterno@fe.infn.it>. 
