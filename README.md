@@ -48,7 +48,7 @@ For the other interactions, standard Geant4 physics model are used. In particula
 ### Event generation
 The beam features (primary particles) have to be set through standard `G4GeneralParticleSource` (gps) commands as in the run.mac macro.
 
-Alternatively the phase-space from a previous simulation (performed with CRYSTAL code) can be read. This can be useful to avoid simulating many times very time consuming interactions in the oriented crystals. This can be done by setting in the macro `/gun/ReadFromFile false`.
+Alternatively **the phase-space from a previous simulation (performed for example with CRYSTAL code) can be read**. This can be useful to avoid simulating many times very time consuming interactions in the oriented crystals. This can be done by setting in the macro `/gun/ReadFromFile false`.
 
 ### Output
 PositronSource is optimised for an ntuple-based output, in which data from sensitive detectors are written event by event. The default output file format is the [ROOT](https://root.cern/) file (`.root`), which contains the ntuples as [tree objects](https://root.cern.ch/doc/master/classTTree.html). The output file is saved in `output/` (in the build path) at the end of the program execution; its name can be set in through the command `/run/setfilenamesave output/NAME_YOU_WANT.root`. Alternatively, different file formats can be chosen, e.g. the CSV. 
@@ -89,7 +89,7 @@ Which represents:
 - the event ID (column 8),
 - the track ID (column 9).
 
-The three-dimensional distributions of energy deposition in the converter (radiator if the converter is not present) can be scored through the custom `VoxelScorer` class, which is similar to the native box mesh scorer, but, unlike the latter, is intrinsically linked to a volume, thus it is less prone to positioning errors. This modality can be turned on and off through the macro command: `/det/setVoxelization true or false`. Also, specific commands allow the user to define the number of voxels in the three directions (see the general macro: macos/run.mac). The same quantity can also be scored through the standard box mesh scorer defined in the attached macros.
+**The three-dimensional distributions of energy deposition in the converter (radiator if the converter is not present)** can be scored through the custom `VoxelScorer` class, which is similar to the native box mesh scorer, but, unlike the latter, is intrinsically linked to a volume, thus it is less prone to positioning errors. This modality can be turned on and off through the macro command: `/det/setVoxelization true or false`. Also, specific commands allow the user to define the number of voxels in the three directions (see the general macro: macos/run.mac). The same quantity can also be scored through the standard `BoxMesh` scorer defined in the attached macros.
 
 ## Analysis scripts
 A series of python notebooks and custom libraries useful for the simulation result analysis is provided. The code is commented and require only the setting of proper input parameters, which are mainly located at the beginning of the notebook, well separed from calculations. 
