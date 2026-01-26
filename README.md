@@ -94,6 +94,10 @@ The three-dimensional distributions of energy deposition in the converter (radia
 ## Analysis scripts
 A series of python notebooks and custom libraries useful for the simulation result analysis is provided. The code is commented and require only the setting of proper input parameters, which are mainly located at the beginning of the notebook, well separed from calculations. 
 
+<p align="center">
+    <img src="./readme_pics/analysis.png" alt="" width="900" height="400">
+</p>
+
 ## Quick Start
 Create a directory where you want to have both the source code and the working (build) directory (e.g. geant4-apps) and move (from terminal) to this path, then clone the repository with:
 ```
