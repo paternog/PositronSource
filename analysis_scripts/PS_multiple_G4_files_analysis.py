@@ -20,10 +20,9 @@ from scipy import interpolate
 from G4_utils import *
 from G4_read_output_files import *
 
-### required libraries to make plots according Mattia's style
 from scipy.optimize import curve_fit
 from matplotlib.colors import LogNorm
-import succolib as sl # Mattia's package (install it with: pip install succolib)
+
 ### Set plot style ###
 import mplhep as hep
 import plot_settings as settings
@@ -39,6 +38,12 @@ print('\nMPLBACKEND:', MPLBACKEND, '\n')
 # tic
 import time
 start = time.time()
+
+
+# definition of Gaussian function
+def gaussian(x, a, b, c):
+    import numpy as np
+    return a*np.exp(-np.power(x - b, 2)/(2*np.power(c, 2)))
 
 
 ## Input and Settings
@@ -155,10 +160,10 @@ fitrange_ang = 17.45 #mrad (for angular distribution)
 #    fitrange_ang = 10. #mrad (for angular distribution)    
 ang_plot_lim = (-50, 150) #mrad
 fitrange = 0.2 #cm (for spatial distribution)
-nBins = 200 #for spatial distribution
+nBins = 200 #(for spatial distribution)
 xRange = (-0.45, 0.45) #cm
 xRange1 = (-10.5, 10.5) #cm
-yUpperLim = 14 #for profiles
+yUpperLim = 14 #(for profiles)
 
 ## Settings for plotting Edep distribution
 NbinsEdep = 50
@@ -243,14 +248,14 @@ for itemi in rad_th:
             ##[and correlate it with the photon distribution at the exit of the radiator crystal]      
             
             ### Define data_in and data_out dataframes and add more parameters to them
-            ### (adapt dataframes to use Mattia's scripts).        
+            ### (adapt dataframes to use Mattia Soldani's scripts).        
             if df_rad_out.shape[0] > 0:
                 data_in = df_rad_out.copy()
             else:
                 if df_conv_out.shape[0] > 0:
                     data_in = df_conv_in.copy()
                 else:
-                    data_in = df_rad_out.copy() #set an empty dataframe, because this is a single-volume (crystalline or conventional) source  
+                    data_in = df_rad_out.copy() #set an empty dataframe, because this is a single-volume (crystal or conventional) source  
 
             data_in["P"] = (data_in.px*data_in.px + data_in.py*data_in.py + data_in.pz*data_in.pz)**0.5 #MeV
             data_in = data_in[data_in.pz >= 0] #selecting only events (that should be) from the input beam
@@ -266,7 +271,7 @@ for itemi in rad_th:
 
             if df_conv_out.shape[0] > 0:
                 data_out = df_conv_out.copy() 
-            else: #this is the case of a single-volume (crystalline or conventional) source
+            else: #this is the case of a single-volume (crystal or conventional) source
                 data_out = df_conv_in.copy()  
 
             data_out["P"] = (data_out.px*data_out.px+data_out.py*data_out.py+data_out.pz*data_out.pz)**0.5 #MeV
@@ -296,7 +301,10 @@ for itemi in rad_th:
                     hist = ax[i].hist(series[i], bins=15000, range=(-200, 200), histtype="step", color="C0")
                     x, y = hist[1][:-1]+0.5*abs(hist[1][1]-hist[1][0]), hist[0]
                     x, y = x[(x>-fitrange_ang) & (x<fitrange_ang)], y[(x>-fitrange_ang) & (x<fitrange_ang)]
-                    par, _ = curve_fit(sl.fGaus, x, y)
+                    try:
+                        par, _ = curve_fit(f=gaussian, xdata=x, ydata=y, bounds=(-np.inf, np.inf))
+                    except:
+                        par = (1, 0, np.inf)
                     xplot = np.linspace(-fitrange_ang, fitrange_ang, 200)
                     xplot2 = np.linspace(-200, -fitrange_ang, 2000)
                     xplot3 = np.linspace(fitrange_ang, 200, 2000)
@@ -306,6 +314,10 @@ for itemi in rad_th:
                     ax[i].plot(xplot, sl.fGaus(xplot, *par), c="C0", alpha=0.5, label=label)
                     ax[i].plot(xplot2, sl.fGaus(xplot2, *par), c="C0", ls=":", alpha=0.5)
                     ax[i].plot(xplot3, sl.fGaus(xplot3, *par), c="C0", ls=":", alpha=0.5)
+                    if abs(par[2]) < np.inf:
+                        ax[i].plot(xplot, gaussian(xplot, *par), c="C0", alpha=0.5, label=label)
+                        ax[i].plot(xplot2, gaussian(xplot2, *par), c="C0", ls=":", alpha=0.5)
+                        ax[i].plot(xplot3, gaussian(xplot3, *par), c="C0", ls=":", alpha=0.5)
                     divergenceIn[i] = abs(par[2])
                     angleStdIn[i] = series[i].std()
 
@@ -320,15 +332,18 @@ for itemi in rad_th:
                 hist = ax[i].hist(series[i], bins=800, range=(-1000, 1000), histtype="step", color="C1")
                 x, y = hist[1][:-1]+0.5*abs(hist[1][1]-hist[1][0]), hist[0]
                 x, y = x[(x>-fitrange_ang) & (x<fitrange_ang)], y[(x>-fitrange_ang) & (x<fitrange_ang)]
-                par, _ = curve_fit(sl.fGaus, x, y)
+                try:
+                    par, _ = curve_fit(f=gaussian, xdata=x, ydata=y, bounds=(-np.inf, np.inf))
+                except:
+                    par = (1, 0, np.inf)
                 xplot = np.linspace(-fitrange_ang, fitrange_ang, 200)
                 xplot2 = np.linspace(-200, -fitrange_ang, 2000)
                 xplot3 = np.linspace(fitrange_ang, 200, 2000)
                 label = "at amorphous target output"+r" ($\it{e}^+$ only)"+", Gaussian\n"+r"fit (in $\pm$ %.2f mrad)" % \
                         fitrange_ang+r" $\it{\sigma}$ = %.2f mrad" % abs(par[2])
-                ax[i].plot(xplot, sl.fGaus(xplot, *par), c="C1", alpha=0.5, label=label)
-                ax[i].plot(xplot2, sl.fGaus(xplot2, *par), c="C1", ls=":", alpha=0.5)
-                ax[i].plot(xplot3, sl.fGaus(xplot3, *par), c="C1", ls=":", alpha=0.5)
+                ax[i].plot(xplot, gaussian(xplot, *par), c="C1", alpha=0.5, label=label)
+                ax[i].plot(xplot2, gaussian(xplot2, *par), c="C1", ls=":", alpha=0.5)
+                ax[i].plot(xplot3, gaussian(xplot3, *par), c="C1", ls=":", alpha=0.5)
                 divergence[i] = abs(par[2])
                 angleStd[i] = series[i].std()
 
@@ -356,86 +371,104 @@ for itemi in rad_th:
 
             beamSizeX, beamSizeY = [0, 0, 0], [0, 0, 0]
 
-            ax[0, 0].set_title(r"$\it{e}^{+}$ only")
-            ax[0, 1].set_title(r"$\it{e}^{+}$ only")
+            ax[0,0].set_title(r"$\it{e}^{+}$ only")
+            ax[0,1].set_title(r"$\it{e}^{+}$ only")
 
-            ax[0, 1].hist2d(data_out[(data_out.particle=="e+")].x, data_out[(data_out.particle=="e+")].y, \
-                            bins=nBins, range=(xRange, xRange), norm=LogNorm())
-            ax[0, 1].grid(True)
-            ax[0, 0].hist2d(data_out[(data_out.particle=="e+")].x, data_out[(data_out.particle=="e+")].y, \
-                            bins=nBins, range=(xRange1, xRange1), norm=LogNorm())
-            ax[0, 0].grid(True)
+            ax[0,1].hist2d(data_out[(data_out.particle=="e+")].x, data_out[(data_out.particle=="e+")].y, \
+                           bins=nBins, range=(xRange, xRange), norm=LogNorm())
+            ax[0,1].grid(True)
+            ax[0,0].hist2d(data_out[(data_out.particle=="e+")].x, data_out[(data_out.particle=="e+")].y, \
+                           bins=nBins, range=(xRange1, xRange1), norm=LogNorm())
+            ax[0,0].grid(True)
 
-            gs = ax[1, 0].get_gridspec()
-            for ax0 in ax[1, :]:
+            gs = ax[1,0].get_gridspec()
+            for ax0 in ax[1,:]:
                 ax0.remove()
-            axdown = fig.add_subplot(gs[1, :])
+            axdown = fig.add_subplot(gs[1,:])
 
             if len(data_in) > 0:
                 hist = axdown.hist(data_in[(data_in.particle=="gamma" if inputType=="all" else data_in.particle=="e-")].x, \
                                    bins=nBins, histtype="step", range=xRange, density=True, color="C0")
                 x, y = hist[1][:-1]+0.5*abs(hist[1][1]-hist[1][0]), hist[0]
                 x, y = x[(x>-fitrange) & (x<fitrange)], y[(x>-fitrange) & (x<fitrange)]
-                par, _ = curve_fit(sl.fGaus, x, y)
+                try:
+                    par, _ = curve_fit(f=gaussian, xdata=x, ydata=y, bounds=(-np.inf, np.inf))
+                except:
+                    par = (1, 0, np.inf)
                 xplot = np.linspace(-fitrange, fitrange, 200)
                 xplot2 = np.linspace(xRange[0], -fitrange, 2000)
                 xplot3 = np.linspace(fitrange, xRange[1], 2000)
                 label = ("at crystal output"+r" ($\it{\gamma}$ only)" if inputType=="all" else \
-                         "at amorphous target input"+r" ($\it{e}^-$ only)")+",\nGaussian fit "+r"$\it{\sigma}$ = %.3f mm" % abs(par[2]*10)
-                axdown.plot(xplot, sl.fGaus(xplot, *par), c="C0", alpha=0.5, label=label)
-                axdown.plot(xplot2, sl.fGaus(xplot2, *par), c="C0", ls=":", alpha=0.5)
-                axdown.plot(xplot3, sl.fGaus(xplot3, *par), c="C0", ls=":", alpha=0.5)
+                         "at amorphous target input"+r" ($\it{e}^-$ only)")+",\nGaussian fit "+r"$\it{\sigma}$ = %.3f mm" % \
+                         abs(par[2]*10)
+                axdown.plot(xplot, gaussian(xplot, *par), c="C0", alpha=0.5, label=label)
+                axdown.plot(xplot2, gaussian(xplot2, *par), c="C0", ls=":", alpha=0.5)
+                axdown.plot(xplot3, gaussian(xplot3, *par), c="C0", ls=":", alpha=0.5)
                 beamSizeX[0] = par[2]
 
-            hist = axdown.hist(data_out[(data_out.particle=="e+")].x, bins=nBins, histtype="step", range=xRange, density=True, color="C1")
+            hist = axdown.hist(data_out[(data_out.particle=="e+")].x, bins=nBins, histtype="step", \
+                               range=xRange, density=True, color="C1")
             x, y = hist[1][:-1]+0.5*abs(hist[1][1]-hist[1][0]), hist[0]
             x, y = x[(x>-fitrange) & (x<fitrange)], y[(x>-fitrange) & (x<fitrange)]
-            par, _ = curve_fit(sl.fGaus, x, y)
+            try:
+                par, _ = curve_fit(f=gaussian, xdata=x, ydata=y, bounds=(-np.inf, np.inf))
+            except:
+                par = (1, 0, np.inf)
             xplot = np.linspace(-fitrange, fitrange, 200)
             xplot2 = np.linspace(xRange[0], -fitrange, 2000)
             xplot3 = np.linspace(fitrange, xRange[1], 2000)
-            label = "at amorphous target output"+r" ($\it{e}^{+}$ only)"+",\nGaussian fit "+r"$\it{\sigma}$ = %.3f mm" % abs(par[2]*10)
-            axdown.plot(xplot, sl.fGaus(xplot, *par), c="C1", alpha=0.5, label=label)
-            axdown.plot(xplot2, sl.fGaus(xplot2, *par), c="C1", ls=":", alpha=0.5)
-            axdown.plot(xplot3, sl.fGaus(xplot3, *par), c="C1", ls=":", alpha=0.5)
+            label = "at amorphous target output"+r" ($\it{e}^{+}$ only)"+",\nGaussian fit "+r"$\it{\sigma}$ = %.3f mm" % \ 
+                    abs(par[2]*10)
+            axdown.plot(xplot, gaussian(xplot, *par), c="C1", alpha=0.5, label=label)
+            axdown.plot(xplot2, gaussian(xplot2, *par), c="C1", ls=":", alpha=0.5)
+            axdown.plot(xplot3, gaussian(xplot3, *par), c="C1", ls=":", alpha=0.5)
             beamSizeX[1] = par[2]
 
-            gs = ax[2, 0].get_gridspec()
-            for ax0 in ax[2, :]:
+            gs = ax[2,0].get_gridspec()
+            for ax0 in ax[2,:]:
                 ax0.remove()
-            axdown2 = fig.add_subplot(gs[2, :])
+            axdown2 = fig.add_subplot(gs[2,:])
 
             if len(data_in) > 0:
                 hist = axdown2.hist(data_in[(data_in.particle=="gamma" if inputType=="all" else data_in.particle=="e-")].y, \
                                     bins=nBins, histtype="step", range=xRange, density=True, color="C0")
                 x, y = hist[1][:-1]+0.5*abs(hist[1][1]-hist[1][0]), hist[0]
                 x, y = x[(x>-fitrange) & (x<fitrange)], y[(x>-fitrange) & (x<fitrange)]
-                par, _ = curve_fit(sl.fGaus, x, y)
+                try:
+                    par, _ = curve_fit(f=gaussian, xdata=x, ydata=y, bounds=(-np.inf, np.inf))
+                except:
+                    par = (1, 0, np.inf)
                 xplot = np.linspace(-fitrange, fitrange, 200)
                 xplot2 = np.linspace(xRange[0], -fitrange, 2000)
                 xplot3 = np.linspace(fitrange, xRange[1], 2000)
                 label = ("at crystal output"+r" ($\it{\gamma}$ only)" if inputType=="all" else \
-                         "at amorphous target input"+r" ($\it{e}^-$ only)")+",\nGaussian fit "+r"$\it{\sigma}$ = %.3f mm" % abs(par[2]*10)
-                axdown2.plot(xplot, sl.fGaus(xplot, *par), c="C0", alpha=0.5, label=label)
-                axdown2.plot(xplot2, sl.fGaus(xplot2, *par), c="C0", ls=":", alpha=0.5)
-                axdown2.plot(xplot3, sl.fGaus(xplot3, *par), c="C0", ls=":", alpha=0.5)
+                         "at amorphous target input"+r" ($\it{e}^-$ only)")+",\nGaussian fit "+r"$\it{\sigma}$ = %.3f mm" % \ 
+                         abs(par[2]*10)
+                axdown2.plot(xplot, gaussian(xplot, *par), c="C0", alpha=0.5, label=label)
+                axdown2.plot(xplot2, gaussian(xplot2, *par), c="C0", ls=":", alpha=0.5)
+                axdown2.plot(xplot3, gaussian(xplot3, *par), c="C0", ls=":", alpha=0.5)
                 beamSizeY[0] = par[2]
 
-            hist = axdown2.hist(data_out[(data_out.particle=="e+")].y, bins=nBins, histtype="step", range=xRange, density=True, color="C1")
+            hist = axdown2.hist(data_out[(data_out.particle=="e+")].y, bins=nBins, histtype="step", \
+                                range=xRange, density=True, color="C1")
             x, y = hist[1][:-1]+0.5*abs(hist[1][1]-hist[1][0]), hist[0]
             x, y = x[(x>-fitrange) & (x<fitrange)], y[(x>-fitrange) & (x<fitrange)]
-            par, _ = curve_fit(sl.fGaus, x, y)
+            try:
+                par, _ = curve_fit(f=gaussian, xdata=x, ydata=y, bounds=(-np.inf, np.inf))
+            except:
+                par = (1, 0, np.inf)
             xplot = np.linspace(-fitrange, fitrange, 200)
             xplot2 = np.linspace(xRange[0], -fitrange, 2000)
             xplot3 = np.linspace(fitrange, xRange[1], 2000)
-            label = "at amorphous target output"+r" ($\it{e}^{+}$ only)"+",\nGaussian fit "+r"$\it{\sigma}$ = %.3f mm" % abs(par[2]*10)
-            axdown2.plot(xplot, sl.fGaus(xplot, *par), c="C1", alpha=0.5, label=label)
-            axdown2.plot(xplot2, sl.fGaus(xplot2, *par), c="C1", ls=":", alpha=0.5)
-            axdown2.plot(xplot3, sl.fGaus(xplot3, *par), c="C1", ls=":", alpha=0.5)
+            label = "at amorphous target output"+r" ($\it{e}^{+}$ only)"+",\nGaussian fit "+r"$\it{\sigma}$ = %.3f mm" % \ 
+                    abs(par[2]*10)
+            axdown2.plot(xplot, gaussian(xplot, *par), c="C1", alpha=0.5, label=label)
+            axdown2.plot(xplot2, gaussian(xplot2, *par), c="C1", ls=":", alpha=0.5)
+            axdown2.plot(xplot3, gaussian(xplot3, *par), c="C1", ls=":", alpha=0.5)
             beamSizeY[1] = par[2]
 
-            ax[0, 0].set_ylabel(r"$\it{y}$ at amorphous"+"\ntarget output [cm]")
-            ax[0, 0].set_xlabel(r"                 $\it{x}$ at amorphous target output [cm]", loc="left")
+            ax[0,0].set_ylabel(r"$\it{y}$ at amorphous"+"\ntarget output [cm]")
+            ax[0,0].set_xlabel(r"                 $\it{x}$ at amorphous target output [cm]", loc="left")
             axdown.set_xlabel(r"$\it{x}$ [cm]")
             axdown.set_ylabel(r"$\frac{\mathrm{d}\it{N}}{\it{N}\mathrm{d}\it{x}} \left[\frac{1}{\mathrm{cm}}\right]$")
             axdown.set_xlim((xRange[0], xRange[1]))
@@ -529,7 +562,7 @@ for itemi in rad_th:
                     plt.close()
                     
 
-            ### Read the built-in BoxMesh scorer with Edep in the Absorber
+            ## Read the built-in BoxMesh scorer with Edep in the Absorber
             
             # read BoxMesh scorer
             if itemk != '':                
@@ -707,14 +740,13 @@ for itemi in rad_th:
                 plt.close()
 
 
-            ## Store the positron beam phase-space in RF-Tack format and prepare the variables to save
+            ## Get the positrons, analyze and export them
             
-            # Get the positrons
+            ### Get the positrons
             positrons = data_out[data_out.particle=="e+"].copy()
             print("yield_e+:", round(positrons.shape[0] / Nevents, 2))
            
-        
-            # Calculate positron beam energy distribution features
+            ### Calculate positron beam energy distribution features
             E_pos = (positrons.P**2 + 0.511**2)**0.5
             Emean_pos = np.mean(E_pos)
             Estdev = np.std(E_pos)
@@ -735,7 +767,7 @@ for itemi in rad_th:
             NsigmaEth = Eth / (Emean_pos + Estdev)
             print("fraction of positrons with energy < %.0f MeV (%.2f*sigma): %.2f\n" % (Eth, NsigmaEth, NposEth))
 
-            # Plot histogram of positrons energy
+            ### Plot histogram of positrons energy
             nbin_pos = 100
             range_pos = (0, 100)
             IWantDensity = False
@@ -744,7 +776,7 @@ for itemi in rad_th:
                          label='positron spectrum')
             h2 = plt.hist(E_pos_cut, density=IWantDensity, bins=nbin_pos, range=range_pos, alpha=0.5, \
                           label='positron spectrum within %.2f mrad' % (angle_cut))
-            plt.legend()
+            plt.legend(fontsize=14)
             plt.xlabel('Energy [MeV]')
             plt.ylabel('Counts [arb. units]')
             plt.title('')
@@ -768,7 +800,7 @@ for itemi in rad_th:
             write_spectrum_to_G4file(Eedges, spectrum_cut, output_file_cut)
             """
             
-            # Prepare the file to feed the RF-Track code to tack the positrons inside the Capture System/Positron Linac with
+            ### Prepare the file to feed the RF-Track code to tack the positrons inside the Capture System/Positron Linac with
             """
             NOTE: In RF-Track x'=px/pz=tan(thx) and y'=py/pz=tan(thy) (see the manual at page 22).
                   The approximation x'=thx and y'=thy holds for small-angle only,
@@ -783,21 +815,21 @@ for itemi in rad_th:
                   we must calculate properly (with arctan) thx, thy and set a proper angular cut.
             """
             if convertFileToRFTrack:    
-                ## Add variables to the original positron dataframe
+                # Add variables to the original positron dataframe
                 positrons["xp[mrad]"] = (positrons.px/(positrons.pz*1000))*1000
                 positrons["yp[mrad]"] = (positrons.py/(positrons.pz*1000))*1000
                 positrons["p[MeV/c]"] = positrons.P
                 positrons["#x[mm]"] = positrons["x"]*10 #this is because they were previously converted form [mm] to [cm]
                 positrons["y[mm]"] = positrons["y"]*10
 
-                ## Select only a set of variables
+                # Select only a set of variables
                 if addID:
                     positrons["ID"] = list(range(1, len(positrons)+1))
                     positrons_out = positrons[["#x[mm]", "xp[mrad]", "y[mm]", "yp[mrad]", "p[MeV/c]", "ID"]]
                 else:
                     positrons_out = positrons[["#x[mm]", "xp[mrad]", "y[mm]", "yp[mrad]", "p[MeV/c]"]]
 
-                ## Guassian sampling in time, to keep the RF phases of the Hybrid similar to the conventional scheme
+                # Guassian sampling in time, to keep the RF phases of the Hybrid similar to the conventional scheme
                 c = 299792458 #m/s
                 if setGaussianTimeShape:
                     mean_value = 17.762 #mm/c
@@ -809,7 +841,7 @@ for itemi in rad_th:
                     t = positrons.t * 1e-6 * c #ns -> mm/c
                 positrons_out.insert(4, 't[mm/c]', t)
                 
-                ## Save the positron phase-space to a txt file
+                # Save the positron phase-space to a txt file
                 name_out = name.replace('output', 'positrons')
                 positrons_out.to_csv(outpath + name_out + ".dat", index=False, sep=' ') 
                 print("positron beam phase-space converted to RF-Track format!")
@@ -820,7 +852,8 @@ for itemi in rad_th:
             trLim = (-3*np.std(positrons.t) + np.mean(positrons.t), 3*np.std(positrons.t) + np.mean(positrons.t))
             plt.hist(positrons.t, density=False, bins=100, range=trLim, label='positrons original time distribution')
             if convertFileToRFTrack and setGaussianTimeShape:
-                plt.hist(positrons_out["t[mm/c]"]*1e6/c, density=False, bins=100, label='positrons distribution after Gaussian shaping')
+                plt.hist(positrons_out["t[mm/c]"]*1e6/c, density=False, bins=100, \
+                         label='positrons distribution after Gaussian shaping')
             plt.legend(fontsize=12)
             plt.xlabel('t [ns]')
             plt.ylabel('Counts [arb. units]')
