@@ -23,9 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-//
 /// \file fastSimChRad.cc
 /// \brief Main program of the FastSimChannelingRad example
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -45,7 +46,7 @@
 #include "G4CoherentPairProductionPhysics.hh"
 
 #include "Randomize.hh"
-#include <sys/time.h>
+#include <ctime>
 #include "G4Timer.hh"
 
 #include "G4ParticleTable.hh"
@@ -58,17 +59,17 @@ int main(int argc,char** argv)
     // Get current time
     G4Timer* theTimer = new G4Timer();
     theTimer->Start();
-     
+ 
     //Set random number generator
-	CLHEP::HepRandom::setTheEngine(new CLHEP::RanecuEngine);
-	G4String option_file = "random.in";
-	std::ifstream fin(option_file);
-	long random_seed = 0;
-	if (fin.is_open()) {
-		fin >> random_seed;
-		fin.close();
-	}
-	random_seed += time(NULL);
+    CLHEP::HepRandom::setTheEngine(new CLHEP::RanecuEngine);
+    G4String option_file = "random.in";
+    std::ifstream fin(option_file);
+    long random_seed = 0;
+    if (fin.is_open()) {
+        fin >> random_seed;
+        fin.close();
+    }
+    random_seed += time(NULL);
     G4cout << "Random seed: " << random_seed << G4endl;
     CLHEP::HepRandom::setTheSeed(random_seed);
  
@@ -96,37 +97,37 @@ int main(int argc,char** argv)
     G4ScoringManager* scManager = G4ScoringManager::GetScoringManager();
     scManager->SetVerboseLevel(0);
 
-           
-    //Set mandatory initialization classes    
+
+    //Set mandatory initialization classes
     //Set the Geometry
     runManager->SetUserInitialization(new DetectorConstruction);
 
-	//Physics list
-	G4VModularPhysicsList* physicsList = new FTFP_BERT;
-	// -- Create helper tool used to activate the fast simulation
-	G4FastSimulationPhysics* fastSimulationPhysics = new G4FastSimulationPhysics();
-	fastSimulationPhysics->BeVerbose();
-	// -- activation of fast simulation for particles having fast simulation models
-	// -- attached in the mass geometry
-	fastSimulationPhysics->ActivateFastSimulation("e-");
-	fastSimulationPhysics->ActivateFastSimulation("e+");
-	fastSimulationPhysics->ActivateFastSimulation("pi-");
-	fastSimulationPhysics->ActivateFastSimulation("pi+");
-	fastSimulationPhysics->ActivateFastSimulation("mu-");
-	fastSimulationPhysics->ActivateFastSimulation("mu+");
-	fastSimulationPhysics->ActivateFastSimulation("proton");
-	fastSimulationPhysics->ActivateFastSimulation("anti_proton");
-	fastSimulationPhysics->ActivateFastSimulation("GenericIon");
-	// -- Attach the fast simulation physics constructor to the physics list
-	physicsList->RegisterPhysics(fastSimulationPhysics);
-	/*
+    //Physics list
+    G4VModularPhysicsList* physicsList = new FTFP_BERT;
+    // -- Create helper tool used to activate the fast simulation
+    G4FastSimulationPhysics* fastSimulationPhysics = new G4FastSimulationPhysics();
+    fastSimulationPhysics->BeVerbose();
+    // -- activation of fast simulation for particles having fast simulation models
+    // -- attached in the mass geometry
+    fastSimulationPhysics->ActivateFastSimulation("e-");
+    fastSimulationPhysics->ActivateFastSimulation("e+");
+    fastSimulationPhysics->ActivateFastSimulation("pi-");
+    fastSimulationPhysics->ActivateFastSimulation("pi+");
+    fastSimulationPhysics->ActivateFastSimulation("mu-");
+    fastSimulationPhysics->ActivateFastSimulation("mu+");
+    fastSimulationPhysics->ActivateFastSimulation("proton");
+    fastSimulationPhysics->ActivateFastSimulation("anti_proton");
+    fastSimulationPhysics->ActivateFastSimulation("GenericIon");
+    // -- Attach the fast simulation physics constructor to the physics list
+    physicsList->RegisterPhysics(fastSimulationPhysics);
+    /*
     //Coherent pair production model (new: September 2024, to test!)
     G4CoherentPairProductionPhysics* coherentPairProductionPhysics =
         new G4CoherentPairProductionPhysics();
     physicsList->RegisterPhysics(coherentPairProductionPhysics);
     */
-	physicsList->SetVerboseLevel(1);
-	runManager->SetUserInitialization(physicsList);
+    physicsList->SetVerboseLevel(1);
+    runManager->SetUserInitialization(physicsList);
 
     //Set user action classes
     runManager->SetUserInitialization(new ActionInitialization());
@@ -134,39 +135,40 @@ int main(int argc,char** argv)
 
     //Get the pointer to the User Interface manager
     G4UImanager* UImanager = G4UImanager::GetUIpointer();
-	   
+       
     if (argc != 1) {
         //Batch mode
         G4String command = "/control/execute ";
         G4String fileName = argv[1];
         UImanager->ApplyCommand(command+fileName);
     } else {
-	    //Visualization manager
+        //Visualization manager
         G4VisManager* visManager = new G4VisExecutive;
         visManager->Initialize();
 
-        //Define UI session for interactive mode        
+        //Define UI session for interactive mode
         G4UIExecutive* ui = new G4UIExecutive(argc,argv);
         UImanager->ApplyCommand("/control/execute macros/init_vis.mac");
         if (ui->IsGUI()) UImanager->ApplyCommand("/control/execute macros/gui.mac");
         ui->SessionStart();
         delete ui;
 
-    	delete visManager;
+        delete visManager;
     }
-    
-	//Job termination
+
+    //Job termination
     delete runManager;
-    
-	G4AnalysisManager* man = G4AnalysisManager::Instance();
-	man->CloseFile();
-    
+
+    G4AnalysisManager* man = G4AnalysisManager::Instance();
+    man->CloseFile();
+
     theTimer->Stop();
     G4cout << "Execution terminated" << G4endl;
     G4cout << (*theTimer) << G4endl;
     delete theTimer;
-    
+
     return 0;  
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo.....
+

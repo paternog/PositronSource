@@ -1,4 +1,9 @@
-./positronSource macros/run.mac 96 > output/output.out
+#Ncores=$1
+
+Ncores=$(grep -c ^processor /proc/cpuinfo)
+echo "number of available cores on this computer: $Ncores"
+
+./positronSource macros/run.mac $Ncores > output/output.out
 
 #rm output/*_t*.root
 

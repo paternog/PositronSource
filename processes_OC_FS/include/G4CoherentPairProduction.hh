@@ -23,9 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-//
-//
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+// Author:      Alexei Sytov
+// Co-author:   Gianfranco Paterno (testing)
+// Using the key points of G4BaierKatkov and developments of V.V. Tikhomirov,
+// partially described in L. Bandiera et al. Eur. Phys. J. C 82, 699 (2022)
 
 #ifndef G4CoherentPairProduction_h
 #define G4CoherentPairProduction_h 1
@@ -47,14 +48,14 @@ class G4CoherentPairProduction : public G4VDiscreteProcess
 {
 public:
     G4CoherentPairProduction(const G4String& processName = "cpp",
-                             const G4String& g4RegionName="Crystal");
+                             G4ProcessType aType = fElectromagnetic);
 
-    virtual ~G4CoherentPairProduction();
+    ~G4CoherentPairProduction() = default;
 
-    virtual G4VParticleChange* PostStepDoIt(const G4Track&,
-                                            const G4Step&);
+    G4VParticleChange* PostStepDoIt(const G4Track&, const G4Step&) override;
 
-    virtual G4bool IsApplicable(const G4ParticleDefinition& aPD) {
+    G4bool IsApplicable(const G4ParticleDefinition& aPD) override
+    {
         return(aPD.GetParticleName() == "gamma");
     }
 
@@ -81,7 +82,7 @@ public:
 
     ///get cuts
     // minimal energy for non-zero cross section
-    virtual G4double MinPrimaryEnergy() { return fLowEnergyLimit; }
+    G4double ModelMinPrimaryEnergy() { return fLowEnergyLimit;}
     G4double GetHighAngleLimit() {return fHighAngleLimit;}
     G4double GetPPKineticEnergyCut() {return fPPKineticEnergyCut;}
 
@@ -127,10 +128,9 @@ public:
     ///set the name of G4Region in which the model is applicable
     void SetG4RegionName(const G4String& nameG4Region){fG4RegionName=nameG4Region;}
 
-protected:
-    virtual G4double GetMeanFreePath(const G4Track&,
-                                     G4double,
-                                     G4ForceCondition* );
+    G4double GetMeanFreePath(const G4Track& aTrack,
+                             G4double,
+                             G4ForceCondition* condition) override;
 
 private:
 
@@ -176,7 +176,7 @@ private:
     G4double fEffectiveLrad = 0.;
 
     ///the name of G4Region in which the model is applicable
-    G4String fG4RegionName;
+    G4String fG4RegionName = "Crystal";
 
     ///charged particle mass
     const G4double fMass = CLHEP::electron_mass_c2;

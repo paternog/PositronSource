@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file DetectorConstruction.cc
 /// \brief Implementation of the DetectorConstruction class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -69,67 +69,10 @@
 
 DetectorConstruction::DetectorConstruction()
 {
-    //instantiate the messenger
+    G4cout << "### DetectorConstruction instantiated ###" << G4endl; 
+
+    //Instantiate the messenger
     fMessenger = new DetectorConstructionMessenger(this);
-    
-    //Positron Source type
-    fHybridSource = true;
-    
-    //Radiator Crystal features
-    fCrystalMaterialStr = "W";
-    fCrystalSize.setX(7.*mm);
-    fCrystalSize.setY(7.*mm);
-    fCrystalSize.setZ(2.*mm);
-    fBendingAngle = 0.*mrad;
-    fLattice = "<111>";
-    fAngleX = 0.*1e-6; //rad
-    fAngleY = 0.*1e-6; //rad
-    fCrystalZ = 0.;
-    fActivateRadiationModel = true;
-    fActivateOCeffects = true;
-    fRadiator = false;
-    fPotentialPath = "Potentials/";
-    
-    //Distance between radiator and converter crystal.
-    //Does not include 2 virtual detector thickness + tolerance.
-    fRadiatorConverterSepDistance = 60.*cm;
-    
-    //Converter (randomly oriented/amorphus) Crystal features
-    fConverterSize.setX(199.75*mm);
-    fConverterSize.setY(199.75*mm);
-    fConverterSize.setZ(11.6*mm);    
-    fConverterMaterialStr = "W";
-    fGranularConverter = false;
-    fSphereRadius = 1.1*mm;
-    fNSpheres = 0;
-    fConverter = true;
-    
-    //Magnetic field
-    fSetMagneticField = false;
-    fFieldValue = 100.*tesla;
-    fFieldRegionLength = 90.*cm;
-    
-    //Collimator
-    fSetCollimator = false;
-    fCollimatorAperture = 2.*mm;
-    fCollimatorHole = "squared";
-    fCollimatorThickness = 50.*cm;
-    fCollimatorSide = 2.5*m;
-    fRadiatorCollimatorSepDistance = 5.*cm;
-            
-    //Virtual Dectectors
-    fVirtualDetectorSize.setX(40.*cm);
-    fVirtualDetectorSize.setY(40.*cm);
-    fVirtualDetectorSize.setZ(0.01*mm); 
-    
-    //default voxel parameters
-    fIWantVoxelization = false;
-    ftotalColumns = 1;
-    ftotalRows = 1;
-    ftotalSlices = 1;    
-    fxVoxelSpacing = 0.*mm;
-    fyVoxelSpacing = 0.*mm;
-    fzVoxelSpacing = 0.*mm;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -155,7 +98,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
            << G4endl;
     
     
-    //sanity check
+    //Sanity check
     if (fHybridSource) {
         G4cout << "This is a hybrid positron source!" << G4endl << G4endl;
     } else {
@@ -163,11 +106,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
         fRadiator = true;
         fRadiatorConverterSepDistance = 0.;
         G4cout << "This is a single-crystal positron source!" << G4endl 
-               << G4endl;    
+               << G4endl;
     }
     
 
-    //check overlap option
+    //Check overlap option
     G4bool checkOverlaps = true;
 
 
@@ -176,11 +119,11 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     //G4Material* G4_vacuum = nist->FindOrBuildMaterial("G4_Galactic");
     G4Material* Silicon = nist->FindOrBuildMaterial("G4_Si");  
     G4Material* PWO = nist->FindOrBuildMaterial("G4_PbWO4");
-    G4Material* Diamond = nist->FindOrBuildMaterial("G4_C");    
+    G4Material* Diamond = nist->FindOrBuildMaterial("G4_C");
     G4Material* Tungsten = nist->FindOrBuildMaterial("G4_W");
     G4Material* Iridium = nist->FindOrBuildMaterial("G4_W");
     G4Material* Germanium = nist->FindOrBuildMaterial("G4_Ge");
-    G4Element* elBi = nist->FindOrBuildElement("Bi");    
+    G4Element* elBi = nist->FindOrBuildElement("Bi");
     G4Element* elGe = nist->FindOrBuildElement("Ge");
     G4Element* elO = nist->FindOrBuildElement("O");
     G4Material* BGO = new G4Material("G4_BGO", 7.13*g/cm3, 3);
@@ -233,13 +176,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                                    checkOverlaps);  // overlaps checking
 
 
-    // --------------- Crystal (Radiator) -------------------------    
-    //set visualization attributes
+    // --------------- Crystal (Radiator) -------------------------
+    //Set visualization attributes
     G4VisAttributes* CrystalVisAttribute = 
         new G4VisAttributes(G4Colour(0., 0., 1., 1.));  
     CrystalVisAttribute->SetForceSolid(true);
     
-    //select crystal material
+    //Select crystal material
     if (fCrystalMaterialStr == "PWO") {
         fCrystalMaterial = PWO;
     } else if (fCrystalMaterialStr == "BGO") {
@@ -278,9 +221,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
         //Crystal position
         G4double tollfCrystalZ = 0.*mm;
         if (fAngleX > 0 || fAngleY > 0)
-            tollfCrystalZ = 0.15*mm; //so as to tolerate misalignements up to 30 mrad on 1 cm thick crystals 
+            tollfCrystalZ = 0.15*mm; //so as to tolerate misalignements up to 30 mrad on 1 cm
         fCrystalZ = -CrystalSizeZ*0.5 - tollfCrystalZ;
-        G4ThreeVector posCrystal = G4ThreeVector(0.*mm, 0.*mm, fCrystalZ);       
+        G4ThreeVector posCrystal = G4ThreeVector(0.*mm, 0.*mm, fCrystalZ);
            
         //Crystal rotation angle (also the angle of crystal planes vs the beam)
         G4RotationMatrix* crystalRotationMatrix = new G4RotationMatrix;
@@ -308,7 +251,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                << "x" << CrystalSizeY/mm
                << "x" << CrystalSizeZ/mm << " mm3" << G4endl;
         G4cout << "RadiatorZ: " << fCrystalZ/mm << " mm" << G4endl;
-        G4cout << G4endl;    
+        G4cout << G4endl;
     } else {
         G4cout << "Radiator Crystal not set!" << G4endl << G4endl;
     }
@@ -334,10 +277,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                                        "MFvolume");
                                                        
         G4VisAttributes* MFregionVisAttribute = 
-            new G4VisAttributes(G4Colour(1., 0., 0., 0.35));  
+            new G4VisAttributes(G4Colour(1., 0., 0., 0.35));
         MFregionVisAttribute->SetForceSolid(true);
-        fMFlogic->SetVisAttributes(MFregionVisAttribute);                                                   
-                                                       
+        fMFlogic->SetVisAttributes(MFregionVisAttribute);
+        
         new G4PVPlacement(xRot,
                           G4ThreeVector(0., 0., magFieldRegionZ),
                           fMFlogic,
@@ -382,7 +325,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
             innerCollimSolid = new G4Box("innerCollimSolid",
                                            fCollimatorAperture*0.5,
                                          fCollimatorAperture*0.5,
-                                         fCollimatorThickness*0.6);        
+                                         fCollimatorThickness*0.6);
         }
                                                    
         G4SubtractionSolid* CollimSolid = new G4SubtractionSolid("Collimator", 
@@ -391,13 +334,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                                                                  
         fCollimatorLogic = new G4LogicalVolume(CollimSolid, 
                                                Tungsten, 
-                                               "Collimator");        
-                                                                 
+                                               "Collimator");
+
         G4VisAttributes* CollimatorVisAttribute = 
             new G4VisAttributes(G4Colour(0.5, 0.5, 0.5));  
         CollimatorVisAttribute->SetForceSolid(true);
-        fCollimatorLogic->SetVisAttributes(CollimatorVisAttribute);                                                   
-                                                       
+        fCollimatorLogic->SetVisAttributes(CollimatorVisAttribute);
+                  
         new G4PVPlacement(0,
                           G4ThreeVector(0., 0., CollimatorZ),
                           fCollimatorLogic,
@@ -408,7 +351,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                           checkOverlaps);
                           
         G4cout << "Collimator set!" << G4endl;
-        G4cout << "Collimator aperture: " << fCollimatorAperture/mm 
+        G4cout << "Collimator aperture: " << fCollimatorAperture/mm
                << " mm" << G4endl;
         G4cout << "Collimator hole shape: " << fCollimatorHole << G4endl;
         G4cout << "Collimator thickness: " << fCollimatorThickness/mm 
@@ -418,10 +361,10 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     } 
     
 
-    // --------------- Converter (Target) ----------------    
+    // --------------- Converter (Target) ----------------
     //visualization attributes
     G4VisAttributes* ConverterVisAttribute = 
-        new G4VisAttributes(G4Colour(0., 0.2, 0.8, 0.8));  
+        new G4VisAttributes(G4Colour(0., 0.2, 0.8, 0.8));
     
     //select Converter material
     G4Material* sphereMaterial;
@@ -430,7 +373,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
         sphereMaterial = PWO;
     } else if (fConverterMaterialStr == "BGO") {
         fConverterMaterial = BGO;
-        sphereMaterial = BGO;        
+        sphereMaterial = BGO;
     } else if (fConverterMaterialStr == "Ir") {
         fConverterMaterial = Iridium;
         sphereMaterial = Iridium;
@@ -453,14 +396,14 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     G4double ConverterThickness = fConverterSize.z();
     
     //Converter position
-    G4double toll = fVirtualDetectorSize.z();    
+    G4double toll = fVirtualDetectorSize.z();
     if (fRadiatorConverterSepDistance > 0) {
         toll = 2.*fVirtualDetectorSize.z();
     }    
     fConverterZ = fRadiatorConverterSepDistance + ConverterThickness*0.5 +
                   fVirtualDetectorSize.z() + toll;
     G4ThreeVector posConverter = G4ThreeVector(0.*mm, 0.*mm, fConverterZ);
-                                                 
+
     //Converter volume
     G4Box* ConverterSolid = new G4Box("Converter",
                                       ConverterWidth*0.5, 
@@ -469,8 +412,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                                    
     fConverterLogic = new G4LogicalVolume(ConverterSolid, 
                                           fConverterMaterial,
-                                          "Converter");  
-                                                                                            
+                                          "Converter");
+                                          
     fConverterLogic->SetVisAttributes(ConverterVisAttribute);
     
     if (fConverter) {
@@ -481,7 +424,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                           logicWorld,
                           false,
                           0,
-                          checkOverlaps);                   
+                          checkOverlaps);
         
         //print Converter info
         G4cout << "RadiatorConverterSepDistance: " << fRadiatorConverterSepDistance 
@@ -490,8 +433,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
         G4cout << "Converter material: " << fConverterMaterial->GetName() << G4endl;
         G4cout << "Converter size: " << ConverterWidth/mm 
                << "x" << ConverterHeight/mm
-               << "x" << ConverterThickness/mm << " mm3" << G4endl;    
-        G4cout << G4endl;        
+               << "x" << ConverterThickness/mm << " mm3" << G4endl;
+        G4cout << G4endl;
             
         //Is it a glanular converter?
         if (fGranularConverter) {
@@ -524,7 +467,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
             sphereVisAtt->SetForceSolid(true);
             
             G4int k = 0;
-            for (int layer = 0; layer < numLayers; layer++) {                
+            for (int layer = 0; layer < numLayers; layer++) {
                 //alternating number of spheres in each layer so as
                 //they are even for odd layers and odd for even layers.
                 G4int numSpheresX = (layer % 2 == 0) ? 
@@ -544,7 +487,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                 
                 //sphere positioning
                 for (int i = 0; i < numSpheresX; ++i) {
-                    for (int j = 0; j < numSpheresY; ++j) {            
+                    for (int j = 0; j < numSpheresY; ++j) {
                         std::string sphereName = "Sphere_" + std::to_string(layer) + 
                                                        "_" + std::to_string(i) + 
                                                        "_" + std::to_string(j);
@@ -646,7 +589,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                       0, 
                       checkOverlaps);
                       
-    if (fHybridSource) {                 
+    if (fHybridSource) {
         new G4PVPlacement(0, 
                           posVirtualDetector1, 
                           fVirtualDetectorLogic1, 
@@ -657,7 +600,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
                           checkOverlaps);      
     }
   
-    if (fRadiatorConverterSepDistance > 0) {             
+    if (fRadiatorConverterSepDistance > 0) {
         new G4PVPlacement(0, 
                           posVirtualDetector2, 
                           fVirtualDetectorLogic2, 
@@ -677,7 +620,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
         fAbsorberZ = fConverterZ;
         absorberWidth = ConverterWidth;
         absorberHeight = ConverterHeight;
-        absorberThickness = ConverterThickness;    
+        absorberThickness = ConverterThickness;
         fAbsorberLogic = fConverterLogic;
     } else {
         fAbsorberZ = fCrystalZ;
@@ -694,24 +637,24 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
         
         //if VoxelSpacing !=0, they are set through macro
         //(in that case, I could not cover the whole Absorber volume)
-        if (fxVoxelSpacing == 0)        
+        if (fxVoxelSpacing == 0)
             fxVoxelSpacing = absorberWidth/ftotalColumns; 
-        if (fyVoxelSpacing == 0)        
+        if (fyVoxelSpacing == 0)
             fyVoxelSpacing = absorberHeight/ftotalRows; 
-        if (fzVoxelSpacing == 0)        
+        if (fzVoxelSpacing == 0)
             fzVoxelSpacing = absorberThickness/ftotalSlices; 
         G4cout << "AbsorberVolume: " << fAbsorberLogic->GetName() << G4endl;
         G4cout << "totalColumns: " << ftotalColumns << G4endl;
         G4cout << "totalRows: " << ftotalRows << G4endl;
-        G4cout << "totalSlices: " << ftotalSlices << G4endl;                        
+        G4cout << "totalSlices: " << ftotalSlices << G4endl;
         G4cout << "xVoxelSpacing: " << fxVoxelSpacing/mm << " mm" << G4endl;
         G4cout << "yVoxelSpacing: " << fyVoxelSpacing/mm << " mm" << G4endl;
-        G4cout << "zVoxelSpacing: " << fzVoxelSpacing/mm << " mm" << G4endl;    
-        G4cout << G4endl;        
+        G4cout << "zVoxelSpacing: " << fzVoxelSpacing/mm << " mm" << G4endl;
+        G4cout << G4endl;
     }
 
 
-    //always return the physical World
+    //Always return the physical World
     return physWorld;
 }
 
@@ -719,8 +662,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
 
 void DetectorConstruction::ConstructSDandField()
 {
-    //activate OC effects through FastSim model
-    if (fRadiator && fActivateOCeffects) {    
+    //Activate OC effects through FastSim model
+    if (fRadiator && fActivateOCeffects) {
         G4RegionStore* regionStore = G4RegionStore::GetInstance();
         G4Region* RegionCh = regionStore->GetRegion("Crystal");
 
@@ -735,11 +678,11 @@ void DetectorConstruction::ConstructSDandField()
         ChannelingModel->SetTaggingInterval(fTaggingInterval);
 
         G4double fParticleLEth = 1.*GeV; //deafult 200.*MeV (5.*GeV -> much faster)
-        G4double fLindhardAngles = 10; //default 100
-        ChannelingModel->SetLowKineticEnergyLimit(fParticleLEth, "e-"); 
-        ChannelingModel->SetLowKineticEnergyLimit(fParticleLEth, "e+");
-        ChannelingModel->SetLindhardAngleNumberHighLimit(fLindhardAngles, "e-");
-        ChannelingModel->SetLindhardAngleNumberHighLimit(fLindhardAngles, "e+"); 
+        G4double fLindhardAngles = 10;   //default 100
+        G4double fHighAngleLimit = 8e-3; //max of this and fLindhardAngles is the actual cut (rad)
+        ChannelingModel->SetDefaultLowKineticEnergyLimit(fParticleLEth);
+        ChannelingModel->SetDefaultLindhardAngleNumberHighLimit(fLindhardAngles);
+        ChannelingModel->SetDefaultHighAngleLimit(fHighAngleLimit);
         
         G4cout << G4endl;
         G4cout << "Oriented Crystal effects set through FastSim model" << G4endl;
@@ -751,38 +694,40 @@ void DetectorConstruction::ConstructSDandField()
             G4cout << "Tagging activated in the Crystal region!" << G4endl;
         G4cout << "fParticleLEth: " << fParticleLEth/MeV << " MeV" << G4endl;
         G4cout << "fLindhardAngles: " << fLindhardAngles << G4endl;
-        G4cout << "ActivateRadiationModel: " << fActivateRadiationModel << G4endl;
+        G4cout << "fHighAngleLimit: " << fHighAngleLimit*1e3 << " mrad" << G4endl;
         
         if (fActivateRadiationModel) {
             ChannelingModel->RadiationModelActivate();
             G4int fSamplingPhotonsNumber = 150; //default 150
             G4int fNSmallTrajectorySteps = 10000; //default 10000
-            G4double fRadiactionAngleFactor = 4.; //deafult 4
+            G4double fRadiactionAngleFactor = 4.; //deafult 4.
             G4double fSinglePhotonRadProbLimit = 0.25; //default 0.25
-            G4double fLEthreshold = 1.*MeV;
+            G4double fLEthreshold = 1.*MeV; //defualt = 1. MeV
             ChannelingModel->GetRadiationModel()->SetSamplingPhotonsNumber(fSamplingPhotonsNumber);
             ChannelingModel->GetRadiationModel()->SetNSmallTrajectorySteps(fNSmallTrajectorySteps);
             ChannelingModel->GetRadiationModel()->SetRadiationAngleFactor(fRadiactionAngleFactor);
-            ChannelingModel->GetRadiationModel()->SetSinglePhotonRadiationProbabilityLimit(fSinglePhotonRadProbLimit);
-            ChannelingModel->GetRadiationModel()->SetSpectrumEnergyRange(fLEthreshold, 20.*GeV, 100);
+            ChannelingModel->GetRadiationModel()->
+                SetSinglePhotonRadiationProbabilityLimit(fSinglePhotonRadProbLimit);
+            ChannelingModel->GetRadiationModel()->
+                SetSpectrumEnergyRange(fLEthreshold, 20.*GeV, 100);
             
             G4cout << "SamplingPhotonsNumber: " 
                    << fSamplingPhotonsNumber << G4endl;
             G4cout << "NSmallTrajectorySteps: " 
-                   << fNSmallTrajectorySteps << G4endl;                    
+                   << fNSmallTrajectorySteps << G4endl;
             G4cout << "fRadiactionAngleFactor: " 
                    << fRadiactionAngleFactor << G4endl;
             G4cout << "fSinglePhotonRadProbLimit: " 
-                   << fSinglePhotonRadProbLimit << G4endl;    
+                   << fSinglePhotonRadProbLimit << G4endl;
             G4cout << "LE threshold to emit photons and record their energy: " 
-                   << fLEthreshold/MeV << " MeV" << G4endl << G4endl;               
+                   << fLEthreshold/MeV << " MeV" << G4endl << G4endl;
         } else {
-            G4cout << G4endl;
+            G4cout << "Radiation model not activated!" << G4endl << G4endl;
         }   
     }
     
 
-    //built-in Edep Scorer in the Radiator Crystal
+    //Built-in Edep Scorer in the Radiator Crystal
     if (fRadiator) {
         G4MultiFunctionalDetector* multisd = new G4MultiFunctionalDetector("multisd");
         G4VPrimitiveScorer* edepscorer = new G4PSEnergyDeposit("edep");

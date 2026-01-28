@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file EventAction.hh
 /// \brief Definition of the EventAction class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -60,7 +60,7 @@ public:
     void BeginOfEventAction(const G4Event* event) override;
     void EndOfEventAction(const G4Event* event) override;
 
-    //custom methods 
+    //Custom methods 
     inline void SetVerbose(G4int val) {fVerboseLevel = val;}
     inline G4int GetVerbose() const {return fVerboseLevel;}
     
@@ -77,18 +77,18 @@ public:
         fRun->AddEdep(x, y, z, E);
     }
      
-     void AddEdepInSpheres(G4int, G4double);
+    void AddEdepInSpheres(G4int, G4double);
 
 private:
-    Run* fRun;
+    Run* fRun{nullptr};
     
     G4int fSensitiveDetector_ID = -1;
     G4int fVerboseLevel = 0;
     
-    G4double fEdepRad;
-    G4double fEdepConv;
+    G4double fEdepRad = 0.;
+    G4double fEdepConv = 0.;
     
-    G4int fNSpheres;
+    G4int fNSpheres = 0;
     std::map<G4int,G4double> fEdepSpheres;
 };
 

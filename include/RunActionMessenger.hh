@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file RunActionMessenger.hh
 /// \brief Definition of the RunActionMessenger class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -47,13 +47,13 @@ class RunActionMessenger: public G4UImessenger
 {
 public: 
     RunActionMessenger(RunAction*);
-    virtual ~RunActionMessenger();
+    ~RunActionMessenger() override;
     
-    virtual void SetNewValue(G4UIcommand*, G4String);
+    void SetNewValue(G4UIcommand*, G4String) override;
     
 private: 
-    RunAction* fRunAction;
-    G4UIcmdWithAString* fSetFileNameCmd;   
+    RunAction* fRunAction{nullptr};
+    G4UIcmdWithAString* fSetFileNameCmd{nullptr};   
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file DetectorConstructionMessenger.cc
 /// \brief Implementation of the DetectorConstruction messenger class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -54,7 +54,7 @@ fDetector(det)
     
 
     fHybridSourceCmd = new G4UIcmdWithABool("/det/isHybridSource", this);
-    fHybridSourceCmd->SetGuidance("set if it is a HybridSource");      
+    fHybridSourceCmd->SetGuidance("set if it is a HybridSource");
     fHybridSourceCmd->SetParameterName("SetHybridSource",true);
     fHybridSourceCmd->SetDefaultValue(false); 
     
@@ -63,7 +63,7 @@ fDetector(det)
     fCrystalMaterialCmd->SetGuidance("Set Crystal Material");
     fCrystalMaterialCmd->SetParameterName("matname",true);
     fCrystalMaterialCmd->SetDefaultValue("Si");
-               
+
     fCrystalSizeCmd = new G4UIcmdWith3VectorAndUnit("/crystal/setCrystalSize",this);
     fCrystalSizeCmd->SetGuidance("Set Crystal size");
     fCrystalSizeCmd->SetParameterName("cryX","cryY","cryZ",false);
@@ -73,7 +73,7 @@ fDetector(det)
     fCrystalLatticeCmd = new G4UIcmdWithAString("/crystal/setCrystalLattice",this);  
     fCrystalLatticeCmd->SetGuidance("Set Crystal Lattice");
     fCrystalLatticeCmd->SetParameterName("lattice",false);
-    fCrystalLatticeCmd->SetDefaultValue("(111)");    
+    fCrystalLatticeCmd->SetDefaultValue("(111)");
       
     fCrystalAngleXCmd = new G4UIcmdWithADouble("/crystal/setCrystalAngleX",this);
     fCrystalAngleXCmd->SetGuidance("Set crystal orientation with respet to the beam");
@@ -92,42 +92,45 @@ fDetector(det)
     fCrystalBendingAngleCmd->AvailableForStates(G4State_PreInit,G4State_Idle); 
     
     fRadModelCmd = new G4UIcmdWithABool("/crystal/setRadiationModel", this);
-    fRadModelCmd->SetGuidance("set Radiation Model");      
+    fRadModelCmd->SetGuidance("set Radiation Model");
     fRadModelCmd->SetParameterName("ActivateRadiationModel",true);
     fRadModelCmd->SetDefaultValue(false);  
     
     fOCeffectsCmd = new G4UIcmdWithABool("/crystal/setOCeffects", this);
-    fOCeffectsCmd->SetGuidance("set Oriented Crystal effects");      
+    fOCeffectsCmd->SetGuidance("set Oriented Crystal effects");
     fOCeffectsCmd->SetParameterName("OCeffects",true);
     fOCeffectsCmd->SetDefaultValue(false);
-      
+
     fRadiatorCmd = new G4UIcmdWithABool("/det/setRadiator", this);
-    fRadiatorCmd->SetGuidance("set Radiator");      
+    fRadiatorCmd->SetGuidance("set Radiator");
     fRadiatorCmd->SetParameterName("setRad",true);
     fRadiatorCmd->SetDefaultValue(false); 
-      
-    fPotentialPathCmd = new G4UIcmdWithAString("/crystal/setPotentialPath",this);  
-    fPotentialPathCmd->SetGuidance("Set the path where to find the available potentials for the FastSim model");
-    fPotentialPathCmd->SetParameterName("potpath",false);
-    fPotentialPathCmd->SetDefaultValue("Potentials/");
+
+    fPotentialPathCmd = new G4UIcmdWithAString("/crystal/setChannelingDataPath",this);
+    fPotentialPathCmd->
+            SetGuidance("Set the path where to find the available data "
+                        "for the G4ChannelingFastSimModel "
+                        "if different from G4CHANNELINGDATA");
+    fPotentialPathCmd->SetParameterName("channelingDataPath",false);
+    fPotentialPathCmd->SetDefaultValue("");
     
     fTaggingCmd = new G4UIcmdWithABool("/crystal/setTagging", this);
-    fTaggingCmd->SetGuidance("set Tagging of particle inside the FastSim model");      
+    fTaggingCmd->SetGuidance("set Tagging of particle inside the FastSim model");
     fTaggingCmd->SetParameterName("fTagging",true);
-    fTaggingCmd->SetDefaultValue(false);    
-           
+    fTaggingCmd->SetDefaultValue(false);
+
     fTaggingFilenameCmd = new G4UIcmdWithAString("/crystal/setTaggingFilename",this);  
     fTaggingFilenameCmd->SetGuidance("Set output filename useful for particle tagging inside the FastSim model");
     fTaggingFilenameCmd->SetParameterName("fname",true);
     fTaggingFilenameCmd->SetDefaultValue("output");
-            
+
     fTaggingIntervalCmd = new G4UIcmdWithAnInteger("/crystal/setTaggingInterval",this);
     fTaggingIntervalCmd->SetGuidance("Set step interval for particle tagging inside the FastSim model");
     fTaggingIntervalCmd->SetParameterName("tinterval",false);
     fTaggingIntervalCmd->SetRange("tinterval>=1");
     fTaggingIntervalCmd->AvailableForStates(G4State_PreInit,G4State_Idle); 
-      
-      
+
+
     fRadiatorConverterSepDistanceCmd = new G4UIcmdWithADoubleAndUnit("/det/setRadiatorConverterSepDistance",this);
     fRadiatorConverterSepDistanceCmd->SetGuidance("Set Radiator-Converter Separation Distance");
     fRadiatorConverterSepDistanceCmd->SetParameterName("RCsepDist",false);
@@ -142,7 +145,7 @@ fDetector(det)
     fConverterSizeCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
     
     fGranularConverterCmd = new G4UIcmdWithABool("/det/setGranularConverter",this);
-    fGranularConverterCmd->SetGuidance("set Collimator");      
+    fGranularConverterCmd->SetGuidance("set Collimator");
     fGranularConverterCmd->SetParameterName("IWantCollimator",true);
     fGranularConverterCmd->SetDefaultValue(false);
       
@@ -157,10 +160,10 @@ fDetector(det)
     fConverterMaterialCmd->SetGuidance("Set Converter Material");
     fConverterMaterialCmd->SetParameterName("convmatname",true);
     fConverterMaterialCmd->SetDefaultValue("W"); 
-          
+  
 
     fMagneticFieldCmd = new G4UIcmdWithABool("/det/setMagneticField",this);
-    fMagneticFieldCmd->SetGuidance("set Magnetic Field");      
+    fMagneticFieldCmd->SetGuidance("set Magnetic Field");
     fMagneticFieldCmd->SetParameterName("IWantMagneticField",true);
     fMagneticFieldCmd->SetDefaultValue(false);  
       
@@ -176,14 +179,14 @@ fDetector(det)
     fFieldRegionLengthCmd->SetParameterName("brl",false);
     fFieldRegionLengthCmd->SetUnitCategory("Length");
     fFieldRegionLengthCmd->SetRange("brl>0.");
-    fFieldRegionLengthCmd->AvailableForStates(G4State_PreInit,G4State_Idle);      
-      
-      
+    fFieldRegionLengthCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
+
+
     fCollimatorCmd = new G4UIcmdWithABool("/det/setCollimator",this);
-    fCollimatorCmd->SetGuidance("set Collimator");      
+    fCollimatorCmd->SetGuidance("set Collimator");
     fCollimatorCmd->SetParameterName("IWantCollimator",true);
     fCollimatorCmd->SetDefaultValue(false);
-            
+
     fCollimatorApertureCmd = new G4UIcmdWithADoubleAndUnit("/det/setCollimatorAperture",this);
     fCollimatorApertureCmd->SetGuidance("Set Collimator Aperture");
     fCollimatorApertureCmd->SetParameterName("CollAp",false);
@@ -226,11 +229,11 @@ fDetector(det)
 
 
     fSetVoxelizationCmd = new G4UIcmdWithABool("/det/setVoxelization",this);
-    fSetVoxelizationCmd->SetGuidance("set IWantVoxelization");      
+    fSetVoxelizationCmd->SetGuidance("set IWantVoxelization");
     fSetVoxelizationCmd->SetParameterName("IWantVoxelization",true);
     fSetVoxelizationCmd->SetDefaultValue(false);
     fSetVoxelizationCmd->AvailableForStates(G4State_PreInit,G4State_Idle);  
-      
+
     fAbsorberColumnsCmd = new G4UIcmdWithAnInteger("/det/setColumns",this);
     fAbsorberColumnsCmd->SetGuidance("Set Absorber Columns");
     fAbsorberColumnsCmd->SetParameterName("AbsorberColumns",false);
@@ -272,10 +275,10 @@ fDetector(det)
     
     
     fScoringCrystalExitCmd = new G4UIcmdWithABool("/det/setScoringCrystalExit",this);
-    fScoringCrystalExitCmd->SetGuidance("set IWantScoringCrystalExit");      
+    fScoringCrystalExitCmd->SetGuidance("set IWantScoringCrystalExit");
     fScoringCrystalExitCmd->SetParameterName("IWantScoringCrystalExit",true);
     fScoringCrystalExitCmd->SetDefaultValue(false);
-    fScoringCrystalExitCmd->AvailableForStates(G4State_PreInit,G4State_Idle);      
+    fScoringCrystalExitCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
@@ -292,7 +295,7 @@ DetectorConstructionMessenger::~DetectorConstructionMessenger()
     delete fCrystalAngleXCmd;
     delete fCrystalAngleYCmd;
     delete fCrystalBendingAngleCmd;
-    delete fRadModelCmd;    
+    delete fRadModelCmd;
     delete fOCeffectsCmd;
     delete fRadiatorCmd;
     delete fPotentialPathCmd;
@@ -335,34 +338,34 @@ DetectorConstructionMessenger::~DetectorConstructionMessenger()
 void DetectorConstructionMessenger::SetNewValue(G4UIcommand* command, G4String newValue)
 {
     if (command == fHybridSourceCmd) 
-        {fDetector->SetHybridSource(fHybridSourceCmd->GetNewBoolValue(newValue));}    
+        {fDetector->SetHybridSource(fHybridSourceCmd->GetNewBoolValue(newValue));}
     
     if (command == fCrystalMaterialCmd) 
         {fDetector->SetCrystalMaterial(newValue);}
     if (command == fCrystalSizeCmd) 
-        {fDetector->SetCrystalSize(fCrystalSizeCmd->GetNew3VectorValue(newValue));}    
+        {fDetector->SetCrystalSize(fCrystalSizeCmd->GetNew3VectorValue(newValue));}
     if (command == fCrystalLatticeCmd) 
         {fDetector->SetCrystalLattice(newValue);}
     if (command == fCrystalAngleXCmd) 
-        {fDetector->SetCrystalAngleX(fCrystalAngleXCmd->GetNewDoubleValue(newValue));}    
+        {fDetector->SetCrystalAngleX(fCrystalAngleXCmd->GetNewDoubleValue(newValue));}
     if (command == fCrystalAngleYCmd) 
-        {fDetector->SetCrystalAngleY(fCrystalAngleYCmd->GetNewDoubleValue(newValue));}    
+        {fDetector->SetCrystalAngleY(fCrystalAngleYCmd->GetNewDoubleValue(newValue));}
     if (command == fCrystalBendingAngleCmd) 
-        {fDetector->SetCrystalBendingAngle(fCrystalBendingAngleCmd->GetNewDoubleValue(newValue));}        
+        {fDetector->SetCrystalBendingAngle(fCrystalBendingAngleCmd->GetNewDoubleValue(newValue));}
     if (command == fRadModelCmd) 
-        {fDetector->SetRadiationModel(fRadModelCmd->GetNewBoolValue(newValue));}    
+        {fDetector->SetRadiationModel(fRadModelCmd->GetNewBoolValue(newValue));}
     if (command == fOCeffectsCmd) 
         {fDetector->SetOCeffects(fOCeffectsCmd->GetNewBoolValue(newValue));}
     if (command == fRadiatorCmd) 
         {fDetector->SetRadiator(fRadiatorCmd->GetNewBoolValue(newValue));}
       if (command == fPotentialPathCmd) 
-        {fDetector->SetPotentialPath(newValue);}        
+        {fDetector->SetPotentialPath(newValue);}
     if (command == fTaggingCmd) 
         {fDetector->SetTagging(fTaggingCmd->GetNewBoolValue(newValue));}
     if (command == fTaggingFilenameCmd) 
-        {fDetector->SetTaggingFilename(newValue);}        
+        {fDetector->SetTaggingFilename(newValue);}
     if (command == fTaggingIntervalCmd)
-        {fDetector->SetTaggingInterval(fTaggingIntervalCmd->GetNewIntValue(newValue));}    
+        {fDetector->SetTaggingInterval(fTaggingIntervalCmd->GetNewIntValue(newValue));}
 
     if (command == fRadiatorConverterSepDistanceCmd) 
         {fDetector->SetRadiatorConverterSepDistance(
@@ -372,23 +375,23 @@ void DetectorConstructionMessenger::SetNewValue(G4UIcommand* command, G4String n
     if (command == fGranularConverterCmd) 
         {fDetector->SetGranularConverter(fGranularConverterCmd->GetNewBoolValue(newValue));}
     if (command == fSphereRadiusCmd) 
-        {fDetector->SetSphereRadius(fSphereRadiusCmd->GetNewDoubleValue(newValue));}    
+        {fDetector->SetSphereRadius(fSphereRadiusCmd->GetNewDoubleValue(newValue));}
     if (command == fConverterMaterialCmd) 
         {fDetector->SetConverterMaterial(newValue);}
         
     if (command == fMagneticFieldCmd) 
-        {fDetector->SetMagneticField(fMagneticFieldCmd->GetNewBoolValue(newValue));}    
+        {fDetector->SetMagneticField(fMagneticFieldCmd->GetNewBoolValue(newValue));}
     if (command == fFieldValueCmd) 
         {fDetector->SetFieldValue(fFieldValueCmd->GetNewDoubleValue(newValue));}
     if (command == fFieldRegionLengthCmd) 
-        {fDetector->SetFieldRegionLength(fFieldRegionLengthCmd->GetNewDoubleValue(newValue));}        
+        {fDetector->SetFieldRegionLength(fFieldRegionLengthCmd->GetNewDoubleValue(newValue));}
         
     if (command == fCollimatorCmd) 
-        {fDetector->SetCollimator(fCollimatorCmd->GetNewBoolValue(newValue));}        
+        {fDetector->SetCollimator(fCollimatorCmd->GetNewBoolValue(newValue));}
     if (command == fCollimatorApertureCmd) 
         {fDetector->SetCollimatorAperture(fCollimatorApertureCmd->GetNewDoubleValue(newValue));}
     if (command == fCollimatorHoleCmd) 
-        {fDetector->SetCollimatorHole(newValue);}    
+        {fDetector->SetCollimatorHole(newValue);}
     if (command == fCollimatorThicknessCmd) 
         {fDetector->SetCollimatorThickness(fCollimatorThicknessCmd->GetNewDoubleValue(newValue));}
     if (command == fCollimatorSideCmd) 
@@ -398,10 +401,10 @@ void DetectorConstructionMessenger::SetNewValue(G4UIcommand* command, G4String n
             fRadiatorCollimatorSepDistanceCmd->GetNewDoubleValue(newValue));}
 
     if (command == fVirtualDetectorSizeCmd) 
-        {fDetector->SetVirtualDetectorSize(fVirtualDetectorSizeCmd->GetNew3VectorValue(newValue));}            
+        {fDetector->SetVirtualDetectorSize(fVirtualDetectorSizeCmd->GetNew3VectorValue(newValue));}
     
     if (command == fSetVoxelizationCmd) 
-        {fDetector->SetVoxelization(fSetVoxelizationCmd->GetNewBoolValue(newValue));}        
+        {fDetector->SetVoxelization(fSetVoxelizationCmd->GetNewBoolValue(newValue));}
     if (command == fAbsorberColumnsCmd)
         {fDetector->SetTotalColumns(fAbsorberColumnsCmd->GetNewIntValue(newValue));}
     if (command == fAbsorberRowsCmd)
@@ -409,14 +412,14 @@ void DetectorConstructionMessenger::SetNewValue(G4UIcommand* command, G4String n
     if (command == fAbsorberSlicesCmd)
         {fDetector->SetTotalSlices(fAbsorberSlicesCmd->GetNewIntValue(newValue));}
     if (command == fAbsorberxVoxelSpacingCmd) 
-        {fDetector->SetxVoxelSpacing(fAbsorberxVoxelSpacingCmd->GetNewDoubleValue(newValue));}    
+        {fDetector->SetxVoxelSpacing(fAbsorberxVoxelSpacingCmd->GetNewDoubleValue(newValue));}
     if (command == fAbsorberyVoxelSpacingCmd) 
-        {fDetector->SetyVoxelSpacing(fAbsorberyVoxelSpacingCmd->GetNewDoubleValue(newValue));}    
+        {fDetector->SetyVoxelSpacing(fAbsorberyVoxelSpacingCmd->GetNewDoubleValue(newValue));}
     if (command == fAbsorberzVoxelSpacingCmd) 
         {fDetector->SetzVoxelSpacing(fAbsorberzVoxelSpacingCmd->GetNewDoubleValue(newValue));} 
         
     if (command == fScoringCrystalExitCmd) 
-        {fDetector->SetScoringCrystalExit(fScoringCrystalExitCmd->GetNewBoolValue(newValue));}             
+        {fDetector->SetScoringCrystalExit(fScoringCrystalExitCmd->GetNewBoolValue(newValue));}
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....

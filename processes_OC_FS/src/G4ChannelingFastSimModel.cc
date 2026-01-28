@@ -35,11 +35,6 @@
 //
 #include "G4ChannelingFastSimModel.hh"
 
-#include "Randomize.hh"
-
-#include "G4TransportationManager.hh"
-#include "G4SystemOfUnits.hh"
-
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 G4ChannelingFastSimModel::G4ChannelingFastSimModel(const G4String& modelName,
@@ -54,12 +49,6 @@ G4ChannelingFastSimModel::G4ChannelingFastSimModel(const G4String& modelName)
 : G4VFastSimulationModel(modelName)
 {
 
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
-G4ChannelingFastSimModel::~G4ChannelingFastSimModel()
-{
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -231,7 +220,7 @@ void G4ChannelingFastSimModel::DoIt(const G4FastTrack& fastTrack,
   //angles in the co-rotating reference system within a channel
   tx = fCrystalData->AngleXFromBoxToLattice(tx0,z);
   ty = ty0;
-  
+
   //code for producing the output file for particle tagging inside the model (Negrello & gpaterno) 
   G4int isteps = 0;
   G4double xx = x;
@@ -241,20 +230,20 @@ void G4ChannelingFastSimModel::DoIt(const G4FastTrack& fastTrack,
   //G4AnalysisManager* analysisManager = G4AnalysisManager::Instance(); //comment for txt output
   if (fTagging) {  
 
-	  outFile << crystallogic->GetName() << " " << GetEventID() << " " 
-	          << trackID << " " << x << " " << tx << " " << z << " " << xx 
-	          << " " << yy << std::endl;
-	  /*
-	  analysisManager->FillNtupleSColumn(2,0,crystallogic->GetName());
-	  analysisManager->FillNtupleIColumn(2,1,GetEventID());
-	  analysisManager->FillNtupleIColumn(2,2,trackID);
-	  analysisManager->FillNtupleDColumn(2,3,x);
-	  analysisManager->FillNtupleDColumn(2,4,tx);
-	  analysisManager->FillNtupleDColumn(2,5,z);
-	  analysisManager->FillNtupleDColumn(2,6,xx);
-	  analysisManager->FillNtupleDColumn(2,7,yy);
-	  analysisManager->AddNtupleRow(2); 
-	  */
+      outFile << crystallogic->GetName() << " " << GetEventID() << " " 
+              << trackID << " " << x << " " << tx << " " << z << " " << xx 
+              << " " << yy << std::endl;
+      /*
+      analysisManager->FillNtupleSColumn(2,0,crystallogic->GetName());
+      analysisManager->FillNtupleIColumn(2,1,GetEventID());
+      analysisManager->FillNtupleIColumn(2,2,trackID);
+      analysisManager->FillNtupleDColumn(2,3,x);
+      analysisManager->FillNtupleDColumn(2,4,tx);
+      analysisManager->FillNtupleDColumn(2,5,z);
+      analysisManager->FillNtupleDColumn(2,6,xx);
+      analysisManager->FillNtupleDColumn(2,7,yy);
+      analysisManager->AddNtupleRow(2); 
+      */
   }
 
   etotalToSetParticleProperties = etotal*0.999;
@@ -330,7 +319,7 @@ void G4ChannelingFastSimModel::DoIt(const G4FastTrack& fastTrack,
           y4 =y+ty*dz;
           ty4=ty;
       }
-      
+
       xx += x4-x; //Negrello & gpaterno
       yy += y4-y; //Negrello & gpaterno
 
@@ -341,9 +330,9 @@ void G4ChannelingFastSimModel::DoIt(const G4FastTrack& fastTrack,
 
       z+=dz*fCrystalData->GetCorrectionZ();//motion along the z coordinate
                                           //("central plane/axis", no current plane/axis)
-                                          
-      isteps += 1; //Negrello & gpaterno                                    
 
+      isteps += 1; //Negrello & gpaterno 
+      
       xyz = fCrystalData->ChannelChange(x,y,z);
       x=xyz.x();
       y=xyz.y();
@@ -367,41 +356,43 @@ void G4ChannelingFastSimModel::DoIt(const G4FastTrack& fastTrack,
           //effective step taking into account nuclear density along the trajectory
           effectiveStep = momentumDirectionStep*fCrystalData->NuclearDensity(x,y,i);
           //Coulomb scattering on screened atomic potential (both multiple and single)
-          scatteringAnglesAndEnergyLoss += fCrystalData->
-                         CoulombAtomicScattering(effectiveStep,momentumDirectionStep,i);
+          if (fScattering) //gapterno
+              scatteringAnglesAndEnergyLoss += fCrystalData->
+                             CoulombAtomicScattering(effectiveStep,momentumDirectionStep,i);
 
           //Amorphous part of ionization energy losses
           elossAccum += fCrystalData->IonizationLosses(momentumDirectionStep, i);
       }
       //electron scattering and coherent part of ionization energy losses
-      scatteringAnglesAndEnergyLoss += fCrystalData->CoulombElectronScattering(
-                                                   fCrystalData->MinIonizationEnergy(x,y),
-                                                   fCrystalData->ElectronDensity(x,y),
-                                                   momentumDirectionStep);
+      if (fScattering) //gapterno
+          scatteringAnglesAndEnergyLoss += fCrystalData->CoulombElectronScattering(
+                                                       fCrystalData->MinIonizationEnergy(x,y),
+                                                       fCrystalData->ElectronDensity(x,y),
+                                                       momentumDirectionStep);
       tx += scatteringAnglesAndEnergyLoss.x();
       ty += scatteringAnglesAndEnergyLoss.y();
       elossAccum += scatteringAnglesAndEnergyLoss.z();
-      
+
       //Print of x,tx at specific intervals (Negrello & gpaterno)
       if (fTagging & (isteps % fTaggingInterval == 0)) {
 
-		  outFile << crystallogic->GetName() << " " << GetEventID() << " " 
-		          << trackID << " " << x << " " << tx << " " << z << " " << xx 
-		          << " " << yy << std::endl;
-		  /*
-		  analysisManager->FillNtupleSColumn(2,0,crystallogic->GetName());
-	      analysisManager->FillNtupleIColumn(2,1,GetEventID());
-	      analysisManager->FillNtupleIColumn(2,2,trackID);
-	      analysisManager->FillNtupleDColumn(2,3,x);
-	      analysisManager->FillNtupleDColumn(2,4,tx);
-	      analysisManager->FillNtupleDColumn(2,5,z);
-	      analysisManager->FillNtupleDColumn(2,6,xx);
-	      analysisManager->FillNtupleDColumn(2,7,yy);
-	      analysisManager->AddNtupleRow(2);
-	      */ 
+          outFile << crystallogic->GetName() << " " << GetEventID() << " " 
+                  << trackID << " " << x << " " << tx << " " << z << " " << xx 
+                  << " " << yy << std::endl;
+          /*
+          analysisManager->FillNtupleSColumn(2,0,crystallogic->GetName());
+          analysisManager->FillNtupleIColumn(2,1,GetEventID());
+          analysisManager->FillNtupleIColumn(2,2,trackID);
+          analysisManager->FillNtupleDColumn(2,3,x);
+          analysisManager->FillNtupleDColumn(2,4,tx);
+          analysisManager->FillNtupleDColumn(2,5,z);
+          analysisManager->FillNtupleDColumn(2,6,xx);
+          analysisManager->FillNtupleDColumn(2,7,yy);
+          analysisManager->AddNtupleRow(2);
+          */ 
       }
 
-      //recalculate the energy depended parameters
+      // recalculate the energy depended parameters
       //(only if the energy decreased enough, not at each step)
       if (etotalToSetParticleProperties>etotal)
       {
@@ -410,7 +401,7 @@ void G4ChannelingFastSimModel::DoIt(const G4FastTrack& fastTrack,
       }
 
       //chain of conditions to escape the cycle
-      //if Inside(xyz0)==kInside has been already true
+      // if Inside(xyz0)==kInside has been already true
       //(a particle has been inside the crystal)
       if (inside)
       {
@@ -448,6 +439,11 @@ void G4ChannelingFastSimModel::DoIt(const G4FastTrack& fastTrack,
                tx0 = fCrystalData->AngleXFromLatticeToBox(tx,z);
                ty0 = ty;
                //xyz0 was calculated above
+               
+               //Quantities useful for radiation cooling (gpaterno 27/11/2025)
+               G4double etotalBefore = etotal;
+               G4double tx0Before = tx0;
+               G4double ty0Before = ty0; 
 
                //running the radiation model and checking if a photon has been emitted
                if(fBaierKatkov->DoRadiation(etotal,mass,
@@ -464,8 +460,15 @@ void G4ChannelingFastSimModel::DoIt(const G4FastTrack& fastTrack,
                    //a photon has been emitted!
                    //shift the particle back into the radiation point
                    etotal = fBaierKatkov->GetParticleNewTotalEnergy();
-                   tx0 = fBaierKatkov->GetParticleNewAngleX();
-                   ty0 = fBaierKatkov->GetParticleNewAngleY();
+                   //(gpaterno 27/11/2025)
+                   if (fRadiationCooling) { //standard part
+                     tx0 = fBaierKatkov->GetParticleNewAngleX();
+                     ty0 = fBaierKatkov->GetParticleNewAngleY();
+                   } else { //turn off radiation cooling
+                     G4double Q4 = sqrt(etotalBefore/etotal);
+                     tx0 = tx0Before*Q4;
+                     ty0 = ty0Before*Q4;
+                   }       
                    tGlobal = fBaierKatkov->GetNewGlobalTime();
                    xyz0 = fBaierKatkov->GetParticleNewCoordinateXYZ();
 
@@ -494,12 +497,12 @@ void G4ChannelingFastSimModel::DoIt(const G4FastTrack& fastTrack,
                eDeposited += elossAccum;
                elossAccum=0;
                ekinetic = etotal-mass;
-               if(ekinetic<1*keV)
+               if(ekinetic<1*CLHEP::keV)
                {
                    G4cout << "Warning in G4ChannelingFastSimModel: " <<
-                   ekinetic << "<" << 1*keV << " !" << G4endl;
-                   eDeposited-=(1*keV-ekinetic);
-                   ekinetic = 1*keV;
+                   ekinetic << "<" << 1*CLHEP::keV << " !" << G4endl;
+                   eDeposited-=(1*CLHEP::keV-ekinetic);
+                   ekinetic = 1*CLHEP::keV;
                    G4cout << "Setting deposited energy=" <<
                    eDeposited << " & ekinetic=" << ekinetic << G4endl;
                    etotal = mass+ekinetic;
@@ -542,29 +545,29 @@ void G4ChannelingFastSimModel::DoIt(const G4FastTrack& fastTrack,
   //the angles in the local reference system of the volume
   tx0 = fCrystalData->AngleXFromLatticeToBox(tx,z);
   ty0 = ty;
-  
+
   //Print of x,tx at model exit (Negrello & gpaterno)
   if (fTagging) {
-	  
-	  outFile << crystallogic->GetName() << " " << GetEventID() << " " 
-	          << trackID << " " << x << " " << tx << " " << z << " " << xx 
-	          << " " << yy << std::endl;
-	  //outFile << "-" << std::endl; #it is useful only in single-thread mode
-	  outFile.close();	  
-	  /*
-	  analysisManager->FillNtupleSColumn(2,0,crystallogic->GetName());
-	  analysisManager->FillNtupleIColumn(2,1,GetEventID());
-	  analysisManager->FillNtupleIColumn(2,2,trackID);
-	  analysisManager->FillNtupleDColumn(2,3,x);
-	  analysisManager->FillNtupleDColumn(2,4,tx);
-	  analysisManager->FillNtupleDColumn(2,5,z);
-	  analysisManager->FillNtupleDColumn(2,6,xx);
-	  analysisManager->FillNtupleDColumn(2,7,yy);
-	  analysisManager->AddNtupleRow(2);
-	  */ 
+      
+      outFile << crystallogic->GetName() << " " << GetEventID() << " " 
+              << trackID << " " << x << " " << tx << " " << z << " " << xx 
+              << " " << yy << std::endl;
+      //outFile << "-" << std::endl; #it is useful only in single-thread mode
+      outFile.close();      
+      /*
+      analysisManager->FillNtupleSColumn(2,0,crystallogic->GetName());
+      analysisManager->FillNtupleIColumn(2,1,GetEventID());
+      analysisManager->FillNtupleIColumn(2,2,trackID);
+      analysisManager->FillNtupleDColumn(2,3,x);
+      analysisManager->FillNtupleDColumn(2,4,tx);
+      analysisManager->FillNtupleDColumn(2,5,z);
+      analysisManager->FillNtupleDColumn(2,6,xx);
+      analysisManager->FillNtupleDColumn(2,7,yy);
+      analysisManager->AddNtupleRow(2);
+      */ 
   } else {
       outFile.close();
-  	  //std::remove(fTaggingFilename); //remove it with ~DetectorConstruction()
+        //std::remove(fTaggingFilename); //remove it with ~DetectorConstruction()
   }
 
   //set global time
@@ -576,12 +579,12 @@ void G4ChannelingFastSimModel::DoIt(const G4FastTrack& fastTrack,
   etotal -= elossAccum;
   eDeposited += elossAccum;
   ekinetic = etotal-mass;
-  if(ekinetic<1*keV)
+  if(ekinetic<1*CLHEP::keV)
   {
       G4cout << "Warning in G4ChannelingFastSimModel: " <<
-      ekinetic << "<" << 1*keV << " !" << G4endl;
-      eDeposited-=(1*keV-ekinetic);
-      ekinetic = 1*keV;
+      ekinetic << "<" << 1*CLHEP::keV << " !" << G4endl;
+      eDeposited-=(1*CLHEP::keV-ekinetic);
+      ekinetic = 1*CLHEP::keV;
       G4cout << "Setting deposited energy=" <<
       eDeposited << " & ekinetic=" << ekinetic << G4endl;
   }
@@ -611,18 +614,6 @@ void G4ChannelingFastSimModel::Input(const G4Material *crystal,
    fCrystalData = new G4ChannelingFastSimCrystalData();
    //setting all the crystal material and lattice data
    fCrystalData->SetMaterialProperties(crystal,lattice,filePath);
-
-   //setting default low energy cuts for kinetic energy
-   SetLowKineticEnergyLimit(1*GeV,"proton");
-   SetLowKineticEnergyLimit(1*GeV,"anti_proton");
-   SetLowKineticEnergyLimit(200*MeV,"e-");
-   SetLowKineticEnergyLimit(200*MeV,"e+");
-
-   //set the model high limit of the angle expressed in [Lindhard angle] units
-   SetLindhardAngleNumberHighLimit(100.,"proton");
-   SetLindhardAngleNumberHighLimit(100.,"anti_proton");
-   SetLindhardAngleNumberHighLimit(100.,"e-");
-   SetLindhardAngleNumberHighLimit(100.,"e+");
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

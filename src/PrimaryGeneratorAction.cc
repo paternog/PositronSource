@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file PrimaryGeneratorAction.cc
 /// \brief Implementation of the PrimaryGeneratorAction class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -56,25 +56,7 @@ FileReader* PrimaryGeneratorAction::fFileReader = 0;
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-PrimaryGeneratorAction::PrimaryGeneratorAction():
-
-fType("e-"),
-fEnergy(2.86*GeV),
-fRelSigmaEnergy(1.e-3),
-fX(0*mm),
-fY(0*mm),
-fZ(0*mm),
-fT(0*ns),
-fXp(0),
-fYp(0),
-fSigmaX(0*mm),
-fSigmaY(0*mm),
-fSigmaZ(1.*mm),
-fSigmaT(0*ns),
-fSigmaXp(1.e-5),
-fSigmaYp(1.e-5),
-fUseGPS(false)
-
+PrimaryGeneratorAction::PrimaryGeneratorAction()
 {
     //G4cout << "### PrimaryGeneratorAction instantiated ###" << G4endl;
     
@@ -94,7 +76,7 @@ fUseGPS(false)
     
     //set default values for GPS
     //Primary particles
-    fGPS->SetParticleDefinition(particle);    
+    fGPS->SetParticleDefinition(particle);
     //Position distribution
     G4SPSPosDistribution* vPosDist = 
         fGPS->GetCurrentSource()->GetPosDist();
@@ -117,15 +99,11 @@ fUseGPS(false)
     fGun->SetParticleMomentumDirection(G4ThreeVector(0., 0., 1.));
     fGun->SetParticleEnergy(fEnergy); 
    
-    //options 
-    fReadFromFile = false;
-    fFileName = "input/W2.0mm_6GeV_all.dat";    
-
-    /*    
+    /*
     //get an instance of the DetectorConstruction and Radiator Crystal Z 
     const DetectorConstruction* detectorConstruction
         = static_cast<const DetectorConstruction*>
-          (G4RunManager::GetRunManager()->GetUserDetectorConstruction());        
+          (G4RunManager::GetRunManager()->GetUserDetectorConstruction());
     fCrystalZ = detectorConstruction->GetCrystalZ();
     */
 }
@@ -147,12 +125,6 @@ PrimaryGeneratorAction::~PrimaryGeneratorAction()
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-void PrimaryGeneratorAction::SetFileName(G4String vFileName) {
-    fFileName = vFileName;
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
-
 void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
 {
     G4AutoLock lock(&PrimaryGeneratorActionMutex);
@@ -166,8 +138,8 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
             G4cout << "File correctly read!" << G4endl << G4endl;
         }
     }
-    
-    if (fReadFromFile) {    
+
+    if (fReadFromFile) {
         fGun->SetParticleDefinition(
             G4ParticleTable::GetParticleTable()->FindParticle(
                 fFileReader->GetAnEventParticle(anEvent->GetEventID())));
@@ -178,14 +150,14 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
         fGun->SetParticleMomentumDirection(
             fFileReader->GetAnEventMomentum(anEvent->GetEventID()));
         fGun->SetParticleEnergy(
-            fFileReader->GetAnEventEnergy(anEvent->GetEventID())); //it set the kinetic energy!         
+            fFileReader->GetAnEventEnergy(anEvent->GetEventID())); //it sets the kinetic energy!
         fGun->GeneratePrimaryVertex(anEvent);   
         //G4cout << fFileReader->GetAnEventMomentum(anEvent->GetEventID())/MeV << " MeV/c, " 
-        //       << fFileReader->GetAnEventEnergy(anEvent->GetEventID())/MeV << " MeV" << G4endl;           
+        //       << fFileReader->GetAnEventEnergy(anEvent->GetEventID())/MeV << " MeV" << G4endl;
     } else {
         if (fUseGPS) {
             fGPS->GeneratePrimaryVertex(anEvent); //override defaut through macro
-        } else {              
+        } else {
             //particle position
             G4double x = G4RandGauss::shoot(fX, fSigmaX);
             G4double y = G4RandGauss::shoot(fY, fSigmaY);
@@ -207,19 +179,19 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
             G4double K = G4RandGauss::shoot(fEnergy, fEnergy*fRelSigmaEnergy);
             fGun->SetParticleEnergy(K);   
                
-            //particle direction      
+            //particle direction
             G4double xp = G4RandGauss::shoot(fXp, fSigmaXp); //xp=x'=px/pz=dx/dz=tan(thetaX)~thetaX
             G4double yp = G4RandGauss::shoot(fYp, fSigmaYp); //yp=y'=py/pz=dy/dz=tan(thetaY)~thetaY
             fGun->SetParticleMomentumDirection(G4ThreeVector(xp, yp, 1.)); //automatically normalized 
                
             /*
             //calculate and print the other particle features
-            G4double mass = particleTable->FindParticle(fType)->GetPDGMass(); //particle mass [MeV/c2]     
+            G4double mass = particleTable->FindParticle(fType)->GetPDGMass(); //particle mass [MeV/c2]
             G4double E = K + mass; //particle total energy
-            G4double p = sqrt(E*E - mass*mass); //particle total momentum              
+            G4double p = sqrt(E*E - mass*mass); //particle total momentum
             G4double pz = p / sqrt(xp*xp + yp*yp + 1.); //longitudinal component of momentum
             G4double px = xp * pz; //transverse components of momentum
-            G4double py = yp * pz;          
+            G4double py = yp * pz;
             
             G4cout.precision(10);
             G4cout << G4endl << "particle: " << fType << " , (x[mm], y[mm], z[mm]): " 
@@ -229,9 +201,9 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
                    << G4endl << "p: " << p << " MeV, mass: " << mass/MeV << " MeV, E: " << E/MeV 
                    << " MeV, K: " << K/MeV << " MeV" << G4endl << G4endl;
             */
-                        
+
             //generate the vertex
-            fGun->GeneratePrimaryVertex(anEvent);                 
+            fGun->GeneratePrimaryVertex(anEvent);
         }
     }
 }

@@ -2,7 +2,7 @@
 #beam
 /gps/particle e-
 #coordinate distribution
-/gps/pos/centre 0. 0. -30. mm
+/gps/pos/centre 0 0 -30 mm
 /gps/pos/type Beam
 /gps/pos/sigma_x 1.0 mm                    
 /gps/pos/sigma_y 1.0 mm                 

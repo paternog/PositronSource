@@ -23,9 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-//
-//
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+// Author:      Alexei Sytov
+// Co-author:   Gianfranco Paterno (testing)
+// Using the key points of G4BaierKatkov and developments of V.V. Tikhomirov,
+// partially described in L. Bandiera et al. Eur. Phys. J. C 82, 699 (2022)
 
 #include "G4CoherentPairProduction.hh"
 
@@ -41,25 +42,22 @@
 
 #include "G4ParticleDefinition.hh"
 #include "G4ProcessManager.hh"
-
+#include "G4EmProcessSubType.hh"
 #include "G4TransportationManager.hh"
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
-G4CoherentPairProduction::G4CoherentPairProduction(const G4String& aName, const G4String &g4RegionName):
-    G4VDiscreteProcess(aName), fG4RegionName(g4RegionName)
+G4CoherentPairProduction::G4CoherentPairProduction(const G4String& aName,
+                                                   G4ProcessType):
+    G4VDiscreteProcess(aName)
 {
-    //SetProcessSubType(fCoherentPairProduction);
+    SetProcessSubType(fCoherentPairProduction);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
-G4CoherentPairProduction::~G4CoherentPairProduction() {}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
-
 G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
-                                    G4double, //previousStepSize
+                                    G4double,
                                     G4ForceCondition* condition)
 {
     //current logical volume
@@ -70,7 +68,7 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
     //angle of the photon in the local reference system of the volume
     G4double txGamma0 = 0, tyGamma0 = 0;
 
-    *condition = NotForced; // !!!
+    *condition = NotForced;
 
     //model activation
     G4bool modelTrigger = false;
@@ -79,7 +77,7 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
     G4double eGamma = aTrack.GetTotalEnergy();
 
     //energy cut, at the beginning, to not check everything else
-    if(eGamma > MinPrimaryEnergy())
+    if(eGamma > ModelMinPrimaryEnergy())
     {
         //current logical volume
         crystallogic = aTrack.GetVolume()->GetLogicalVolume();
@@ -91,11 +89,13 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
 
             //the momentum direction of the photon in the local reference system of the volume
             momentumDirectionGamma =
-                (aTrack.GetTouchableHandle()->GetHistory()->GetTopTransform().NetRotation().inverse())*aTrack.GetMomentumDirection();
+                (aTrack.GetTouchableHandle()->GetHistory()->
+                    GetTopTransform().NetRotation().inverse())*aTrack.GetMomentumDirection();
 
             //the coordinates of the photon in the local reference system of the volume
             xyzGamma0 =
-                aTrack.GetTouchableHandle()->GetHistory()->GetTopTransform().TransformPoint(aTrack.GetPosition());
+                aTrack.GetTouchableHandle()->GetHistory()->
+                    GetTopTransform().TransformPoint(aTrack.GetPosition());
 
             // the coordinates of the photon in the co-rotating reference system within
             //a channel (elementary periodic cell)
@@ -142,11 +142,11 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
         //variables in Runge-Kutta calculations
         G4double kvx1=0.,kvx2=0.,kvx3=0.,kvx4=0.,kvy1=0.,kvy2=0.,kvy3=0.,kvy4=0.;
         //simulation step along z (internal step of the model) and its parts
-        G4double dz,dzd3,dzd8;//dzd3 = dz/3; dzd8 = dz/8;
+        G4double dz=0.,dzd3=0.,dzd8=0.;//dzd3 = dz/3; dzd8 = dz/8;
         //simulation step along the momentum direction
         G4double momentumDirectionStep;
         //effective simulation step (taking into account nuclear density along the trajectory)
-        G4double effectiveStep;
+        G4double effectiveStep=0.;
 
         // Baier-Katkov variables
         G4double dzMeV=0.; //step in MeV^-1
@@ -204,7 +204,8 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
         {
             //pair energy uniform sampling
             G4double etotal = fMass + fPPKineticEnergyCut +
-                              G4UniformRand()*(eGamma-2*(fMass+fPPKineticEnergyCut));//particle total energy
+                              G4UniformRand()*(eGamma-2*(fMass+fPPKineticEnergyCut));//particle
+                                                                                     //total energy
 
             G4double phi = CLHEP::twopi*G4UniformRand();//necessary for pair kinematics
 
@@ -213,7 +214,7 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
             G4double probabilityPPdz = 0.;
 
             //cycle e- and e+ within single pair
-            for(std::size_t j=0; j<2;j++)
+            for(G4int j=0; j<2;j++)
             {
                 if(j==1){etotal=eGamma-etotal;} //2nd particle energy
                 twoVectorEtotal[j]=etotal;
@@ -313,7 +314,8 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
                 if (paramParticleAngle>CLHEP::halfpi-DBL_EPSILON){paramParticleAngle=CLHEP::halfpi;}
 
                 G4double rho=1.;
-                G4double rhocut=CLHEP::halfpi/paramParticleAngle;//radial angular cut of the distribution
+                G4double rhocut=CLHEP::halfpi/paramParticleAngle;//radial angular cut of
+                                                                 //the distribution
                 G4double norm=std::atan(rhocut*rhocut)*
                                 CLHEP::pi*paramParticleAngle*paramParticleAngle;
 
@@ -353,8 +355,8 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
 
                     //trajectory calculation:
                     //Runge-Cutt "3/8"
-                    //fCrystalData->GetCurv(z)*fCrystalData->GetCorrectionZ() is due to dependence of
-                    //the radius on x; GetCurv gets 1/R for the central ("central plane/axis")
+                    //fCrystalData->GetCurv(z)*fCrystalData->GetCorrectionZ() is due to dependence
+                    //of the radius on x; GetCurv gets 1/R for the central ("central plane/axis")
 
                     //first step
                     kvx1=fCrystalData->Ex(x,y);
@@ -382,7 +384,8 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
                     //third step
                     kvx3=fCrystalData->Ex(x2,y2);
                     x3=x+(tx-tx1+tx2)*dz;
-                    tx3=tx+(kvx1-kvx2+kvx3-fCrystalData->GetCurv(z)*fCrystalData->GetCorrectionZ())*dz;
+                    tx3=tx+(kvx1-kvx2+kvx3-
+                                fCrystalData->GetCurv(z)*fCrystalData->GetCorrectionZ())*dz;
                     if (fCrystalData->GetModel()==2)
                     {
                         kvy3=fCrystalData->Ey(x2,y2);
@@ -415,7 +418,6 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
                     z+=dz*fCrystalData->GetCorrectionZ();//motion along the z coordinate
                         //("central plane/axis", no current plane/axis)
 
-
                     xyzparticle = fCrystalData->ChannelChange(x,y,z);
                     x=xyzparticle.x();
                     y=xyzparticle.y();
@@ -423,7 +425,7 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
 
                     momentumDirectionStep =
                         dz*std::sqrt(1+std::pow(std::tan(tx),2)+std::pow(std::tan(ty),2));
-                    zalongGamma += dz/momentumDirectionZGamma; //dz*momentumDirectionZGamma; // !!!
+                    zalongGamma += dz/momentumDirectionZGamma;
 
                     //default scattering and energy loss 0
                     scatteringAnglesAndEnergyLoss.set(0.,0.,0.);
@@ -433,11 +435,15 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
                         //calculate separately for each element of the crystal
                         for (G4int ii = 0; ii < fCrystalData->GetNelements(); ii++)
                         {
-                            //effective step taking into account nuclear density along the trajectory
-                            effectiveStep = momentumDirectionStep*fCrystalData->NuclearDensity(x,y,ii);
-                            //Coulomb scattering on screened atomic potential (both multiple and single)
+                           //effective step taking into account nuclear density along the trajectory
+                            effectiveStep = momentumDirectionStep*
+                                            fCrystalData->NuclearDensity(x,y,ii);
+                            //Coulomb scattering on screened atomic potential
+                            //(both multiple and single)
                             scatteringAnglesAndEnergyLoss +=
-                                fCrystalData->CoulombAtomicScattering(effectiveStep,momentumDirectionStep,ii);
+                                fCrystalData->CoulombAtomicScattering(effectiveStep,
+                                                                      momentumDirectionStep,
+                                                                      ii);
                         }
                         //electron scattering and coherent part of ionization energy losses
                         scatteringAnglesAndEnergyLoss += fCrystalData->CoulombElectronScattering(
@@ -554,7 +560,7 @@ G4double G4CoherentPairProduction::GetMeanFreePath(const G4Track& aTrack,
 G4VParticleChange* G4CoherentPairProduction::PostStepDoIt(const G4Track& aTrack,
                                            const G4Step& aStep)
 {
-	//example with no physical sense
+    //example with no physical sense
     aParticleChange.Initialize(aTrack);
     //G4LogicalVolume* aLV = aTrack.GetVolume()->GetLogicalVolume();
 
@@ -563,7 +569,8 @@ G4VParticleChange* G4CoherentPairProduction::PostStepDoIt(const G4Track& aTrack,
 
     // the coordinates of the photon in the local reference system of the volume
     G4ThreeVector xyzGamma0 =
-        aTrack.GetTouchableHandle()->GetHistory()->GetTopTransform().TransformPoint(aTrack.GetPosition());
+        aTrack.GetTouchableHandle()->GetHistory()->
+            GetTopTransform().TransformPoint(aTrack.GetPosition());
 
     // the coordinates of the photon in the co-rotating reference system within
     //a channel (elementary periodic cell)
@@ -583,15 +590,17 @@ G4VParticleChange* G4CoherentPairProduction::PostStepDoIt(const G4Track& aTrack,
     //a channel (elementary periodic cell)
     G4ThreeVector xyzparticle;
     //cycle e- and e+ within single pair
-    for(std::size_t j=0; j<2;j++)
+    for(G4int j=0; j<2;j++)
     {
         xyzparticle.set(fullVectorX[ipair][j],fullVectorY[ipair][j],xyzGamma.z());
 
         //in the local reference system of the volume
-        G4ThreeVector newParticleCoordinateXYZ = fCrystalData->CoordinatesFromLatticeToBox(xyzparticle);
+        G4ThreeVector newParticleCoordinateXYZ =
+                fCrystalData->CoordinatesFromLatticeToBox(xyzparticle);
         //the same in the global reference system
         newParticleCoordinateXYZ =
-            aTrack.GetTouchableHandle()->GetHistory()->GetTopTransform().Inverse().TransformPoint(newParticleCoordinateXYZ);
+            aTrack.GetTouchableHandle()->GetHistory()->
+                GetTopTransform().Inverse().TransformPoint(newParticleCoordinateXYZ);
 
         //back to the local reference system of the volume
         G4double tx0 = fCrystalData->AngleXFromLatticeToBox(fullVectorTX[ipair][j],xyzGamma.z());
@@ -608,7 +617,8 @@ G4VParticleChange* G4CoherentPairProduction::PostStepDoIt(const G4Track& aTrack,
                                                                 momentumDirectionZ);
         //the same in the global reference system
         momentumDirectionParticle =
-            (aTrack.GetTouchableHandle()->GetHistory()->GetTopTransform().NetRotation()) * momentumDirectionParticle;
+            (aTrack.GetTouchableHandle()->GetHistory()->GetTopTransform().NetRotation()) *
+                momentumDirectionParticle;
 
         G4DynamicParticle* chargedParticle =
             new G4DynamicParticle(chargedParticleDefinition[j],
@@ -616,10 +626,12 @@ G4VParticleChange* G4CoherentPairProduction::PostStepDoIt(const G4Track& aTrack,
                               fullVectorEtotal[ipair][j]-fMass);
 
         // Create the track for the secondary particle
-        G4Track* secondaryTrack = new G4Track(chargedParticle,tGlobalGamma,newParticleCoordinateXYZ);
+        G4Track* secondaryTrack = new G4Track(chargedParticle,
+                                              tGlobalGamma,
+                                              newParticleCoordinateXYZ);
         secondaryTrack->SetTouchableHandle(aStep.GetPostStepPoint()->GetTouchableHandle());
         secondaryTrack->SetParentID(aTrack.GetTrackID());
-        //secondaryTrack->SetCreatorModelID(secID);
+
         //generation of a secondary charged particle
         aParticleChange.AddSecondary(secondaryTrack);
     }

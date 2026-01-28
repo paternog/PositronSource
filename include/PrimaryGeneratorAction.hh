@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file PrimaryGeneratorAction.hh
 /// \brief Description of the PrimaryGeneratorAction class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -37,6 +37,7 @@
 
 #include "G4VUserPrimaryGeneratorAction.hh"
 #include "globals.hh"
+#include "G4SystemOfUnits.hh"
 
 #include "FileReader.hh"
 
@@ -56,13 +57,13 @@ class PrimaryGeneratorAction : public G4VUserPrimaryGeneratorAction
 {
 public:
     PrimaryGeneratorAction();
-    virtual ~PrimaryGeneratorAction();
+    ~PrimaryGeneratorAction() override;
     
-    void GeneratePrimaries(G4Event*);
+    void GeneratePrimaries(G4Event*) override;
     
-    void ReadFromFile(G4bool vBool) {fReadFromFile = vBool;};   
-    void SetFileName(G4String);
-    void SetUseGPS(G4bool vBool) {fUseGPS = vBool;};
+    void ReadFromFile(G4bool vBool) {fReadFromFile = vBool;}   
+    void SetFileName(G4String vFileName) {fFileName = vFileName;}
+    void SetUseGPS(G4bool vBool) {fUseGPS = vBool;}
     
     void SetType(G4String val) {fType = val;}   
     void SetEnergy(G4double val) {fEnergy = val;}
@@ -81,33 +82,33 @@ public:
     void SetSigmaYp(G4double val) {fSigmaYp = val;}
 
 private:
-    PrimaryGeneratorActionMessenger* fMessenger;
+    PrimaryGeneratorActionMessenger* fMessenger{nullptr};
 
-    G4GeneralParticleSource* fGPS;
-    G4ParticleGun* fGun;
+    G4GeneralParticleSource* fGPS{nullptr};
+    G4ParticleGun* fGun{nullptr};
     
-    G4bool fReadFromFile;
-    G4String fFileName;
+    G4bool fReadFromFile = false;
+    G4String fFileName = "input/W2.0mm_6GeV_all.dat";
     static FileReader* fFileReader;
     
-    G4bool fUseGPS;
-    G4double fCrystalZ;
+    G4bool fUseGPS = false;
+    G4double fCrystalZ = 0.;
     
-    G4String fType;
-    G4double fEnergy;
-    G4double fRelSigmaEnergy;
-    G4double fX;
-    G4double fY;
-    G4double fZ;
-    G4double fT;
-    G4double fXp;
-    G4double fYp;
-    G4double fSigmaX;
-    G4double fSigmaY;
-    G4double fSigmaZ;
-    G4double fSigmaT;
-    G4double fSigmaXp;
-    G4double fSigmaYp;  
+    G4String fType = "e-";
+    G4double fEnergy = 2.86*GeV;
+    G4double fRelSigmaEnergy = 1.e-3;
+    G4double fX = 0.*mm;
+    G4double fY = 0.*mm;
+    G4double fZ = 0.*mm;
+    G4double fT = 0.*mm;
+    G4double fXp = 0.;
+    G4double fYp = 0.;
+    G4double fSigmaX = 0*mm;
+    G4double fSigmaY = 0*mm;
+    G4double fSigmaZ = 1*mm;
+    G4double fSigmaT = 0*ns;
+    G4double fSigmaXp = 1.e-5;
+    G4double fSigmaYp = 1.e-5;  
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

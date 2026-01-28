@@ -23,13 +23,12 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file EventAction.cc
 /// \brief Implementation of the EventAction class
 //
+// gpaterno, January 2026
+//
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
-
 
 #include "EventAction.hh"
 #include "RunAction.hh"
@@ -53,20 +52,18 @@
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
-EventAction::EventAction():
-fEdepRad(0.),
-fEdepConv(0.)
+EventAction::EventAction()
 {
     //An instance of the DetectorConstruction
     const DetectorConstruction* detectorConstruction = 
         static_cast<const DetectorConstruction*>
             (G4RunManager::GetRunManager()->GetUserDetectorConstruction());
-    
+
     fNSpheres = detectorConstruction->GetNSpheres();
-    
-    //Inizialize the Edep map in the Spheres (scored through SteppingAction)                                          
-    for (int i = 0; i < fNSpheres; i++) {    
-        fEdepSpheres[i] = 0.;     
+
+    //Inizialize the Edep map in the Spheres (scored through SteppingAction)
+    for (int i = 0; i < fNSpheres; i++) {
+        fEdepSpheres[i] = 0.;
     }
 }
 
@@ -78,19 +75,19 @@ EventAction::~EventAction() {}
 
 void EventAction::BeginOfEventAction(const G4Event*)
 {
-    //reset Edep in the Radiator and Converter Crystals
+    //Reset Edep in the Radiator and Converter Crystals
     fEdepRad = 0.;
     fEdepConv = 0.;
-    
-    //reset the Edep map in the Spheres (scored through SteppingAction)
+
+    //Reset the Edep map in the Spheres (scored through SteppingAction)
     if (fVerboseLevel > 0) {
         G4int eventID = GetEventID();
         G4cout << "EventAction::BeginOfEventAction(), "
                << "EventID: " << eventID << G4endl;
     }
-    
-    for (int i = 0; i < fNSpheres; i++) {    
-        fEdepSpheres[i] = 0.;     
+
+    for (int i = 0; i < fNSpheres; i++) {
+        fEdepSpheres[i] = 0.;
     }
 }
 
@@ -98,9 +95,9 @@ void EventAction::BeginOfEventAction(const G4Event*)
 
 void EventAction::EndOfEventAction(const G4Event* aEvent)
 {   
-    //instantiating The Sensitive Detector Manager
+    //Instantie the Sensitive Detector Manager
     G4SDManager* SDman = G4SDManager::GetSDMpointer();
-        
+
     //Hit Detection System
     if (fSensitiveDetector_ID == -1) {
         G4String SensitiveDetectorName;
@@ -109,10 +106,10 @@ void EventAction::EndOfEventAction(const G4Event* aEvent)
                 SDman->GetCollectionID(SensitiveDetectorName="det/collection");
         }
     }
-    
+
     SensitiveDetectorHitsCollection* sensitiveDetectorHC = 0;
     G4HCofThisEvent* HCE = aEvent->GetHCofThisEvent();
-    
+
     if (HCE) {
         if (fSensitiveDetector_ID != -1) {
             G4VHitsCollection* aHC = HCE->GetHC(fSensitiveDetector_ID);
@@ -120,13 +117,13 @@ void EventAction::EndOfEventAction(const G4Event* aEvent)
         }
     }
 
-    //instantiating The Analysis Manager
+    //Instante the Analysis Manager
     G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
     
-    //get the Event Number
+    //Get the Event Number
     G4int eventID = GetEventID();
 
-    //filling the SD scoring ntuple
+    //Fill the SD scoring ntuple
     if (sensitiveDetectorHC) {
         int vNumberOfHit = sensitiveDetectorHC->entries();
         for (int i=0; i<vNumberOfHit; i++) {
@@ -144,24 +141,24 @@ void EventAction::EndOfEventAction(const G4Event* aEvent)
         }
     }
    
-    //filling the Edep (in the Radiator Crystal) ntuple
+    //Fill the Edep (in the Radiator Crystal) ntuple
     if (fEdepRad > 0) {
         analysisManager->FillNtupleDColumn(1,0,fEdepRad/MeV);
         analysisManager->FillNtupleIColumn(1,1,eventID);
         analysisManager->AddNtupleRow(1);   
     }
-    
-    //filling the Edep (in the Converter Crystal) ntuple
+
+    //Fill the Edep (in the Converter Crystal) ntuple
     if (fEdepConv > 0) {
         analysisManager->FillNtupleDColumn(2,0,fEdepConv/MeV);
-        analysisManager->FillNtupleIColumn(2,1,eventID);        
+        analysisManager->FillNtupleIColumn(2,1,eventID);
         analysisManager->AddNtupleRow(2);   
     }
 
     //Get the results accumulated through the SteppingAction class
     //and fill the local (one for thread) ntuple for Edep map in 
     //the Spheres of thew granular target.
-    for (int i = 0; i < fNSpheres; i++) {    
+    for (int i = 0; i < fNSpheres; i++) {
         analysisManager->FillNtupleIColumn(3,0,i);
         analysisManager->FillNtupleDColumn(3,1,fEdepSpheres[i]/MeV);
         analysisManager->FillNtupleIColumn(3,2,eventID);
@@ -175,10 +172,10 @@ void EventAction::EndOfEventAction(const G4Event* aEvent)
 void EventAction::AddEdepInSpheres(G4int volID, G4double edep) 
 {    
     G4double temp = fEdepSpheres.find(volID)->second;
-    fEdepSpheres[volID] = temp + edep;    
+    fEdepSpheres[volID] = temp + edep;
 
     if (fVerboseLevel > 1) {
-        G4int eventID = GetEventID();    
+        G4int eventID = GetEventID();
         G4cout << "Event: " << eventID
                << ", Edep[" << volID << "]: " 
                << edep/MeV << " MeV" << G4endl;

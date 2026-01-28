@@ -1,15 +1,15 @@
 
 #Radiator Crystal settings
 /crystal/setCrystalMaterial W               #PWO, BGO, W, Ir, C, Ge, Si (default)
-/crystal/setCrystalSize 20. 20. 1. mm
+/crystal/setCrystalSize 20 20 1 mm
 /crystal/setCrystalLattice <111>            #planes (e.g. (111)) or axes (e.g. <111>)
-/det/setRadiator true                       #default is false
+/det/setRadiator true
 
 #Converter Crystal settings
 /det/setRadiatorConverterSepDistance 10 cm
-/det/setConverterSize 100. 100. 10.00 mm
+/det/setConverterSize 100 100 10.00 mm
 
-#further settings
+#Further settings
 #/det/setScoringCrystalExit true             #default is false
 
 /run/initialize
@@ -20,10 +20,10 @@
 /run/setfilenamesave output/output_test.root
 
 #/gun/UseGPS true                            #default false. It works only if ReadFromFile is false.
-#/control/execute macros/beam_6GeV.mac        #old GPS macro
-/control/execute macros/setPrimaryBeam.mac  #new custom ParticleGun commands         
+#/control/execute macros/beam_6GeV.mac       #old GPS macro
+/control/execute macros/setPrimaryBeam.mac  #new custom ParticleGun commands
           
 #statistics
 /run/printProgress 1
-/run/beamOn 5                             
+/run/beamOn 5
 

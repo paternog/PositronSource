@@ -63,14 +63,14 @@ do
 		do
 			echo Running simulation $(($count + 1)) at $energy with: rad_th "=" ${t_array[$i]} mm, D "=" ${D_array[$k]} cm, conv_th "=" ${t_conv_array[$j]} mm ...
 			
-			sed -i "s+/crystal/setCrystalSize .*+/crystal/setCrystalSize 20. 20. ${t_array[$i]} mm+" $macro
+			sed -i "s+/crystal/setCrystalSize .*+/crystal/setCrystalSize 20 20 ${t_array[$i]} mm+" $macro
 			sed -i "s+/det/setRadiatorConverterSepDistance .*+/det/setRadiatorConverterSepDistance ${D_array[$k]} cm+" $macro
-			sed -i "s+/det/setConverterSize .*+/det/setConverterSize 100. 100. ${t_conv_array[$j]} mm+" $macro
+			sed -i "s+/det/setConverterSize .*+/det/setConverterSize 100 100 ${t_conv_array[$j]} mm+" $macro
 				
 			sed -i "s+/run/setfilenamesave output/output_6GeV_W.*+/run/setfilenamesave output/output_${energy}_W${t_array[$i]}mm_D${D_array[$k]}cm_target${t_conv_array[$j]}mm.root+" $macro		
 			
 			halfsize_conv=$(echo ${t_conv_array[$j]} '* 0.5' | bc) #mm
-			sed -i "s+/score/mesh/boxSize .* #converter+/score/mesh/boxSize 50. 50. $halfsize_conv mm #converter+" $macro
+			sed -i "s+/score/mesh/boxSize .* #converter+/score/mesh/boxSize 50 50 $halfsize_conv mm #converter+" $macro
 			var=$(echo "scale=2; ${t_conv_array[$j]} / $binsize" | bc -l) #mm
 			ceil $var
 			int_var=$?
@@ -90,10 +90,10 @@ do
 				defZ=$defZ0
 			fi
 			convZ=$(echo ${D_array[$k]} '* 10 +' $defZ | bc) #mm
-			sed -i "s+/score/mesh/translate/xyz .* #converter+/score/mesh/translate/xyz 0. 0. $convZ mm #converter+" $macro
+			sed -i "s+/score/mesh/translate/xyz .* #converter+/score/mesh/translate/xyz 0 0 $convZ mm #converter+" $macro
 			
 			halfsize=$(echo ${t_array[$i]} '* 0.5' | bc) #mm
-			sed -i "s+/score/mesh/boxSize .* #radiator+/score/mesh/boxSize 10. 10. $halfsize mm #radiator+" $macro
+			sed -i "s+/score/mesh/boxSize .* #radiator+/score/mesh/boxSize 10 10 $halfsize mm #radiator+" $macro
 			var=$(echo "scale=2; ${t_array[$i]} / $binsize" | bc -l) #mm
 			ceil $var
 			int_var=$?
@@ -104,7 +104,7 @@ do
 			fi
 			NbinZ=$int_var			
 			sed -i "s+/score/mesh/nBin .* #radiator+/score/mesh/nBin 41 41 $NbinZ #radiator+" $macro
-			sed -i "s+/score/mesh/translate/xyz .* #radiator+/score/mesh/translate/xyz 0. 0. -$halfsize mm #radiator+" $macro	
+			sed -i "s+/score/mesh/translate/xyz .* #radiator+/score/mesh/translate/xyz 0 0 -$halfsize mm #radiator+" $macro	
 			
 			sed -i "s+/score/dumpQuantityToFile boxMesh1 Edep output/Edep_${energy}_W.*+/score/dumpQuantityToFile boxMesh1 Edep output/Edep_${energy}_W${t_array[$i]}mm_D${D_array[$k]}cm_target${t_conv_array[$j]}mm.txt+" $macro		
 			sed -i "s+/score/dumpQuantityToFile boxMesh2 Edep output/Edep_${energy}_W.*+/score/dumpQuantityToFile boxMesh2 Edep output/Edep_${energy}_W${t_array[$i]}mm_D${D_array[$k]}cm_target${t_conv_array[$j]}mm_rad.txt+" $macro		

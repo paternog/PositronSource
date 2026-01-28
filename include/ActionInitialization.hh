@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file ActionInitialization.cc
 /// \brief Implementation of the ActionInitialization class
+//
+// gpaterno, January 2025
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -41,9 +41,9 @@
 
 class ActionInitialization : public G4VUserActionInitialization
 {
-  public:
-    ActionInitialization();
-    ~ActionInitialization() override;
+public:
+    ActionInitialization() = default;
+    ~ActionInitialization() override = default;
 
     void BuildForMaster() const override;
     void Build() const override;

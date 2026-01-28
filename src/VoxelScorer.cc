@@ -39,7 +39,6 @@ VoxelScorer::VoxelScorer(G4double x_len, G4double y_len, G4double z_len,
                          G4double x_position, 
                          G4double y_position, 
                          G4double z_position)
-                               
 {
     x_start = x_position - (x_len/2);
     y_start = y_position - (y_len/2);

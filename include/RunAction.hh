@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file RunAction.hh
 /// \brief Definition of the RunAction class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -61,12 +61,12 @@ public:
     void SetFileName(G4String);
     
 private:
-    G4String fFileName;
-    RunActionMessenger* fMessenger; 
+    G4String fFileName = "output/output";
+    RunActionMessenger* fMessenger{nullptr}; 
     
-    G4AnalysisManager* fAnalysisManager = nullptr; 
+    G4AnalysisManager* fAnalysisManager{nullptr}; 
     
-    G4bool fIsFileOpened;
+    G4bool fIsFileOpened = false;
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

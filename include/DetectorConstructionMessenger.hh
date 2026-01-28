@@ -23,11 +23,11 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file DetectorConstructionMessenger.hh
 /// \brief Description of the DetectorConstruction messenger class
-// 
+//
+// gpaterno, January 2026
+//
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 #ifndef DetectorConstructionMessenger_h
@@ -53,59 +53,59 @@ class G4UIcmdWithAString;
 class DetectorConstructionMessenger: public G4UImessenger
 {
 public:
-    DetectorConstructionMessenger(DetectorConstruction* mpga);
-    ~DetectorConstructionMessenger();
+    DetectorConstructionMessenger(DetectorConstruction* mydet);
+    ~DetectorConstructionMessenger() override;
 
-    virtual void SetNewValue(G4UIcommand* command, G4String newValues);
+    void SetNewValue(G4UIcommand* command, G4String newValues) override;
 
 private:
-    DetectorConstruction* fDetector;
+    DetectorConstruction* fDetector{nullptr};
     
-    G4UIcmdWithABool* fHybridSourceCmd;
+    G4UIcmdWithABool* fHybridSourceCmd{nullptr};
     
-    G4UIdirectory* fCmdDir;   
-    G4UIcmdWithAString* fCrystalMaterialCmd;
-    G4UIcmdWith3VectorAndUnit* fCrystalSizeCmd;
-    G4UIcmdWithAString* fCrystalLatticeCmd;
-    G4UIcmdWithADouble* fCrystalAngleXCmd;
-    G4UIcmdWithADouble* fCrystalAngleYCmd;
-    G4UIcmdWithADouble* fCrystalBendingAngleCmd;
-    G4UIcmdWithABool* fRadModelCmd;
-    G4UIcmdWithABool* fOCeffectsCmd;
-    G4UIcmdWithABool* fRadiatorCmd;
-    G4UIcmdWithAString* fPotentialPathCmd;
-    G4UIcmdWithABool* fTaggingCmd;
-    G4UIcmdWithAString* fTaggingFilenameCmd;
-    G4UIcmdWithAnInteger* fTaggingIntervalCmd;
+    G4UIdirectory* fCmdDir{nullptr};   
+    G4UIcmdWithAString* fCrystalMaterialCmd{nullptr};
+    G4UIcmdWith3VectorAndUnit* fCrystalSizeCmd{nullptr};
+    G4UIcmdWithAString* fCrystalLatticeCmd{nullptr};
+    G4UIcmdWithADouble* fCrystalAngleXCmd{nullptr};
+    G4UIcmdWithADouble* fCrystalAngleYCmd{nullptr};
+    G4UIcmdWithADouble* fCrystalBendingAngleCmd{nullptr};
+    G4UIcmdWithABool* fRadModelCmd{nullptr};
+    G4UIcmdWithABool* fOCeffectsCmd{nullptr};
+    G4UIcmdWithABool* fRadiatorCmd{nullptr};
+    G4UIcmdWithAString* fPotentialPathCmd{nullptr};
+    G4UIcmdWithABool* fTaggingCmd{nullptr};
+    G4UIcmdWithAString* fTaggingFilenameCmd{nullptr};
+    G4UIcmdWithAnInteger* fTaggingIntervalCmd{nullptr};
     
-    G4UIcmdWithADoubleAndUnit* fRadiatorConverterSepDistanceCmd;
-    G4UIcmdWith3VectorAndUnit* fConverterSizeCmd;
-    G4UIcmdWithABool* fGranularConverterCmd;
-    G4UIcmdWithADoubleAndUnit* fSphereRadiusCmd;
-    G4UIcmdWithAString* fConverterMaterialCmd;
+    G4UIcmdWithADoubleAndUnit* fRadiatorConverterSepDistanceCmd{nullptr};
+    G4UIcmdWith3VectorAndUnit* fConverterSizeCmd{nullptr};
+    G4UIcmdWithABool* fGranularConverterCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fSphereRadiusCmd{nullptr};
+    G4UIcmdWithAString* fConverterMaterialCmd{nullptr};
     
-    G4UIcmdWithABool* fMagneticFieldCmd;
-    G4UIcmdWithADoubleAndUnit* fFieldValueCmd;
-    G4UIcmdWithADoubleAndUnit* fFieldRegionLengthCmd;
+    G4UIcmdWithABool* fMagneticFieldCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fFieldValueCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fFieldRegionLengthCmd{nullptr};
     
-    G4UIcmdWithABool* fCollimatorCmd;
-    G4UIcmdWithADoubleAndUnit* fCollimatorApertureCmd;
-    G4UIcmdWithAString* fCollimatorHoleCmd;
-    G4UIcmdWithADoubleAndUnit* fCollimatorThicknessCmd;
-    G4UIcmdWithADoubleAndUnit* fCollimatorSideCmd;
-    G4UIcmdWithADoubleAndUnit* fRadiatorCollimatorSepDistanceCmd;
+    G4UIcmdWithABool* fCollimatorCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fCollimatorApertureCmd{nullptr};
+    G4UIcmdWithAString* fCollimatorHoleCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fCollimatorThicknessCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fCollimatorSideCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fRadiatorCollimatorSepDistanceCmd{nullptr};
     
-    G4UIcmdWith3VectorAndUnit* fVirtualDetectorSizeCmd;
+    G4UIcmdWith3VectorAndUnit* fVirtualDetectorSizeCmd{nullptr};
     
-    G4UIcmdWithABool* fSetVoxelizationCmd;
-    G4UIcmdWithAnInteger* fAbsorberColumnsCmd;
-    G4UIcmdWithAnInteger* fAbsorberRowsCmd;
-    G4UIcmdWithAnInteger* fAbsorberSlicesCmd;
-    G4UIcmdWithADoubleAndUnit* fAbsorberxVoxelSpacingCmd;
-    G4UIcmdWithADoubleAndUnit* fAbsorberyVoxelSpacingCmd;
-    G4UIcmdWithADoubleAndUnit* fAbsorberzVoxelSpacingCmd;  
+    G4UIcmdWithABool* fSetVoxelizationCmd{nullptr};
+    G4UIcmdWithAnInteger* fAbsorberColumnsCmd{nullptr};
+    G4UIcmdWithAnInteger* fAbsorberRowsCmd{nullptr};
+    G4UIcmdWithAnInteger* fAbsorberSlicesCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fAbsorberxVoxelSpacingCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fAbsorberyVoxelSpacingCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fAbsorberzVoxelSpacingCmd{nullptr};  
     
-    G4UIcmdWithABool* fScoringCrystalExitCmd; 
+    G4UIcmdWithABool* fScoringCrystalExitCmd{nullptr}; 
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

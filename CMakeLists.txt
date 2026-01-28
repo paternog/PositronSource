@@ -79,12 +79,14 @@ install(TARGETS positronSource DESTINATION bin)
 #----------------------------------------------------------------------------
 # Create directiories in the binary path
 
-#file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/input)
 file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/output)
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/input) #directory where to put input file to be read
 
 #----------------------------------------------------------------------------
-# Create directiories in the binary path
+# Copy directiories in the binary path
 
-file(COPY Potentials DESTINATION ${PROJECT_BINARY_DIR}) #directory where to put all potentials 
-file(COPY input DESTINATION ${PROJECT_BINARY_DIR}) #directory where to input file to use as PrimaryGenerator
+file(COPY data DESTINATION ${PROJECT_BINARY_DIR}) #directory where to put all potentials 
+#file(COPY input DESTINATION ${PROJECT_BINARY_DIR}) #directory where to put input file to be read
+
+#----------------------------------------------------------------------------
 

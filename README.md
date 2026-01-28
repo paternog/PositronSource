@@ -5,6 +5,8 @@ PositronSource is a [Geant4](http://www.geant4.org/geant4/) application to simul
     <img src="./readme_pics/schemes.png" alt="" width="900" height="450">
 </p>
 
+The potential for many different crystalline materials in planar/axial orientation at various temperature are currently available, most of them are included in official Geant4 release (the biggest inclusion occurred with the release of 11.4.0 version).
+
 Both Geant4 and [CMake](https://cmake.org/) need to be installed on your machine in order to compile and run the software.
 
 The source code can be downloaded either as a ZIP archive, from the Code drop-down menu (look at the green box above), or directly from the terminal (open in your project working directory) via:
@@ -116,8 +118,14 @@ make -j[Ncores]
 Run the app GUI which will show you a default geometry. You could also launch a test particle by selecting from the menu Run>Beam and then pushing the green "play" button on the command bar or typing `/run/beanOn 1` in the UI terminal (where you see "Session:").
 
 ## Version
-version: 1.0,
-date: 05-08-2025
+version: 2.0,
+date: 27-01-2026
+
+## Last changes
+- Modified G4ChannelingFastSimCrystalData so as to read channeling data from a file with arbitrary name.
+- Changed some macro commands, so as to match the official ones in example ch5 (run.mac contains all the commands available).
+- Adapted to G4ChannelingFastSimModel of release 11.4.0.
+- Improved analysis scripts.
 
 ## Acknowledgement
 The code has been developed in collaboration with Alexei Sytov, who acknowledges financial support from H2020-MSCA-GF TRILLION (G.A. 101032975) project. We also acknowledge finacial support from the INFN-CSN5 (GEANT4INFN and CORAL projects) and financial support under the National Recovery and Resilience Plan (NRRP), Call for tender No. 104 published on 02.02.2022 by the Italian Ministry of University and Research (MUR), funded by the European Union – NextGenerationEU – Project Title : "Intense positron source Based On Oriented crySTals - e+BOOST" 2022Y87K7X– CUP I53D23001510006. 

@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file FileReader.hh
 /// \brief Description of the FileReader class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -60,7 +60,7 @@ public:
     G4int GetNumberOfEvents();
 
 private:
-    G4String fFileName;
+    G4String fFileName = "";
     std::ifstream inputFile;
     std::vector<G4String> evListPart;
     std::vector<G4ThreeVector> evListPos;

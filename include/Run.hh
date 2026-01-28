@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, December 2024
-//
 /// \file Run.hh
 /// \brief Description of the Run class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -47,37 +47,34 @@ class Run : public G4Run
 {
 public:
     Run();
-    virtual ~Run();
+    ~Run() override;
 
-    virtual void RecordEvent(const G4Event*);
-    virtual void Merge(const G4Run*);
-    
-    G4double GetEdep() const {return fEdep;}    
+    void RecordEvent(const G4Event*) override;
+    void Merge(const G4Run*) override;
+
+    //Custom methods
+    G4double GetEdep() const {return fEdep;}
     G4double GetEdep2() const {return fEdep2;}
     G4double GoodEvents() const {return fGoodEvents;}
-        
+ 
     void AddEdep(G4double, G4double, G4double, G4double);
     
-    G4double GetEdep(G4int t, G4int r, G4int u) const {
-        return fEdepScorer->GetValue(t,r,u);
-    }
+    G4double GetEdep(G4int t, G4int r, G4int u) const {return fEdepScorer->GetValue(t,r,u);}
     G4int GetVoxNx() const {return fEdepScorer->GetX_vox();}
     G4int GetVoxNy() const {return fEdepScorer->GetY_vox();}
-    G4int GetVoxNz() const {return fEdepScorer->GetZ_vox();}     
-    void CleanVoxel (G4int t, G4int r, G4int u) const { 
-        fEdepScorer->Reset(t,r,u);
-    }
-     
+    G4int GetVoxNz() const {return fEdepScorer->GetZ_vox();}
+    void CleanVoxel (G4int t, G4int r, G4int u) const {fEdepScorer->Reset(t,r,u);}
+
 private:
-    G4int fCollID_edep;   
-    G4double fEdep;
-    G4double fEdep2;
-    G4int fGoodEvents;        
-    
-    G4bool fVoxelization;
-    VoxelScorer* fEdepScorer;
-    
-    G4bool fRadiator;
+    G4int fCollID_edep = -1;
+    G4double fEdep = 0.;
+    G4double fEdep2 = 0.;
+    G4int fGoodEvents = 0;
+
+    G4bool fVoxelization = false;
+    VoxelScorer* fEdepScorer{nullptr};
+
+    G4bool fRadiator = false;
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

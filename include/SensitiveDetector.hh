@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file SensitiveDetector.hh
 /// \brief Definition of the SensitiveDetector class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -48,15 +48,15 @@ class SensitiveDetector : public G4VSensitiveDetector
 {
 public:
     SensitiveDetector(G4String);
-    virtual ~SensitiveDetector();
+    ~SensitiveDetector() override;
     
-    virtual void Initialize(G4HCofThisEvent*);
-    virtual G4bool ProcessHits(G4Step*,G4TouchableHistory*);
-    virtual void EndOfEvent(G4HCofThisEvent*);
+    void Initialize(G4HCofThisEvent*) override;
+    G4bool ProcessHits(G4Step*,G4TouchableHistory*) override;
+    void EndOfEvent(G4HCofThisEvent*) override;
        
 private:
-    SensitiveDetectorHitsCollection* fHitsCollection;
-    G4int fHCID;   
+    SensitiveDetectorHitsCollection* fHitsCollection{nullptr};
+    G4int fHCID = -1;
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

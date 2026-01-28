@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file SteppingAction.cc
 /// \brief Implementation of the SteppingAction class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -56,80 +56,79 @@ SteppingAction::~SteppingAction()
 
 void SteppingAction::UserSteppingAction(const G4Step* step)
 {
-    //get an instance of the DetectorConstruction and retrieve some settings 
+    //Get an instance of the DetectorConstruction and retrieve some settings 
     const DetectorConstruction* detectorConstruction
         = static_cast<const DetectorConstruction*>
           (G4RunManager::GetRunManager()->GetUserDetectorConstruction());
-    
-    //get the Sensitive Volumes
+
+    //Get the Sensitive Volumes
     fCrystalVolume = detectorConstruction->GetCrystalVolume(); //Radiator
     fConverterVolume = detectorConstruction->GetConverterVolume(); //Converter/Target
     fAbsorberVolume = detectorConstruction->GetAbsorberVolume(); //Absorber (it could be both)
     if (fScoringVolume.size() == 0)
         fScoringVolume = detectorConstruction->GetScoringVolume(); //Spheres of the granular target
     G4int NScoringVolumes = fScoringVolume.size();
-      
-    //get if I want to score Edep in a voxelized Volume
+ 
+    //Get if I want to score Edep in a voxelized Volume
     G4bool Voxelization = detectorConstruction->GetVoxelization();
-    
-    //get if I want to score the features of particles
+
+    //Get if I want to score the features of particles
     //exiting the raditior and /or the target (27/09/2024)
     G4bool scoreCrystalExit = detectorConstruction->GetScoringCrystalExit();
   
   
-    //get pre and post step points
+    //Get pre and post step points
     G4StepPoint* preStepPoint = step->GetPreStepPoint();
     G4StepPoint* postStepPoint = step->GetPostStepPoint();
-        
-    //get the current and next particle postion
+
+    //Get the current and next particle postion
     G4ThreeVector preStepPos = preStepPoint->GetPosition();
     G4ThreeVector postStepPos = postStepPoint->GetPosition();
     G4ThreeVector pos = preStepPos + G4UniformRand()*(postStepPos - preStepPos);
-          
-    //get the volume of the current step
+ 
+    //Get the volume of the current step
     G4LogicalVolume* volume = 
         preStepPoint->GetTouchableHandle()->GetVolume()->GetLogicalVolume();
     G4String volumeName = volume->GetName();
-  	//G4cout << "volume: " << volumeName << G4endl;
+      //G4cout << "volume: " << volumeName << G4endl;
       
-    //get track and particle name
+    //Get track and particle name
     G4Track* track = step->GetTrack();
     //G4double trackWeight = track->GetWeight();
     G4String partName = track->GetDefinition()->GetParticleName();
     G4int trackID = track->GetTrackID();
     //G4int parentID = track->GetParentID();
 
-    //get the energy deposited during in this step
+    //Get the energy deposited during in this step
     G4double edep = step->GetTotalEnergyDeposit();
     
-    //get eventID
+    //Get eventID
     G4int eventID = 
         G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
                
     
-    //instantiating The Analysis Manager
+    //Instantiating The Analysis Manager
     G4AnalysisManager* analysisManager = G4AnalysisManager::Instance();
-       
-    
-    //declaration of variables useful for the scoring 
+  
+
+    //Declaration of variables useful for the scoring 
     //of the features of the particles exiting the crystals
     //G4ThreeVector postStepPos;
     G4ThreeVector postStepMom;
     G4double postStepTime;
     G4LogicalVolume* volumeNext;
-    
-    
-    //score the Edep in the Crystal (the Radiator)
-    if (volume == fCrystalVolume) {     
+
+
+    //Score the Edep in the Crystal (the Radiator)
+    if (volume == fCrystalVolume) {
         fEventAction->AddEdepRad(edep);
         
-        //score the features of the particle exiting the volume
+        //Score the features of the particle exiting the volume
         //if (scoreCrystalExit && postStepPoint->GetStepStatus() == fGeomBoundary) { //it doesn't work...
         //postStepPos = postStepPoint->GetPosition();
-		postStepMom = postStepPoint->GetMomentum(); 
-		postStepTime = postStepPoint->GetGlobalTime();
-		volumeNext = 
-		    postStepPoint->GetTouchableHandle()->GetVolume()->GetLogicalVolume();
+        postStepMom = postStepPoint->GetMomentum(); 
+        postStepTime = postStepPoint->GetGlobalTime();
+        volumeNext = postStepPoint->GetTouchableHandle()->GetVolume()->GetLogicalVolume();
         //G4cout << "volume: " << volumeName << ", next volume: " << volumeNextName << G4endl;
         if (scoreCrystalExit && volumeNext && volume != volumeNext) {
             analysisManager->FillNtupleSColumn(4,0,partName);
@@ -142,22 +141,21 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
             analysisManager->FillNtupleDColumn(4,7,postStepTime/CLHEP::ns);
             analysisManager->FillNtupleIColumn(4,8,eventID);
             analysisManager->FillNtupleIColumn(4,9,trackID);
-            analysisManager->AddNtupleRow(4);          
+            analysisManager->AddNtupleRow(4);
         }
         
     }
-    
-    
-    //score the Edep in the Converter (the Target)
-    if (volume == fConverterVolume) {     
+
+
+    //Score the Edep in the Converter (the Target)
+    if (volume == fConverterVolume) {
         fEventAction->AddEdepConv(edep);
-        
-        //score the features of the particle exiting the volume
+
+        //Score the features of the particle exiting the volume
         //postStepPos = postStepPoint->GetPosition();
-		postStepMom = postStepPoint->GetMomentum(); 
-		postStepTime = postStepPoint->GetGlobalTime();
-		volumeNext = 
-		    postStepPoint->GetTouchableHandle()->GetVolume()->GetLogicalVolume();
+        postStepMom = postStepPoint->GetMomentum(); 
+        postStepTime = postStepPoint->GetGlobalTime();
+        volumeNext = postStepPoint->GetTouchableHandle()->GetVolume()->GetLogicalVolume();
         if (scoreCrystalExit && volumeNext && volume != volumeNext) {
             analysisManager->FillNtupleSColumn(4,0,partName);
             analysisManager->FillNtupleDColumn(4,1,postStepPos.x()/CLHEP::mm);
@@ -169,14 +167,14 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
             analysisManager->FillNtupleDColumn(4,7,postStepTime/CLHEP::ns);
             analysisManager->FillNtupleIColumn(4,8,eventID);
             analysisManager->FillNtupleIColumn(4,9,trackID);
-            analysisManager->AddNtupleRow(4);          
+            analysisManager->AddNtupleRow(4);
         } 
-        
+
     }
-    
-    
-    //score the Edep in the voxelized volume (the Absorber)
-    if (volume == fAbsorberVolume) {     
+
+
+    //Score the Edep in the voxelized volume (the Absorber)
+    if (volume == fAbsorberVolume) {
         if (edep > 0 && Voxelization) {
             fEventAction->AddEdep(pos.x(), 
                                   pos.y(),
@@ -184,25 +182,25 @@ void SteppingAction::UserSteppingAction(const G4Step* step)
                                   edep);
         }  
     }
-      
-      
-    //score the Edep in the spheres of the granular target 
+  
+  
+    //Score the Edep in the spheres of the granular target 
     //(NScoringVolumes !=0 only if the target is granular)
     for (int i = 0; i < NScoringVolumes; i++) {
-        if (volume == fScoringVolume[i]) {    
+        if (volume == fScoringVolume[i]) {
             if (edep > 0) {
-                fEventAction->AddEdepInSpheres(i, edep);            
-            } 
-            
+                fEventAction->AddEdepInSpheres(i, edep);
+            }
+
             if (edep > 0 && Voxelization) {
                 fEventAction->AddEdep(pos.x(),
                                       pos.y(),
                                       pos.z(),
                                       edep);
-            }            
+            }
         }
     }
-    
+
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

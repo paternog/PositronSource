@@ -46,6 +46,8 @@
 
 class VoxelScorer 
 {
+friend class Run;
+
 public:
     VoxelScorer(G4double, G4double, G4double, 
                 G4int, G4int, G4int,
@@ -61,9 +63,8 @@ public:
     G4int GetY_vox() {return y_vox;}; 
     G4int GetZ_vox() {return z_vox;}; 
     
-    G4double*** fScoreMatrix; //if it is private, merging does not work!
-    
 private :
+    G4double*** fScoreMatrix;
     G4double x_start;
     G4double y_start;
     G4double z_start;

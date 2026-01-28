@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file SteppingAction.hh
 /// \brief Definition of the SteppingAction class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -52,16 +52,16 @@ public:
     SteppingAction(EventAction* eventAction);
     ~SteppingAction() override;
 
-    //method from the base class
+    //Method from the base class
     void UserSteppingAction(const G4Step*) override;
 
 private:
-    EventAction* fEventAction = nullptr;
+    EventAction* fEventAction{nullptr};
     
     std::vector<G4LogicalVolume*> fScoringVolume;
-    G4LogicalVolume* fAbsorberVolume;
-    G4LogicalVolume* fCrystalVolume;
-    G4LogicalVolume* fConverterVolume; 
+    G4LogicalVolume* fAbsorberVolume{nullptr};
+    G4LogicalVolume* fCrystalVolume{nullptr};
+    G4LogicalVolume* fConverterVolume{nullptr}; 
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

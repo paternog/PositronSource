@@ -2,7 +2,7 @@
 #beam
 /gps/particle e-
 #coordinate distribution
-/gps/pos/centre 0. 0. -50. mm
+/gps/pos/centre 0 0 -50 mm
 /gps/pos/type Beam
 /gps/pos/sigma_x 0.5 mm                    
 /gps/pos/sigma_y 0.5 mm                 
@@ -13,4 +13,4 @@
 /gps/ang/sigma_x 100.E-6 rad
 /gps/ang/sigma_y 100.E-6 rad
 #energy distribution
-/gps/ene/mono 6. GeV
+/gps/ene/mono 6 GeV

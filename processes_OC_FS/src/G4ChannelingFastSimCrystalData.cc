@@ -27,15 +27,6 @@
 // Co-author:   Gianfranco Paternò (modifications & testing)
 
 #include "G4ChannelingFastSimCrystalData.hh"
-#include "G4SystemOfUnits.hh"
-#include "G4PhysicalConstants.hh"
-
-G4ChannelingFastSimCrystalData::G4ChannelingFastSimCrystalData()
-{
-
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
 void G4ChannelingFastSimCrystalData::SetMaterialProperties(
                                      const G4Material *crystal,
@@ -47,16 +38,16 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
 
     if (fVerbosity)
       {
-	G4cout << 
-	  "======================================================================="  
-	       << G4endl;
+    G4cout << 
+      "======================================================================="  
+           << G4endl;
     G4cout <<
       "======                 Crystal lattice data                    ========"
            << G4endl;
-	G4cout << 
-	  "======================================================================="  
-	       << G4endl;    
-	G4cout << "Crystal material: " << filename << G4endl;
+    G4cout << 
+      "======================================================================="  
+           << G4endl;    
+    G4cout << "Crystal material: " << filename << G4endl;
       }
 
     //choice between planes (1D model) and axes (2D model)
@@ -65,14 +56,14 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
       iModel=1; //planes
       filename = filename + "_planes_"; //temporary name
       if (fVerbosity)
-	G4cout << "Crystal planes: " << lattice << G4endl;
+    G4cout << "Crystal planes: " << lattice << G4endl;
     }
     else if (lattice.compare(0,1,"<")==0)
     {
       iModel=2; //axes
       filename = filename + "_axes_"; //temporary name
       if (fVerbosity)
-	G4cout << "Crystal axes: " << lattice << G4endl;
+    G4cout << "Crystal axes: " << lattice << G4endl;
     }
 
     //input file:
@@ -81,12 +72,12 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
     if(filePath=="")
     {
       //standard file path if another one is not set
-      filename = std::getenv("G4CHANNELINGDATA") + filename;
+      filename = std::getenv("G4CHANNELINGDATA") + G4String("/") + filename;
     }
     else
     {
-      //custom file path
-      filename = filePath + filename;
+      //custom file path (gpaterno)
+      filename = filePath; //+ filename;
     }
 
     fNelements=(G4int)crystal->GetNumberOfElements();
@@ -102,9 +93,8 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
 
     std::ifstream vfilein;
     vfilein.open(filename);
-    G4cout << "opening " << filename << " ..." << G4endl;
     //check if the input file was found, otherwise return an exception
-    if (!vfilein.is_open())
+    if(!vfilein.is_open())
     {
         G4String outputMessage="Input file " +
                                filename +
@@ -113,29 +103,41 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
                     "001",
                      FatalException,
                     outputMessage);
-    } else {
-    	G4cout << "crystal lattice data loaded!" << G4endl;
     }
 
     //read nuclear concentration
     for(G4int i=0; i<fNelements; i++)
     {
       vfilein >> var;
-      fN0.push_back(var/cm3);
+      fN0.push_back(var/CLHEP::cm3);
     }
+    
+    //gpaterno (18/10/2025): I put this check here, because the passed directory could
+    //exist (and thus the previous check would be passed), but not the actual data file.
+    if (var == 0)
+    {
+        G4String outputMessage="Data file " +
+                               filename +
+                               " is not found!";
+        G4Exception("SetMaterialProperties",
+                    "001",
+                    FatalException,
+                    outputMessage);
+    }
+    G4cout << "reading " << filename << " ..." << G4endl; //gpaterno
 
     //read amplitude of thermal oscillations
     for(G4int i=0; i<fNelements; i++)
     {
       vfilein >> var;
-      fU1.push_back(var*cm);
+      fU1.push_back(var*CLHEP::cm);
     }
 
         if (iModel==1)
     {
       //  read channel dimensions
       vfilein >> fDx;
-      fDx*=cm;
+      fDx*=CLHEP::cm;
       //  read interpolation step size
       vfilein >> fNpointsx;
 
@@ -146,22 +148,22 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
     {
       //  read channel dimensions
       vfilein >> fDx >> fDy;
-      fDx*=cm;
-      fDy*=cm;
+      fDx*=CLHEP::cm;
+      fDy*=CLHEP::cm;
       //  read the number of nodes of interpolation
       vfilein >> fNpointsx >> fNpointsy;
     }
 
     //read the height of the potential well, necessary only for step length calculation
     vfilein >> fVmax;
-    fVmax*=eV;
+    fVmax*=CLHEP::eV;
     fVmax2=2.*fVmax;
 
     //read the on-zero minimal potential inside the crystal,
     //necessary for angle recalculation for entrance/exit through
     //the crystal lateral surface
     vfilein >> fVMinCrystal;
-    fVMinCrystal*=eV;
+    fVMinCrystal*=CLHEP::eV;
 
     // to create the class of interpolation for any function
     fElectricFieldX =
@@ -188,7 +190,7 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
         //reading the coefficients of cubic spline
         vfilein >> ai >> bi >> ci >> di;
         //setting spline coefficients for electric field
-        unitIF=eV/cm;
+        unitIF=CLHEP::eV/CLHEP::cm;
         fElectricFieldX->SetCoefficients1D(ai*unitIF, bi*unitIF,
                                            ci*unitIF, di*unitIF, i);
 
@@ -202,14 +204,14 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
         //reading the coefficients of cubic spline
         vfilein >> ai >> bi >> ci >> di;
         //setting spline coefficients for electron density
-        unitIF=1./cm3;
+        unitIF=1./CLHEP::cm3;
         fElectronDensity->SetCoefficients1D(ai*unitIF, bi*unitIF,
                                             ci*unitIF, di*unitIF, i);
 
         //reading the coefficients of cubic spline
         vfilein >> ai >> bi >> ci >> di;
         //setting spline coefficients for minimal ionization energy
-        unitIF=eV;
+        unitIF=CLHEP::eV;
         fMinIonizationEnergy->SetCoefficients1D(ai*unitIF, bi*unitIF,
                                                 ci*unitIF, di*unitIF, i);
 
@@ -231,12 +233,12 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
       {
         for(G4int i=0; i<fNpointsx+1; i++)
         {
-		  vfilein >> var >> var; // to be deleted in the future (coordinates of interpolation node) !!!
+          //vfilein >> var >> var; //coord of interpolation nodes (for old files) (gpaterno)
           for(G4int k=0; k<2; k++)
           {
             //reading the coefficients of cubic spline
             vfilein >> ai3D >> bi3D >> ci3D;
-            unitIF=eV;
+            unitIF=CLHEP::eV;
             //setting spline coefficients for minimal ionization energy
             fMinIonizationEnergy->SetCoefficients2D(ai3D*unitIF, bi3D*unitIF, ci3D*unitIF,
                                                     i, j, k);
@@ -244,14 +246,14 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
             //reading the coefficients of cubic spline
             vfilein >> ai3D >> bi3D >> ci3D;
             //setting spline coefficients for horizontal electric field
-            unitIF=eV/cm;
+            unitIF=CLHEP::eV/CLHEP::cm;
             fElectricFieldX->SetCoefficients2D(ai3D*unitIF, bi3D*unitIF, ci3D*unitIF,
                                                i, j, k);
 
             //reading the coefficients of cubic spline
             vfilein >> ai3D >> bi3D >> ci3D;
             //setting spline coefficients for vertical electric field
-            unitIF=eV/cm;
+            unitIF=CLHEP::eV/CLHEP::cm;
             fElectricFieldY->SetCoefficients2D(ai3D*unitIF, bi3D*unitIF, ci3D*unitIF,
                                                i, j, k);
 
@@ -265,7 +267,7 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
             //reading the coefficients of cubic spline
             vfilein >> ai3D >> bi3D >> ci3D;
             //setting spline coefficients for electron density
-            unitIF=1./cm3;
+            unitIF=1./CLHEP::cm3;
             fElectronDensity->SetCoefficients2D(ai3D*unitIF, bi3D*unitIF, ci3D*unitIF,
                                                 i, j, k);
 
@@ -286,8 +288,7 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
     }
 
     vfilein.close();
-    
-    if (fImportCrystalGeometry) ReadCrystalInternalGeometry();
+    G4cout << "crystal lattice data loaded!" << G4endl; //gpaterno
 
     //set special values and coefficients
     G4double alphahbarc2=std::pow(CLHEP::fine_structure_const*CLHEP::hbarc ,2.);
@@ -296,7 +297,7 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
     for(G4int i=0; i<fNelements; i++)
     {
       fRF.push_back((std::pow(9*CLHEP::pi*CLHEP::pi/128/fZ1[i],1/3.))
-                    *0.5291772109217*angstrom);//Thomas-Fermi screening radius
+                    *0.5291772109217*CLHEP::angstrom);//Thomas-Fermi screening radius
 
       fTetamax0.push_back(CLHEP::hbarc/(fR0*std::pow(fAN[i],1./3.)));
       fTeta10.push_back(CLHEP::hbarc/fRF[i]);
@@ -372,7 +373,7 @@ G4ThreeVector G4ChannelingFastSimCrystalData::CoordinatesFromBoxToLattice
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
 G4ThreeVector G4ChannelingFastSimCrystalData::CoordinatesFromLatticeToBox(
-                                                     const G4ThreeVector &pos)
+        const G4ThreeVector &pos)
 {
    G4double x=pos.x(),y=pos.y(),z=pos.z();
 
@@ -411,8 +412,8 @@ G4ThreeVector G4ChannelingFastSimCrystalData::CoordinatesFromLatticeToBox(
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
 G4ThreeVector G4ChannelingFastSimCrystalData::ChannelChange(G4double& x,
-							                                G4double& y,
-							                                G4double& z)
+                                G4double& y,
+                                G4double& z)
 {
 
     //test of enter in other channel
@@ -447,52 +448,3 @@ G4ThreeVector G4ChannelingFastSimCrystalData::ChannelChange(G4double& x,
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
-
-void G4ChannelingFastSimCrystalData::ReadCrystalInternalGeometry()
-{
-    std::ifstream vfilein;
-    vfilein.open(fCrystalGeometryFilename); //gpaterno
-    
-    G4cout << "Importing the Crystal geometry from the file: "  
-           << fCrystalGeometryFilename << G4endl;
-
-    //read crystal length (within interpolation period)
-    G4double culength = 0.;
-    vfilein >> culength;
-    culength *= cm;
-    //read the number of nodes of interpolation
-    G4int npointsx = 1;
-    vfilein >> npointsx;
-
-    fCUx =     new G4ChannelingFastSimInterpolation(culength,0,npointsx,1,1);
-    fCUtetax = new G4ChannelingFastSimInterpolation(culength,0,npointsx,1,1);
-    fCUCurv =  new G4ChannelingFastSimInterpolation(culength,0,npointsx,1,1);
-
-    G4double unitIF = 1.; //unit of interpolation function
-    G4double ai, bi, ci, di;
-    for(G4int i=0; i<npointsx; i++)
-    {
-        //reading the coefficients of cubic spline
-        vfilein >> ai >> bi >> ci >> di;
-        //setting spline coefficients for electric field
-        unitIF = cm;
-        fCUx->SetCoefficients1D(ai*unitIF, bi*unitIF, ci*unitIF, di*unitIF, i);
-
-        //reading the coefficients of cubic spline
-        vfilein >> ai >> bi >> ci >> di;
-        //setting spline coefficients for nuclear density (first element)
-        unitIF = 1.;
-        fCUtetax->SetCoefficients1D(ai*unitIF, bi*unitIF, ci*unitIF, di*unitIF, i);
-
-        //reading the coefficients of cubic spline
-        vfilein >> ai >> bi >> ci >> di;
-        //setting spline coefficients for electron density
-        unitIF = 1./cm;
-        fCUCurv->SetCoefficients1D(ai*unitIF, bi*unitIF, ci*unitIF, di*unitIF, i);
-    }
-
-    vfilein.close();
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
-

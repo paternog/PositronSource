@@ -29,16 +29,13 @@
 #ifndef G4ChannelingFastSimCrystalData_h
 #define G4ChannelingFastSimCrystalData_h 1
 
-#include "G4ios.hh"
-#include "globals.hh"
-#include <CLHEP/Units/SystemOfUnits.h>
-#include "G4ThreeVector.hh"
-#include "Randomize.hh"
-#include "G4Material.hh"
-#include <unordered_map>
 
+#include "globals.hh"
+#include "G4ios.hh"
+#include "G4ThreeVector.hh"
+#include "G4Material.hh"
 #include "G4VChannelingFastSimCrystalData.hh"
-#include "G4ChannelingFastSimInterpolation.hh"
+
 
 /** \file G4ChannelingFastSimCrystalData.hh
 * \brief Definition of the G4ChannelingFastSimCrystalData class
@@ -54,19 +51,14 @@ class G4ChannelingFastSimCrystalData  : public G4VChannelingFastSimCrystalData
 {
 public:
 
-    G4ChannelingFastSimCrystalData();
-    virtual ~G4ChannelingFastSimCrystalData() = default;
-
-public:
+    G4ChannelingFastSimCrystalData() = default;
+    ~G4ChannelingFastSimCrystalData() = default;
 
     ///find and upload crystal lattice input files, calculate all the basic values
     ///(to do only once)
     void SetMaterialProperties(const G4Material* crystal,
                                const G4String &lattice,
                                const G4String &filePath);
-                               
-    //read crystal internal geometry
-    void ReadCrystalInternalGeometry();
 
     ///calculate the coordinates in the co-rotating reference system
     ///within a channel (periodic cell)
@@ -119,7 +111,7 @@ private:
     ///fundamental constants of material
     std::vector <G4double> fN0; // nuclear concentration
     std::vector <G4double> fU1; // amplitude of thermal oscillations
-    std::vector <G4double> fZ1; //atomic number of each element
+    std::vector <G4double> fZ1;//atomic number of each element
     std::vector <G4double> fAN; //atomic mass of each element
 };
 

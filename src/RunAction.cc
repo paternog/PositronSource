@@ -53,19 +53,15 @@
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-RunAction::RunAction():
-G4UserRunAction(),
-fIsFileOpened(false)
+RunAction::RunAction() : G4UserRunAction()
 {
     G4RunManager::GetRunManager()->SetPrintProgress(1000);
 
     fMessenger = new RunActionMessenger(this);
-    
-    fFileName = "output";
-    
-    //Create the analysis manager  
-    fAnalysisManager = G4AnalysisManager::Instance();      
-    fAnalysisManager->SetDefaultFileType("root"); 
+
+    //Create the analysis manager
+    fAnalysisManager = G4AnalysisManager::Instance();
+    fAnalysisManager->SetDefaultFileType("root");
     fAnalysisManager->SetFileName(fFileName);
 #ifdef G4MULTITHREADED
     fAnalysisManager->SetNtupleMerging(true);
@@ -73,8 +69,8 @@ fIsFileOpened(false)
     fAnalysisManager->SetNtupleMerging(false);
 #endif
     fAnalysisManager->SetVerboseLevel(0);
-           
-    //Creating the ntuple to score the particles impinging on the virtual screens
+
+    //Create the ntuple to score the particles impinging on the virtual screens
     fAnalysisManager->CreateNtuple("scoring_ntuple","virtual scoring screens");
     fAnalysisManager->CreateNtupleIColumn("screenID");
     fAnalysisManager->CreateNtupleSColumn("particle");
@@ -86,27 +82,27 @@ fIsFileOpened(false)
     fAnalysisManager->CreateNtupleDColumn("t");
     fAnalysisManager->CreateNtupleIColumn("eventID");
     fAnalysisManager->FinishNtuple();
-        
-    //Creating the ntuple to score Edep in the Radiatior
+
+    //Create the ntuple to score Edep in the Radiatior
     fAnalysisManager->CreateNtuple("edep_rad","radiator");
     fAnalysisManager->CreateNtupleDColumn("edep");
     fAnalysisManager->CreateNtupleIColumn("eventID");
     fAnalysisManager->FinishNtuple();
-    
-    //Creating the ntuple to score Edep in the Converter
+
+    //Create the ntuple to score Edep in the Converter
     fAnalysisManager->CreateNtuple("edep_conv","converter");
     fAnalysisManager->CreateNtupleDColumn("edep");
     fAnalysisManager->CreateNtupleIColumn("eventID");
     fAnalysisManager->FinishNtuple();
-    
-    //Creating the ntuple to score Edep in the spheres of the Granular Target
+
+    //Create the ntuple to score Edep in the spheres of the Granular Target
     fAnalysisManager->CreateNtuple("edep_spheres","granular target");
     fAnalysisManager->CreateNtupleIColumn("volumeID");
     fAnalysisManager->CreateNtupleDColumn("edep");
     fAnalysisManager->CreateNtupleIColumn("eventID");
     fAnalysisManager->FinishNtuple();
 
-    //Creating the ntuple to score the particles exiting the crystals
+    //Create the ntuple to score the particles exiting the crystals
     fAnalysisManager->CreateNtuple("scoring_ntuple2","particle leaving crystals");
     fAnalysisManager->CreateNtupleSColumn("particle");
     fAnalysisManager->CreateNtupleDColumn("x");
@@ -125,7 +121,7 @@ fIsFileOpened(false)
 
 RunAction::~RunAction()
 {
-    //write results
+    //Write results
     if (fIsFileOpened) {
         fAnalysisManager->Write();
         //fAnalysisManager->CloseFile(); //I do it in the main   
@@ -146,26 +142,26 @@ G4Run* RunAction::GenerateRun() {return new Run;}
 
 void RunAction::BeginOfRunAction(const G4Run* run)
 {
-    //merging is only for root
+    //Merging is only for root
     if (fFileName.find(".csv") != std::string::npos) {
         fAnalysisManager->SetNtupleMerging(false);
     }
-       
-    //open the output file         
+ 
+    //Open the output file
     if (!fIsFileOpened) {
         fAnalysisManager->OpenFile(fFileName);
         fIsFileOpened = true;
     }
 
-    //print begin message
+    //Print begin message
     if (IsMaster()) {
         G4int NumberOfEventToBeProcessed = run->GetNumberOfEventToBeProcessed();
-        
+  
         G4cout
         << G4endl
         << "--------------------Begin of Global Run-----------------------" 
         << G4endl
-        << "Number of events to be processed: " << NumberOfEventToBeProcessed       
+        << "Number of events to be processed: " << NumberOfEventToBeProcessed
         << G4endl
         << "--------------------------------------------------------------"
         << G4endl;
@@ -179,30 +175,30 @@ void RunAction::EndOfRunAction(const G4Run* run)
     //Get the number of events
     G4int nofEvents = run->GetNumberOfEvent();
     if (nofEvents == 0) return;
-                      
+
     //Get results from the Edep (in the Radiator Crystal) scorer
     const Run* aRun = static_cast<const Run*>(run);
-    G4double Edep  = aRun->GetEdep();    
-    G4double Edep2 = aRun->GetEdep2();     
+    G4double Edep  = aRun->GetEdep();
+    G4double Edep2 = aRun->GetEdep2();
     G4int nGoodEvents = aRun->GoodEvents();
     G4double stdEdep = sqrt(Edep2 - Edep*Edep/nGoodEvents); 
-       
+
     //Print and write results to a text file
-    if (IsMaster()) {    
-        //detector construction instance    
+    if (IsMaster()) {
+        //DetectorConstruction instance
         const DetectorConstruction* detectorConstruction = 
             static_cast<const DetectorConstruction*>(G4RunManager::GetRunManager()
                 ->GetUserDetectorConstruction());
-                        
+
         G4bool bRadiator = detectorConstruction->GetRadiator();
         if (bRadiator) { 
             G4String matName = 
-                detectorConstruction->GetCrystalVolume()->GetMaterial()->GetName();            
-            
-            //set the significant digits to print
+                detectorConstruction->GetCrystalVolume()->GetMaterial()->GetName();
+
+            //Set the significant digits to print
             G4cout.precision(8);
-          
-            //print the results on screen
+  
+            //Print the results on screen
             G4cout << G4endl
             << "--------------------End of Global Run-----------------------"
             << G4endl
@@ -215,7 +211,7 @@ void RunAction::EndOfRunAction(const G4Run* run)
             << G4endl << G4endl;
             
             /*
-            //write the Edep in the radiator on a text file  
+            //Write the Edep in the radiator on a text file  
             G4double mass = detectorConstruction->GetCrystalVolume()->GetMass();
             std::ofstream fFileOut;
             fFileOut.open("output/SimulationSummary.dat", 
@@ -231,11 +227,11 @@ void RunAction::EndOfRunAction(const G4Run* run)
             */
         }
                 
-        //write results of Edep in the VoxelScorer to a text file
+        //Write results of Edep in the VoxelScorer to a text file
         std::string pureFileName = fFileName.substr(0, fFileName.find(".root"));
         if (pureFileName.length() == fFileName.length())
-            pureFileName = fFileName.substr(0, fFileName.find(".csv"));       
-        //G4cout << "pureFileName: " << pureFileName << G4endl;        
+            pureFileName = fFileName.substr(0, fFileName.find(".csv"));
+        //G4cout << "pureFileName: " << pureFileName << G4endl;
         G4bool Voxelization = detectorConstruction->GetVoxelization();
         if (Voxelization) { 
             G4int x_n = aRun->GetVoxNx();
@@ -251,33 +247,33 @@ void RunAction::EndOfRunAction(const G4Run* run)
             G4String edep_file;
             std::stringstream s1;
             s1 << pureFileName << "_AbsorberEdepDistribution.txt";
-            edep_file = s1.str();            
+            edep_file = s1.str();
             std::ofstream edep_stream;
             edep_stream.open(edep_file);
             edep_stream.precision(6);
-                            
+
             //first line: voxel structure [nx, ny, nz]
             //second line: values (nx) of columns (end of a column is new line),
             //then for rows, then for slices
             edep_stream << x_n << " " << y_n << " " << z_n << '\n';
-               
+  
             for (G4int k=0; k < z_n; k++) {
                 for (G4int i=0; i < x_n; i++) {
-                    for (G4int j=0; j < y_n; j++) {          
+                    for (G4int j=0; j < y_n; j++) {
                         edep_stream << aRun->GetEdep(i,j,k) << " ";
-                        aRun->CleanVoxel(i,j,k);    
+                        aRun->CleanVoxel(i,j,k);
                     }
                     edep_stream << '\n';
-                }            
+                }
             }
-                  
+
             edep_stream.close();
             G4cout << "...file written!" << G4endl << G4endl;
         }
         
-    }            
-                   
-    //end message
+    }
+   
+    //End message
     G4cout
         << G4endl
         << " The run consisted of " << nofEvents << " particles" << G4endl

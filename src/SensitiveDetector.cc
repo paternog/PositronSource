@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file SensitiveDetector.cc
 /// \brief Implementation of the SensitiveDetector class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
@@ -49,7 +49,6 @@ SensitiveDetector::SensitiveDetector(G4String name):G4VSensitiveDetector(name)
 {
     G4String HCname;
     collectionName.insert(HCname="collection");
-    fHCID = -1;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
@@ -75,7 +74,7 @@ bool SensitiveDetector::ProcessHits(G4Step* aStep, G4TouchableHistory*)
     
     G4StepPoint* preStepPoint = aStep->GetPreStepPoint();
                    
-    if (!(preStepPoint->GetStepStatus() == fGeomBoundary)) {return true;}    
+    if (!(preStepPoint->GetStepStatus() == fGeomBoundary)) {return true;}
 
     G4String particle = 
         vTrack->GetDynamicParticle()->GetParticleDefinition()->GetParticleName();
@@ -84,14 +83,14 @@ bool SensitiveDetector::ProcessHits(G4Step* aStep, G4TouchableHistory*)
        
     G4int detID = preStepPoint->GetTouchableHandle()->GetVolume()->GetCopyNo(); 
 
-    G4ThreeVector momentum = preStepPoint->GetMomentum();            
-    
-    if (momentum.getZ() > 0) {    
+    G4ThreeVector momentum = preStepPoint->GetMomentum();
+
+    if (momentum.getZ() > 0) {
         SensitiveDetectorHit* aHit = new SensitiveDetectorHit();
         aHit->SetParticle(particle);
         aHit->SetDetID(detID);
         aHit->SetPos(position);
-        aHit->SetMom(momentum);    
+        aHit->SetMom(momentum);
         aHit->SetEnergy(preStepPoint->GetKineticEnergy());
         aHit->SetTime(preStepPoint->GetGlobalTime());
         aHit->SetWeight(vTrack->GetWeight());
@@ -99,7 +98,7 @@ bool SensitiveDetector::ProcessHits(G4Step* aStep, G4TouchableHistory*)
         aHit->SetTrackIDP(vTrack->GetParentID());
         fHitsCollection->insert(aHit);
     }
-    
+
     return true;
 }
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....

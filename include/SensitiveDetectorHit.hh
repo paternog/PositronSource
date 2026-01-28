@@ -23,7 +23,7 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
+// gpaterno, October 2025
 //
 /// \file SensitiveDetectorHit.hh
 /// \brief Definition of the SensitiveDetectorHit class
@@ -51,36 +51,22 @@ class G4AttValue;
 class SensitiveDetectorHit : public G4VHit
 {
 public:
-    SensitiveDetectorHit();
+    SensitiveDetectorHit() = default;
+    ~SensitiveDetectorHit() override = default;
     
-    virtual ~SensitiveDetectorHit();
-    
-    SensitiveDetectorHit(const SensitiveDetectorHit &right);
-    const SensitiveDetectorHit& operator=(const SensitiveDetectorHit &right);
+    SensitiveDetectorHit(const SensitiveDetectorHit &right) = default;
+    SensitiveDetectorHit& operator=(const SensitiveDetectorHit &right) = default;
     
     int operator==(const SensitiveDetectorHit &right) const;
     
     inline void *operator new(size_t);
     inline void operator delete(void *aHit);
     
-    virtual void Draw();
-    virtual const std::map<G4String,G4AttDef>* GetAttDefs() const;
-    virtual std::vector<G4AttValue>* CreateAttValues() const;
-    virtual void Print();
-    
-private:
-    G4int fTrackID;
-    G4int fTrackIDP;
-    G4double fTime;
-    G4ThreeVector fPos;
-    G4ThreeVector fMom;
-    G4double fEnergy;
-    G4int fType;
-    G4String fParticle;
-    G4double fWeight;
-    G4int fDetID;
-  
-public:
+    void Draw() override;
+    const std::map<G4String,G4AttDef>* GetAttDefs() const override;
+    std::vector<G4AttValue>* CreateAttValues() const override;
+    void Print() override;
+
     inline void SetTrackID(G4int z) {fTrackID = z;}
     inline G4int GetTrackID() const {return fTrackID;}
 
@@ -110,38 +96,37 @@ public:
 
     inline void SetDetID(G4int did) {fDetID = did;}
     inline G4int GetDetID() const {return fDetID;}
+    
+private:
+    G4int fTrackID = -1;
+    G4int fTrackIDP = -1;
+    G4double fTime = 0;
+    G4ThreeVector fPos = G4ThreeVector(0., 0., 0.);
+    G4ThreeVector fMom = G4ThreeVector(0., 0., 0.);
+    G4double fEnergy = 0.;
+    G4int fType = -11;
+    G4String fParticle = "";
+    G4double fWeight = -1;
+    G4int fDetID = -1;
 };
 
-typedef G4THitsCollection<SensitiveDetectorHit> SensitiveDetectorHitsCollection;
+using SensitiveDetectorHitsCollection = G4THitsCollection<SensitiveDetectorHit>;
 
-#ifdef G4MULTITHREADED
 extern G4ThreadLocal G4Allocator<SensitiveDetectorHit>* SensitiveDetectorHitAllocator;
-#else
-extern G4Allocator<SensitiveDetectorHit> SensitiveDetectorHitAllocator;
-#endif
 
 inline void* SensitiveDetectorHit::operator new(size_t)
 {
-#ifdef G4MULTITHREADED
-    if(!SensitiveDetectorHitAllocator) SensitiveDetectorHitAllocator = 
-        new G4Allocator<SensitiveDetectorHit>;
-    return (void *) SensitiveDetectorHitAllocator->MallocSingle();
-#else
-    void* aHit;
-    aHit = (void*)SensitiveDetectorHitAllocator.MallocSingle();
-    return aHit;
-#endif
+  if (!SensitiveDetectorHitAllocator) SensitiveDetectorHitAllocator = 
+      new G4Allocator<SensitiveDetectorHit>;
+  return (void *) SensitiveDetectorHitAllocator->MallocSingle();
 }
 
 inline void SensitiveDetectorHit::operator delete(void* aHit)
 {
-#ifdef G4MULTITHREADED
-    SensitiveDetectorHitAllocator->FreeSingle((SensitiveDetectorHit*) aHit);
-#else
-    SensitiveDetectorHitAllocator.FreeSingle((SensitiveDetectorHit*) aHit);
-#endif
+  SensitiveDetectorHitAllocator->FreeSingle((SensitiveDetectorHit*) aHit);
 }
 
-#endif
+
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
+#endif

@@ -64,14 +64,14 @@ do
 			angY=$(echo ${mis_array[$j]} '* 0.988770' | bc) #mm (angleY=mis*sin(atan(slopeYX=20/3)))
 			echo Running simulation $(($count + 1)) at $energy with: crystal_th "=" ${t_array[$i]} mm, mis "=" 0${mis_array[$j]} rad [angleX "=" 0$angX rad, angleY "=" 0$angY rad], pot "=" ${pot_array[$k]}...
 		
-			sed -i "s+/crystal/setCrystalSize .*+/crystal/setCrystalSize 20. 20. ${t_array[$i]} mm+" $macro
+			sed -i "s+/crystal/setCrystalSize .*+/crystal/setCrystalSize 20 20 ${t_array[$i]} mm+" $macro
 			sed -i "s+/crystal/setCrystalAngleX .*+/crystal/setCrystalAngleX 0$angX+" $macro
 			sed -i "s+/crystal/setCrystalAngleY .*+/crystal/setCrystalAngleY 0$angY+" $macro
 			sed -i "s+/crystal/setPotentialPath .*+/crystal/setPotentialPath ../Potentials/W111/u1_${pot_array[$k]}/+" $macro
 			sed -i "s+/run/setfilenamesave output/output_${energy}_W.*+/run/setfilenamesave output/output_${energy}_W${t_array[$i]}mm_crystalline_mis${mis_array[$j]}rad_pot${pot_array[$k]}.root+" $macro
 			
 			halfsize=$(echo ${t_array[$i]} '* 0.5' | bc) #mm
-			sed -i "s+/score/mesh/boxSize .*+/score/mesh/boxSize 10. 10. $halfsize mm+" $macro
+			sed -i "s+/score/mesh/boxSize .*+/score/mesh/boxSize 10 10 $halfsize mm+" $macro
 			var=$(echo "scale=2; ${t_array[$i]} / $binsize" | bc -l) #mm
 			ceil $var
 			int_var=$?
@@ -82,7 +82,7 @@ do
 			fi
 			NbinZ=$int_var			
 			sed -i "s+/score/mesh/nBin .*+/score/mesh/nBin 41 41 $NbinZ+" $macro
-			sed -i "s+/score/mesh/translate/xyz 0. 0. .*+/score/mesh/translate/xyz 0. 0. -$halfsize mm+" $macro
+			sed -i "s+/score/mesh/translate/xyz 0 0 .*+/score/mesh/translate/xyz 0 0 -$halfsize mm+" $macro
 				
 			sed -i "s+/score/dumpQuantityToFile boxMesh1 Edep output/Edep_${energy}_W.*+/score/dumpQuantityToFile boxMesh1 Edep output/Edep_${energy}_W${t_array[$i]}mm_crystalline_mis${mis_array[$j]}rad_pot${pot_array[$k]}.txt+" $macro
 			sleep 1

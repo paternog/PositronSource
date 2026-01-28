@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file PrimaryGeneratorActionMessenger.cc
 /// \brief Implementation of the PrimaryGeneratorActionMessenger class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -53,26 +53,26 @@ fPrimaryGeneratorAction(stack)
     fSetFileNameCmd->SetParameterName("filename", true);
     fSetFileNameCmd->SetDefaultValue("");
     fSetFileNameCmd->AvailableForStates(G4State_PreInit,G4State_Idle);
-    
+
     fUseGPSCmd = new G4UIcmdWithABool("/gun/UseGPS", this);
     fUseGPSCmd->SetGuidance("Choice : (1) true, (0) false.");
     fUseGPSCmd->SetParameterName("setGPS", true);
     fUseGPSCmd->SetDefaultValue(false);
-    
-         
+
+ 
     fPrimaryTypeCmd = new G4UIcmdWithAString("/gun/primaryType",this);
     fPrimaryTypeCmd->SetParameterName("primaryType",true);
     fPrimaryTypeCmd->SetDefaultValue("e-");
-      
+
     fPrimaryEnergyCmd = new G4UIcmdWithADoubleAndUnit("/gun/primaryEnergy",this);
     fPrimaryEnergyCmd->SetParameterName("primaryEnergy",true);
     fPrimaryEnergyCmd->SetDefaultValue(6);
     fPrimaryEnergyCmd->SetDefaultUnit("GeV");
-      
+ 
     fPrimaryRelSigmaEnergyCmd = new G4UIcmdWithADouble("/gun/primaryRelSigmaEnergy",this);
     fPrimaryRelSigmaEnergyCmd->SetParameterName("primaryRelSigmaEnergy",true);
     fPrimaryRelSigmaEnergyCmd->SetDefaultValue(1.0e-3);
-    
+
     fPrimaryXCmd = new G4UIcmdWithADoubleAndUnit("/gun/primaryX",this);
     fPrimaryXCmd->SetParameterName("primaryX",true);
     fPrimaryXCmd->SetDefaultValue(0);
@@ -92,17 +92,17 @@ fPrimaryGeneratorAction(stack)
     fPrimaryTCmd->SetParameterName("primaryT",true);
     fPrimaryTCmd->SetDefaultValue(0);
     fPrimaryTCmd->SetDefaultUnit("ns");
-      
+ 
     fPrimaryXpCmd = new G4UIcmdWithADoubleAndUnit("/gun/primaryXp",this);
     fPrimaryXpCmd->SetParameterName("primaryXp",true);
     fPrimaryXpCmd->SetDefaultValue(0);
     fPrimaryXpCmd->SetDefaultUnit("rad");
-    
+
     fPrimaryYpCmd = new G4UIcmdWithADoubleAndUnit("/gun/primaryYp",this);
     fPrimaryYpCmd->SetParameterName("primaryYp",true);
     fPrimaryYpCmd->SetDefaultValue(0);
     fPrimaryYpCmd->SetDefaultUnit("rad");   
-           
+ 
     fPrimarySigmaXCmd = new G4UIcmdWithADoubleAndUnit("/gun/primarySigmaX",this);
     fPrimarySigmaXCmd->SetParameterName("primarySigmaX",true);
     fPrimarySigmaXCmd->SetDefaultValue(0);
@@ -141,7 +141,7 @@ PrimaryGeneratorActionMessenger::~PrimaryGeneratorActionMessenger()
     delete fReadFromFileCmd;
     delete fSetFileNameCmd;
     delete fUseGPSCmd;
-      
+ 
     delete fPrimaryTypeCmd; 
     delete fPrimaryEnergyCmd; 
     delete fPrimaryRelSigmaEnergyCmd;
@@ -169,10 +169,10 @@ void PrimaryGeneratorActionMessenger::SetNewValue(G4UIcommand* command, G4String
         fPrimaryGeneratorAction->SetFileName(newValue);
     if (command == fUseGPSCmd) 
         fPrimaryGeneratorAction->SetUseGPS(fUseGPSCmd->GetNewBoolValue(newValue));
-                       
+
     if (command == fPrimaryTypeCmd) {
         fPrimaryGeneratorAction->SetType(newValue);
-    }          
+    }
     if (command == fPrimaryEnergyCmd) {
         fPrimaryGeneratorAction->SetEnergy(fPrimaryEnergyCmd->GetNewDoubleValue(newValue));
     }
@@ -214,7 +214,7 @@ void PrimaryGeneratorActionMessenger::SetNewValue(G4UIcommand* command, G4String
     }
     if (command == fPrimarySigmaYpCmd) {
         fPrimaryGeneratorAction->SetSigmaYp(fPrimarySigmaYpCmd->GetNewDoubleValue(newValue));
-    }       
+    }
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

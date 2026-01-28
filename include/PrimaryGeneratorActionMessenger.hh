@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file PrimaryGeneratorActionMessenger.hh
 /// \brief Description of the PrimaryGeneratorActionMessenger class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -44,39 +44,39 @@ class G4UIcmdWithADouble;
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-/// messenger for PrimaryGenerator class. It is possible to set if we want to
+/// Messenger for PrimaryGenerator class. It is possible to set if we want to
 /// simulate using FastSim model or import an external phase-space.
 
 class PrimaryGeneratorActionMessenger: public G4UImessenger
 {
 public:
     PrimaryGeneratorActionMessenger(PrimaryGeneratorAction*);
-    virtual ~PrimaryGeneratorActionMessenger();
+    ~PrimaryGeneratorActionMessenger() override;
     
-    void SetNewValue(G4UIcommand*, G4String);
+    void SetNewValue(G4UIcommand*, G4String) override;
     
 private:   
-    PrimaryGeneratorAction* fPrimaryGeneratorAction;
+    PrimaryGeneratorAction* fPrimaryGeneratorAction{nullptr};
     
-    G4UIcmdWithABool* fReadFromFileCmd;
-    G4UIcmdWithAString* fSetFileNameCmd;
-    G4UIcmdWithABool* fUseGPSCmd;
+    G4UIcmdWithABool* fReadFromFileCmd{nullptr};
+    G4UIcmdWithAString* fSetFileNameCmd{nullptr};
+    G4UIcmdWithABool* fUseGPSCmd{nullptr};
     
-    G4UIcmdWithAString* fPrimaryTypeCmd; 
-    G4UIcmdWithADoubleAndUnit* fPrimaryEnergyCmd; 
-    G4UIcmdWithADouble* fPrimaryRelSigmaEnergyCmd; 
-    G4UIcmdWithADoubleAndUnit* fPrimaryXCmd;  
-    G4UIcmdWithADoubleAndUnit* fPrimaryYCmd;
-    G4UIcmdWithADoubleAndUnit* fPrimaryZCmd;
-    G4UIcmdWithADoubleAndUnit* fPrimaryTCmd;
-    G4UIcmdWithADoubleAndUnit* fPrimaryXpCmd;
-    G4UIcmdWithADoubleAndUnit* fPrimaryYpCmd;  
-    G4UIcmdWithADoubleAndUnit* fPrimarySigmaXCmd; 
-    G4UIcmdWithADoubleAndUnit* fPrimarySigmaYCmd; 
-    G4UIcmdWithADoubleAndUnit* fPrimarySigmaZCmd;
-    G4UIcmdWithADoubleAndUnit* fPrimarySigmaTCmd; 
-    G4UIcmdWithADoubleAndUnit* fPrimarySigmaXpCmd; 
-    G4UIcmdWithADoubleAndUnit* fPrimarySigmaYpCmd;
+    G4UIcmdWithAString* fPrimaryTypeCmd{nullptr}; 
+    G4UIcmdWithADoubleAndUnit* fPrimaryEnergyCmd{nullptr}; 
+    G4UIcmdWithADouble* fPrimaryRelSigmaEnergyCmd{nullptr}; 
+    G4UIcmdWithADoubleAndUnit* fPrimaryXCmd{nullptr};  
+    G4UIcmdWithADoubleAndUnit* fPrimaryYCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fPrimaryZCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fPrimaryTCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fPrimaryXpCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fPrimaryYpCmd{nullptr};  
+    G4UIcmdWithADoubleAndUnit* fPrimarySigmaXCmd{nullptr}; 
+    G4UIcmdWithADoubleAndUnit* fPrimarySigmaYCmd{nullptr}; 
+    G4UIcmdWithADoubleAndUnit* fPrimarySigmaZCmd{nullptr};
+    G4UIcmdWithADoubleAndUnit* fPrimarySigmaTCmd{nullptr}; 
+    G4UIcmdWithADoubleAndUnit* fPrimarySigmaXpCmd{nullptr}; 
+    G4UIcmdWithADoubleAndUnit* fPrimarySigmaYpCmd{nullptr};
 };
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......

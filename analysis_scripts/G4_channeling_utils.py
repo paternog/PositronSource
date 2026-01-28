@@ -1,6 +1,6 @@
 #######################################################################################################
 ####### Set of functions used during the analysis of channeling simulations with Geant4 ###############
-####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 14/05/2025 ######################
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 19/12/2025 ######################
 #######################################################################################################
 
 # Import the required libraries
@@ -15,6 +15,7 @@ import scipy
 from scipy.special import voigt_profile
 from scipy.special import erf
 import json
+import time
 
 from G4_utils import * #my custom functions of general utility
 
@@ -22,18 +23,23 @@ from G4_utils import * #my custom functions of general utility
 #######################################################################################################
 ############ Custom functions useful for various Geant4 simulations related to channeling #############
 #######################################################################################################
-def get_photons_on_detector(filename, Nevents, xlim_rad=(0, 1e10), \
-                            apply_collimation=False, cut_angle=3.14, \
-                            thetaC=0, cutOnAngleX=False, beVerbose=True):
+def get_photons_on_detector(filename, Nevents, Elim=(0, 1e10), \
+                            apply_collimation=False, coll_type='ellipse', tilt=45, \
+                            cut_angle=(3.14, 3.14), thetaC=(0, 0), beVerbose=True):
     """
     Function to open the root file obtained with the Geant4 FastSimChannelingRad app 
-    and get the data scored in the "photon_spectrum" ntuple, namely the features of the 
-    photons that impinge as the detector: ["E", "angle_x", "angle_y", eventID], with 
-    E is expressed in MeV and the angles in rad. 
+    and get the data scored in the ntuples so as to select the main features of the photons 
+    that impinge as the detector, namely: ["E", "angle_x", "angle_y", "eventID"], 
+    with E is expressed in MeV and the angles in rad. 
     The function returns the read root file and a dataframe with the selected photons.
-    The angular selection can be applied specifying a cut angle with respect to a center thetaC.
-    The cut can be defined w.r.t. both angle_x and theta=sqrt(angle_x**2+angle_y**2).
+    The angular selection can be applied specifying cut angles with respect to a center thetaC.
+    The collimator can be elliptical (circular) or rectangular. The selection can be performed
+    using coll_type variable. Tilt and thetaC define the tilt of an elliptical collimator and
+    the cut center, respectively. cut_angle define the abosute cut angles in x and y direction
+    (for a circular collimator, the two elements must have the same value).
+    Last update: 31/10/2025.
     """
+    
     import numpy as np
     import pandas as pd
     import uproot
@@ -41,141 +47,439 @@ def get_photons_on_detector(filename, Nevents, xlim_rad=(0, 1e10), \
     rf = uproot.open(filename)
     rf_content = [item.split(';')[0] for item in rf.keys()]
     print('rf_content:\n', rf_content, '\n')
+    
+    ph_features = ["E", "angle_x", "angle_y", "eventID"]
        
     # Get the simulated data
     if 'photon_spectrum' in rf_content:
         df_ph = rf['photon_spectrum'].arrays(library='pd')
+    elif 'detector_photons' in rf_content:
+        df_root = rf['detector_photons'].arrays(library='pd')
+        df_ph = [ph_features]
     else:
-        #Evalues = np.zeros(1)
         df_root = rf['scoring_ntuple'].arrays(library='pd')
         df_det_ph = df_root[(df_root.volume == "Detector") & (df_root.particle == "gamma")].copy()
-        df_ph = df_det_ph.drop(["particleID", "parentID", "particle", "volume"], axis=1)
+        df_ph = df_det_ph[ph_features]
     Evalues = df_ph["E"].values #MeV
     print("number of photons scored:", Evalues.shape[0])
-    
+       
     # Take only the photons inside the collimator acceptance
-    thetaX = df_ph["angle_x"].values #rad
-    thetaY = df_ph["angle_y"].values #rad
-    df_ph["theta"] = np.sqrt(thetaX**2 + thetaY**2) #rad
-        
-    # Apply a collimation
     if apply_collimation:
-        if cutOnAngleX:
-            df_ph_sel = df_ph[((df_ph["angle_x"] - thetaC)**2 + df_ph["angle_y"]**2)**0.5 < cut_angle]
+        if coll_type == 'ellipse': #or circle if cut_angle[0]=cut_angle[1]
+            df_ph_sel = df_ph[np.sqrt((df_ph["angle_x"] - thetaC[0])**2/cut_angle[0]**2 + \
+                                      (df_ph["angle_y"] - thetaC[1])**2/cut_angle[1]**2) < 1]
+            #_, _, mask = elliptical_selection(df_ph["angle_x"], df_ph["angle_y"], thetaC, *cut_angle*2, tilt) #defined in G4_utils.py
+            #df_ph_sel = df_ph[mask] #It's an equivalent method!
         else:
-            df_ph_sel = df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle]
+            mask1 = np.abs(df_ph["angle_x"] - thetaC[0]) < cut_angle[0]
+            mask2 = np.abs(df_ph["angle_y"] - thetaC[1]) < cut_angle[1]
+            df_ph_sel = df_ph[mask1 & mask2]
     else:
         df_ph_sel = df_ph.copy()    
-    df_ph_sel = df_ph_sel[(df_ph_sel.E >= xlim_rad[0]) & (df_ph_sel.E <= xlim_rad[1])]
-    eventID_sel = list(df_ph_sel.eventID)
+    df_ph_sel_E = df_ph_sel[(df_ph_sel.E >= Elim[0]) & (df_ph_sel.E <= Elim[1])].copy()
 
     # Print number of photons emitted
     if beVerbose:
-        if cutOnAngleX:
-            strcoll = "number of collimated [sqrt((angle_x - %.3f mrad)^2 + angle_y^2) < %.3f mrad] photons: %d"
-        else:
-            strcoll = "number of collimated (|theta - %.3f mrad| < %.3f mrad) photons: %d"
-        print(strcoll % \
-              (thetaC*1e3, cut_angle*1e3, len(df_ph[np.abs(df_ph["theta"] - thetaC) < cut_angle])))
-        print("number of photons emitted within %.3f mrad (w.r.t %.3f mrad) with energy in [%.2f, %.2f] MeV: %d\n" % \
-              (cut_angle*1e3, thetaC*1e3, *xlim_rad, len(df_ph_sel.E)))
-        print("\nnumber of photons emitted per particle: %.2f" % (len(df_ph)/Nevents))
-        print("number of photons emitted per particle within %.3f mrad (w.r.t %.3f mrad) with energy in [%.2f, %.2f] MeV: %.4f\n" % \
-              (cut_angle*1e3, thetaC*1e3, *xlim_rad, len(df_ph_sel.E)/Nevents))
-
-    return rf, df_ph_sel
+        print("number of collimated photons: %d" % len(df_ph_sel))
+        print("number of collimated photons with energy in [%.2f, %.2f] MeV: %d" % \
+              (*Elim, len(df_ph_sel_E.E)))
+        print("number of photons emitted per particle: %.2f" % (len(df_ph)/Nevents))
+        print("number of collimated photons emitted per particle with energy in [%.2f, %.2f] MeV: %.4f\n" % \
+              (*Elim, len(df_ph_sel_E.E)/Nevents))
+    
+    # Return
+    return rf, df_ph_sel, df_ph_sel_E
 
 
-def read_G4_BK_spectrum(filename, th=1.):
+def read_G4_BK_spectrum(filename, file_format='new', th=1.):
     """
-    Function to read a text file with the photon spectrum emitted by an oriented crystal,
+    Function to read a text file with the photon spectrum emitted by an oriented crystal
     analitically calculated in Geant4 through Baier-Katkov formula using sampling photons. 
-    It returns [Esteps, spectrum, Nevents, Nspectra, Nbroken, Ne].
+    NOTE: the code is mainly useful to read a file contaning the results provided by 
+    each thread separated by the number of events of the thread (file_format='old').
+    Also, the code was developed when there was the possibility that the results of some 
+    thread were bugged. For this reason there are many check, that actually are not needed anymore.
+    If file_format='old' the code returns [Esteps, spectrum, Nevents, Nspectra, Nbroken, Ne].
+    The new file format is much more straightforward to read, since it ha the format of a 
+    text file with 2 columns: E_photon [MeV]  dW_rad/dE_photon [MeV^-1]. Threfore, it can
+    be read simply with: np.loadtxt(filename, delimiter=' ', skiprows=1, unpack=True).
+    Last update: 29/11/2025.
+    """
+
+    if file_format == 'old':
+        weights_list = []
+        partial = []
+        data_read = []
+        broken = False
+        Nspectra = 0
+        Nbroken = 0
+    
+        # Read the file and create a dataframe with all the good (value < th) file entries.
+        # NOTE: after the last modifications, broken data are not present anymore.
+        with open(filename, 'r') as f:
+            header = f.readline()
+            weights_list.append(int(header.split('\n')[0]))
+            for line in f:
+                if not line == '\n': 
+                    #E = float(line.split(' ')[0]) #MeV
+                    dNdE = float(line.split(' ')[1].split('\n')[0])
+                    #EdNdE = float(line.split(' ')[2].split('\n')[0])           
+                    partial.append(line)               
+                    if dNdE > th: #check using the threshold
+                        broken = True    
+                else:    
+                    if not broken:
+                        data_read.append(partial)
+                        Nspectra += 1
+                    else:
+                        Nbroken += 1
+                    header = f.readline()
+                    if not header == "":
+                        weights_list.append(int(header.split('\n')[0]))
+                    if broken:
+                        weights_list.pop()
+                    broken = False
+                    partial = []
+            if not broken:
+                data_read.append(partial)  
+    
+        weights = np.array(weights_list, dtype='float')
+        data_read = [item for sublist in data_read for item in sublist]
+        Ndata = len(data_read)
+        #print('weights_list:', weights_list)
+        #print(data_read)
+        #print("Nbroken:", Nbroken)
+        #print("Nspectra:", Nspectra)
+    
+        data_x_read = np.array([data_read[i].split(' ')[0] for i in range(Ndata)], dtype='float')
+        data_y_read = np.array([data_read[i].split(' ')[1].split('\n')[0] for i in range(Ndata)], dtype='float')
+        data_z_read = np.array([data_read[i].split(' ')[2].split('\n')[0] for i in range(Ndata)], dtype='float')
+    
+        df_list = np.transpose(np.array([data_x_read, data_y_read, data_z_read]))
+        df = pd.DataFrame(data=df_list, columns=['E', 'dNdE', 'EdNdE'])
+        #print('\n', df.head(5), '\n')
+    
+        # build the spectrum (and spectral intensity)
+        Esteps = np.unique(df.E.values)
+        Nbin = Esteps.shape[0]
+        spectrum = np.zeros(Nbin)
+        spectral_intensity = np.zeros(Nbin)
+    
+        my_list = []
+        for E in list(Esteps):
+            temp = df.loc[df['E'] == E].values
+            my_list.append(temp)    
+        my_array = np.array(my_list, dtype='float')
+    
+        for i in range(Nbin):
+            my_array2 = my_array[i]
+            spectrum[i] = np.average(my_array2[:,1], weights=weights)
+            spectral_intensity[i] = np.average(my_array2[:,2], weights=weights)   
+    
+        spectrum[-1] = 0
+        
+        Nevents = int(np.sum(weights))
+        Ne = round(np.sum(spectrum), 2)
+        print('Number of good events:', Nevents)
+        print('Number of photons emitted per primary (single-photon approx):', Ne, '\n')
+        
+        return Esteps, spectrum, Nevents, Nspectra, Nbroken, Ne
+    else:
+        with open(filename, 'r') as f:
+            header = f.readline()
+            print("reading BK file: %s.dat" % filename)
+            print("header:", header)       
+        data_read = np.loadtxt(filename, dtype='float', \
+                               delimiter=' ', skiprows=1, unpack=True)
+        Esteps = data_read[0]
+        spectrum = data_read[1]
+        print("file read!")       
+        return Esteps, spectrum, None, None, None, None
+
+
+####################### process_photons_optimized (different versions) ###########################
+def process_photons_optimized(rf):
+    """
+    Optimized function to process photon data from ROOT file.
+    
+    Returns:
+    - Eph: Photon energies in GeV
+    - thetaX_ph: Photon angles in mrad
+    - thetaY_ph: Photon angles in mrad
+    - Nph: Number of photons
     """
     
-    weights_list = []
-    partial = []
-    data_read = []
-    broken = False
-    Nspectra = 0
-    Nbroken = 0
-
-    # Read the file and create a dataframe with all the good (value < th) file entries.
-    # NOTE: after last modifications, broken data are not present anymore.
-    with open(filename, 'r') as f:
-        header = f.readline()
-        weights_list.append(int(header.split('\n')[0]))
-        for line in f:
-            if not line == '\n': 
-                #E = float(line.split(' ')[0]) #MeV
-                dNdE = float(line.split(' ')[1].split('\n')[0])
-                #EdNdE = float(line.split(' ')[2].split('\n')[0])           
-                partial.append(line)               
-                if dNdE > th: #check using the threshold
-                    broken = True    
-            else:    
-                if not broken:
-                    data_read.append(partial)
-                    Nspectra += 1
-                else:
-                    Nbroken += 1
-                header = f.readline()
-                if not header == "":
-                    weights_list.append(int(header.split('\n')[0]))
-                if broken:
-                    weights_list.pop()
-                broken = False
-                partial = []
-        if not broken:
-            data_read.append(partial)  
-
-    weights = np.array(weights_list, dtype='float')
-    data_read = [item for sublist in data_read for item in sublist]
-    Ndata = len(data_read)
-    #print('weights_list:', weights_list)
-    #print(data_read)
-    #print("Nbroken:", Nbroken)
-    #print("Nspectra:", Nspectra)
-
-    data_x_read = np.array([data_read[i].split(' ')[0] for i in range(Ndata)], dtype='float')
-    data_y_read = np.array([data_read[i].split(' ')[1].split('\n')[0] for i in range(Ndata)], dtype='float')
-    data_z_read = np.array([data_read[i].split(' ')[2].split('\n')[0] for i in range(Ndata)], dtype='float')
-
-    df_list = np.transpose(np.array([data_x_read, data_y_read, data_z_read]))
-    df = pd.DataFrame(data=df_list, columns=['E', 'dNdE', 'EdNdE'])
-    #print('\n', df.head(5), '\n')
-
-    # build the spectrum (and the spectral intensity)
-    Esteps = np.unique(df.E.values)
-    Nbin = Esteps.shape[0]
-    spectrum = np.zeros(Nbin)
-    spectral_intensity = np.zeros(Nbin)
-
-    my_list = []
-    for E in list(Esteps):
-        temp = df.loc[df['E'] == E].values
-        my_list.append(temp)    
-    my_array = np.array(my_list, dtype='float')
-
-    for i in range(Nbin):
-        my_array2 = my_array[i]
-        spectrum[i] = np.average(my_array2[:,1], weights=weights)
-        spectral_intensity[i] = np.average(my_array2[:,2], weights=weights)   
-
-    spectrum[-1] = 0
+    tstart = time.time()
     
-    Nevents = int(np.sum(weights))
-    Ne = round(np.sum(spectrum), 2)
-    print('Number of good events:', Nevents)
-    print('Number of photons emitted per primary (single-photon approx):', Ne, '\n')
+    # Load only necessary columns and apply filters during loading
+    branches_red = ["eventID", "volume", "angle_x", "angle_y", "Ekin", "parentID", "particle"]
     
-    return Esteps, spectrum, Nevents, Nspectra, Nbroken, Ne
+    # Use array filtering for maximum performance
+    arrays = rf['scoring_ntuple'].arrays(branches_red, library='np')
+    
+    # Create boolean masks using numpy (much faster than pandas filtering)
+    volume_mask = arrays['volume'] == b"Detector"
+    parent_mask = arrays['parentID'] > 0
+    particle_mask = arrays['particle'] == b"gamma"
+    
+    # Combine all masks
+    photon_mask = volume_mask & parent_mask & particle_mask
+    
+    # Apply mask and convert in one step
+    Eph = arrays['Ekin'][photon_mask] * 0.001         # MeV -> GeV
+    thetaX_ph = arrays['angle_x'][photon_mask] * 1e3  # rad -> mrad
+    thetaY_ph = arrays['angle_y'][photon_mask] * 1e3  # rad -> mrad
+    Nph = len(Eph)
+    
+    telapsed = time.time() - tstart
+    print(f"Number of emitted photons: {Nph}")
+    print(f"Elapsed time: {telapsed:.2f} s\n")
+    
+    return Eph, thetaX_ph, thetaY_ph, Nph
 
 
-def get_deflection_angles(df_out, df_in, pot_good_events, 
-                          res_thetaX_in=0, res_thetaY_in=0, \
-                          res_DthetaX=0, res_DthetaY=0, \
-                          ang_cut=np.pi*1e6, cut_center=[0., 0.]):
+# Even faster version using uproot's built-in filtering
+def process_photons_uproot_filter(rf):
+    """
+    Ultra-fast version using uproot's expression filtering.
+    """
+    
+    tstart = time.time()
+    
+    # Use uproot's expression filtering to load only photon data
+    expression = "(volume == 'Detector') & (parentID > 0) & (particle == 'gamma')"
+    
+    # Load only the filtered data directly
+    df_ph = rf['scoring_ntuple'].arrays(
+        ["Ekin", "angle_x", "angle_y"],
+        cut=expression,
+        library='pd'
+    )
+    
+    # Convert to arrays and apply unit conversions
+    Eph = df_ph['Ekin'].values * 0.001         # MeV -> GeV
+    thetaX_ph = df_ph['angle_x'].values * 1e3  # rad -> mrad
+    thetaY_ph = df_ph['angle_y'].values * 1e3  # rad -> mrad
+    Nph = len(Eph)
+    
+    telapsed = time.time() - tstart
+    print(f"Number of emitted photons: {Nph}")
+    print(f"Elapsed time: {telapsed:.2f} s\n")
+    
+    return Eph, thetaX_ph, thetaY_ph, Nph
+
+
+# Memory-efficient version for very large datasets
+def process_photons_memory_efficient(rf, chunk_size=100000):
+    """
+    Memory-efficient version that processes data in chunks.
+    """
+    
+    tstart = time.time()
+    
+    total_entries = int(rf['scoring_ntuple'].num_entries)
+    Eph_list, thetaX_list, thetaY_list = [], [], []
+    
+    # Process data in chunks to reduce memory usage
+    for start_idx in range(0, total_entries, chunk_size):
+        end_idx = min(start_idx + chunk_size, total_entries)
+        
+        arrays = rf['scoring_ntuple'].arrays(
+            ["volume", "angle_x", "angle_y", "Ekin", "parentID", "particle"],
+            entry_start=start_idx,
+            entry_stop=end_idx,
+            library='np'
+        )
+        
+        # Apply filters
+        mask = (arrays['volume'] == b"Detector") & \
+                (arrays['parentID'] > 0) & (arrays['particle'] == b"gamma")
+        
+        # Store results
+        if np.any(mask):
+            Eph_list.append(arrays['Ekin'][mask] * 0.001)
+            thetaX_list.append(arrays['angle_x'][mask] * 1e3)
+            thetaY_list.append(arrays['angle_y'][mask] * 1e3)
+    
+    # Combine all chunks
+    Eph = np.concatenate(Eph_list) if Eph_list else np.array([])
+    thetaX_ph = np.concatenate(thetaX_list) if thetaX_list else np.array([])
+    thetaY_ph = np.concatenate(thetaY_list) if thetaY_list else np.array([])
+    Nph = len(Eph)
+    
+    telapsed = time.time() - tstart
+    print(f"Number of emitted photons: {Nph}")
+    print(f"Elapsed time: {telapsed:.2f} s\n")
+    
+    return Eph, thetaX_ph, thetaY_ph, Nph
+
+
+# One-liner version for maximum simplicity
+def process_photons_quick(rf):
+    """Quick and simple version for standard use cases."""
+    
+    tstart = time.time()
+    
+    # Load and filter in one step, then convert
+    df_ph = rf['scoring_ntuple'].arrays(
+        ["Ekin", "angle_x", "angle_y", "volume", "parentID", "particle"],
+        library='pd'
+    ).query('volume == "Detector" and parentID > 0 and particle == "gamma"')
+    
+    Eph = df_ph['Ekin'].values * 0.001
+    thetaX_ph = df_ph['angle_x'].values * 1e3
+    thetaY_ph = df_ph['angle_y'].values * 1e3
+    Nph = len(Eph)
+    
+    print(f"Number of emitted photons: {Nph}")
+    print(f"Elapsed time: {time.time() - tstart:.2f} s\n")
+    
+    return Eph, thetaX_ph, thetaY_ph, Nph
+##################################################################################################
+
+######################### load_and_process_data (different versions) #############################
+def load_and_process_data(rf, Nmax=100000):
+    """
+    Optimized function to load and process simulation data.
+    
+    Parameters:
+    - rf: Root file object
+    - Nmax: Maximum number of events to process
+    
+    Returns:
+    - df_in_primary_sel: Filtered input data
+    - df_out_primary_sel: Filtered output data
+    """
+    
+    # Disable warnings
+    import warnings
+    warnings.simplefilter("ignore")
+    
+    # Load only necessary columns to reduce memory
+    columns_needed = ['eventID', 'angle_x', 'angle_y', 'Ekin', 'volume', 'parentID']
+    df = rf['scoring_ntuple'].arrays(columns_needed, library='pd')
+    
+    # Create boolean masks for filtering (much faster than separate operations)
+    crystal_mask = (df['volume'] == "Crystal") & (df['parentID'] == 0)
+    detector_mask = (df['volume'] == "Detector") & (df['parentID'] == 0)
+    
+    # Apply masks and limit to Nmax in one step
+    df_in_all_primary = df[crystal_mask].head(Nmax)
+    df_out_all_primary = df[detector_mask].head(Nmax)
+    
+    # Use the actual minimum length
+    actual_Nmax = min(len(df_in_all_primary), len(df_out_all_primary), int(Nmax))
+    
+    # Select final datasets with proper slicing
+    df_in_primary_sel = df_in_all_primary[["eventID", "angle_x", "angle_y", "Ekin"]].iloc[:actual_Nmax]
+    df_out_primary_sel = df_out_all_primary[["eventID", "angle_x", "angle_y", "Ekin"]].iloc[:actual_Nmax]
+    
+    print(f"Number of considered events (oriented case): {len(df_in_primary_sel)}")
+    
+    return df_in_primary_sel, df_out_primary_sel
+
+
+# Even faster version using numpy arrays directly
+def load_and_process_data_fast(rf, Nmax=100000):
+    """
+    Ultra-fast version using numpy arrays directly.
+    """
+
+    # Disable warnings
+    import warnings
+    warnings.simplefilter("ignore")
+    
+    # Load data as numpy arrays for maximum performance
+    arrays = rf['scoring_ntuple'].arrays(['eventID', 'angle_x', 'angle_y', \
+                                          'Ekin', 'volume', 'parentID'])
+    
+    # Convert to numpy operations
+    volume = arrays['volume']
+    parentID = arrays['parentID']
+    eventID = arrays['eventID']
+    angle_x = arrays['angle_x']
+    angle_y = arrays['angle_y']
+    Ekin = arrays['Ekin']
+    
+    # Create masks
+    crystal_mask = (volume == b"Crystal") & (parentID == 0)
+    detector_mask = (volume == b"Detector") & (parentID == 0)
+    
+    # Apply masks and limit to Nmax
+    crystal_indices = np.where(crystal_mask)[0][:Nmax]
+    detector_indices = np.where(detector_mask)[0][:Nmax]
+    
+    # Create final DataFrames
+    df_in_primary_sel = pd.DataFrame({
+        'eventID': eventID[crystal_indices],
+        'angle_x': angle_x[crystal_indices],
+        'angle_y': angle_y[crystal_indices],
+        'Ekin': Ekin[crystal_indices]
+    })
+    
+    df_out_primary_sel = pd.DataFrame({
+        'eventID': eventID[detector_indices],
+        'angle_x': angle_x[detector_indices],
+        'angle_y': angle_y[detector_indices],
+        'Ekin': Ekin[detector_indices]
+    })
+    
+    print(f"Number of considered events (oriented case): {len(df_in_primary_sel)}")
+    
+    return df_in_primary_sel, df_out_primary_sel
+
+
+# Memory-optimized version for very large files
+def load_and_process_data_memory_optimized(rf, Nmax=100000, chunk_size=50000):
+    """
+    Memory-optimized version that processes data in chunks.
+    Useful for very large files that don't fit in memory.
+    """
+    warnings.simplefilter("ignore")
+    
+    # Get the total number of entries to pre-allocate arrays
+    n_entries = rf['scoring_ntuple'].num_entries
+    
+    # Pre-allocate lists (more memory efficient than growing arrays)
+    in_events = []
+    out_events = []
+    
+    # Process in chunks to reduce memory usage
+    for start in range(0, n_entries, chunk_size):
+        end = min(start + chunk_size, n_entries)
+        
+        df_chunk = rf['scoring_ntuple'].arrays(
+            ['eventID', 'angle_x', 'angle_y', 'Ekin', 'volume', 'parentID'],
+            entry_start=start,
+            entry_stop=end,
+            library='pd'
+        )
+        
+        # Filter and collect events
+        crystal_events = df_chunk[(df_chunk['volume'] == "Crystal") & (df_chunk['parentID'] == 0)]
+        detector_events = df_chunk[(df_chunk['volume'] == "Detector") & (df_chunk['parentID'] == 0)]
+        
+        in_events.append(crystal_events[["eventID", "angle_x", "angle_y", "Ekin"]])
+        out_events.append(detector_events[["eventID", "angle_x", "angle_y", "Ekin"]])
+        
+        # Stop if we have enough events
+        if len(in_events) > 0 and sum(len(chunk) for chunk in in_events) >= Nmax:
+            break
+    
+    # Concatenate and limit to Nmax
+    df_in_primary_sel = pd.concat(in_events, ignore_index=True).head(Nmax)
+    df_out_primary_sel = pd.concat(out_events, ignore_index=True).head(Nmax)
+    
+    print(f"Number of considered events (oriented case): {len(df_in_primary_sel)}")
+    
+    return df_in_primary_sel, df_out_primary_sel
+##################################################################################################
+
+######################### get deflection angles (different versions) #############################
+def get_deflection_angles_old(df_out, df_in, pot_good_events, 
+                              res_thetaX_in=0, res_thetaY_in=0, \
+                              res_DthetaX=0, res_DthetaY=0, \
+                              ang_cut=np.pi*1e6, cut_center=[0., 0.]):
     """
     Calculate the deflection for events whose transverse
     deviation angle is within a given angular cut.
@@ -205,16 +509,17 @@ def get_deflection_angles(df_out, df_in, pot_good_events,
     return DthetaX, DthetaY, thetaX_in, thetaY_in, good_events
 
 
-def get_deflection_angles2(df_merged, 
-                           res_thetaX_in=0, res_thetaY_in=0, \
-                           res_DthetaX=0, res_DthetaY=0, \
-                           ang_cut=np.pi*1e6, cut_center=[0., 0.]):
+def get_deflection_angles(df_merged, 
+                          res_thetaX_in=0, res_thetaY_in=0, \
+                          res_DthetaX=0, res_DthetaY=0, \
+                          ang_cut=np.pi*1e6, cut_center=[0., 0.]):
     """
     Calculate the deflection for events whose transverse
     deviation angle is within a given angular cut.
     Experimental resolution can be taken into account.
     Input angles must be given in [urad]. However, the angles
-    in the passed dataframes (df_out, df_in) are expressed in [rad].
+    in the passed merged dataframe are expressed in [rad].
+    In this case, there is no neee dof pot_good_events list.
     """
     pot_good_events = df_merged.eventID.unique()
     DthetaX = [] #urad
@@ -223,8 +528,6 @@ def get_deflection_angles2(df_merged,
     thetaY_in = [] #rad
     good_events = []
     df_grouped = df_merged.groupby('eventID')
-    #for i in tqdm(pot_good_events):
-    #    df_i = df_merged[df_merged["eventID"] == i].copy()
     for i, df_i in tqdm(df_grouped):
         thX_in = np.random.normal(df_i['angle_x_in'].values[0]*1e6, res_thetaX_in, 1)[0] #urad
         thY_in = np.random.normal(df_i['angle_y_in'].values[0]*1e6, res_thetaY_in, 1)[0] #urad
@@ -240,6 +543,120 @@ def get_deflection_angles2(df_merged,
     return DthetaX, DthetaY, thetaX_in, thetaY_in, good_events
 
 
+def get_deflection_angles_vectorized(df_merged, 
+                                     res_thetaX_in=0, 
+                                     res_thetaY_in=0,
+                                     res_DthetaX=0, 
+                                     res_DthetaY=0,
+                                     ang_cut=np.pi*1e6, 
+                                     cut_center=(0., 0.)):
+    """
+    Calculate deflection angles for events within angular cut.
+    Vectorized implementation for much better performance.
+    
+    Parameters:
+    - df_merged: DataFrame with eventID, angle_x_in, angle_y_in, angle_x_out, angle_y_out
+    - res_*: Resolution uncertainties (standard deviation) in urad
+    - ang_cut: Angular cut radius in urad
+    - cut_center: Center of angular cut in urad
+    
+    Returns:
+    - DthetaX, DthetaY: Deflection angles with resolution smearing
+    - thetaX_in, thetaY_in: Input angles with resolution smearing  
+    - good_events: Event IDs that pass the cut
+    """
+    # Convert to urad once (vectorized)
+    theta_x_in_urad = df_merged['angle_x_in'].values * 1e6
+    theta_y_in_urad = df_merged['angle_y_in'].values * 1e6
+    
+    # Calculate deflection in urad
+    DthetaX_mean = (df_merged['angle_x_out'].values - df_merged['angle_x_in'].values) * 1e6
+    DthetaY_mean = (df_merged['angle_y_out'].values - df_merged['angle_y_in'].values) * 1e6
+    
+    # Apply resolution smearing
+    if res_thetaX_in > 0 or res_thetaY_in > 0:
+        theta_x_in_smeared = np.random.normal(theta_x_in_urad, res_thetaX_in)
+        theta_y_in_smeared = np.random.normal(theta_y_in_urad, res_thetaY_in)
+    else:
+        theta_x_in_smeared = theta_x_in_urad
+        theta_y_in_smeared = theta_y_in_urad
+    
+    # Calculate radial distance from cut center
+    radial_dist = np.sqrt((theta_x_in_smeared - cut_center[0])**2 + 
+                          (theta_y_in_smeared - cut_center[1])**2)
+    
+    # Apply angular cut
+    mask = radial_dist < ang_cut
+    good_events = df_merged['eventID'].values[mask]
+    
+    # Apply resolution to deflection angles
+    if res_DthetaX > 0 or res_DthetaY > 0:
+        DthetaX = np.random.normal(DthetaX_mean[mask], res_DthetaX)
+        DthetaY = np.random.normal(DthetaY_mean[mask], res_DthetaY)
+    else:
+        DthetaX = DthetaX_mean[mask]
+        DthetaY = DthetaY_mean[mask]
+    
+    thetaX_in = theta_x_in_smeared[mask]
+    thetaY_in = theta_y_in_smeared[mask]
+    
+    return DthetaX, DthetaY, thetaX_in, thetaY_in, good_events
+
+
+# Alternative version for even better performance with pre-grouped data
+def get_deflection_angles_optimized(df_merged,
+                                    res_thetaX_in=0,
+                                    res_thetaY_in=0, 
+                                    res_DthetaX=0,
+                                    res_DthetaY=0,
+                                    ang_cut=np.pi*1e6,
+                                    cut_center=(0., 0.)):
+    """
+    Optimized version that assumes df_merged has one row per eventID.
+    If there are duplicates, use df_merged = df_merged.drop_duplicates('eventID') first.
+    """
+    # Convert to urad
+    theta_x_in_urad = df_merged['angle_x_in'] * 1e6
+    theta_y_in_urad = df_merged['angle_y_in'] * 1e6
+    
+    # Calculate deflections
+    DthetaX_mean = (df_merged['angle_x_out'] - df_merged['angle_x_in']) * 1e6
+    DthetaY_mean = (df_merged['angle_y_out'] - df_merged['angle_y_in']) * 1e6
+    
+    # Apply resolution smearing to input angles
+    if res_thetaX_in > 0:
+        theta_x_in_urad = np.random.normal(theta_x_in_urad, res_thetaX_in)
+    if res_thetaY_in > 0:
+        theta_y_in_urad = np.random.normal(theta_y_in_urad, res_thetaY_in)
+    
+    # Apply angular cut
+    radial_dist = np.hypot(theta_x_in_urad - cut_center[0], 
+                           theta_y_in_urad - cut_center[1])
+    mask = radial_dist < ang_cut
+    
+    # Apply resolution to deflection angles
+    if res_DthetaX > 0:
+        DthetaX = np.random.normal(DthetaX_mean[mask], res_DthetaX)
+    else:
+        DthetaX = DthetaX_mean[mask]
+        
+    if res_DthetaY > 0:
+        DthetaY = np.random.normal(DthetaY_mean[mask], res_DthetaY)
+    else:
+        DthetaY = DthetaY_mean[mask]
+    
+    return (DthetaX, DthetaY, 
+            theta_x_in_urad[mask], theta_y_in_urad[mask], 
+            df_merged['eventID'].values[mask])
+
+
+# If you need to handle multiple entries per eventID, use this first:
+def prepare_dataframe(df_merged):
+    """Ensure one row per eventID by taking first occurrence"""
+    return df_merged.groupby('eventID').first().reset_index()
+##################################################################################################
+
+######################### filter photon emission using deflection values #########################
 def filter_photon_emission_with_defl_cut(DthetaX, DthetaY, good_events, df_ph, \
                                          applySel=False, selType=1, \
                                          DthXmin=-np.pi*1e6, DthXmax=np.pi*1e6, \
@@ -295,7 +712,8 @@ def filter_photon_emission_with_defl_cut(DthetaX, DthetaY, good_events, df_ph, \
         Eph_dict_sel[sel_events[i]] = list(df_i["Ekin"].values*0.001) #MeV -> GeV
         thetaX_ph_dict_sel[sel_events[i]] = list(df_i["angle_x"].values*1e3) #rad -> mrad
         thetaY_ph_dict_sel[sel_events[i]] = list(df_i["angle_y"].values*1e3) #rad -> mrad
-    Erad_sel = np.array([sum(Eph_dict_sel[event]) for event in Eph_dict_sel.keys()]) #total energy lost by radiation per (selected) event [GeV]
+    Erad_sel = np.array([sum(Eph_dict_sel[event]) for event in Eph_dict_sel.keys()]) 
+    #Erad_Sel is the total energy lost by radiation per (selected) event [GeV]
     print("number of selected events:", len(Eph_dict_sel.keys()))
     Eph_sel = [] #it will contain the individual photon spectrum [GeV]
     thetaX_ph_sel = [] #it will contain the individual photon angle_x [mrad]
@@ -321,17 +739,87 @@ def filter_photon_emission_with_defl_cut(DthetaX, DthetaY, good_events, df_ph, \
 #######################################################################################################
 
 #######################################################################################################
+############# Set of functions useful for TestBeamOC(2) ###############################################
+#######################################################################################################
+def applyCutsToDF(df, th_APC1=1e15, th_APC2=0, crystal_width_cm=1e15, crystal_height_cm=1e15, \
+                  angular_cut_type='theta', theta_cut=3.1415):
+    """
+    It applies cuts to a df that contains at least x, y, thetax, thetay, APC1, APC2.
+    The following variables are a subset of the columns of outData ntuple of TestBeamOC(2).
+    The angular cut can be applied on thetaX, thetaY or on theta, which is valid in the axial case.
+    """
+    import numpy as np
+    
+    if angular_cut_type == "thetaX":
+        ang_cut = np.abs(df.thetaX) < theta_cut
+    elif angular_cut_type == "thetaY":
+        ang_cut = np.abs(df.thetaY) < theta_cut
+    else:
+        ang_cut = df.thetaX**2 + df.thetaY**2 < theta_cut**2
+    print("applied %.2e rad angular cut on %s" % (theta_cut, angular_cut_type))
+           
+    if 'edep_APC1' not in df.columns:
+        df_sel = df[(np.abs(df.x_cry) < crystal_width_cm*0.5) & \
+                    (np.abs(df.y_cry) < crystal_height_cm*0.5) & (ang_cut)]
+    else:
+        if len(df[df.edep_APC1 == 0]) == len(df.edep_APC1):
+            df_sel = df[(np.abs(df.x_cry) < crystal_width_cm*0.5) & \
+                        (np.abs(df.y_cry) < crystal_height_cm*0.5) & (ang_cut)]
+        else:
+            df_sel = df[(df.edep_APC1 < th_APC1) & (df.edep_APC2 > th_APC2) & \
+                        (np.abs(df.x_cry) < crystal_width_cm*0.5) & \
+                        (np.abs(df.y_cry) < crystal_height_cm*0.5) & (ang_cut)]
+    return df_sel
+
+
+def FindPartPerEvent(df):
+    """
+    It counts the number of particles per event present
+    in an ntuple that contains 'eventID' column, 
+    such as 'scoringScreen' of TestBeamOC.
+    WARNING: there may be particles that impinge multiple times 
+    on the screen (due to scattering), thus it is an approx.
+    """
+    import pandas as pd
+    import numpy as np
+    from tqdm.notebook import tqdm
+    part_events = []
+    df_dict = {}
+    df_grouped = df.groupby('eventID')
+    for i, df_i in tqdm(df_grouped):
+        part_events.append(len(df_i))
+        df_dict[i] = df_i    
+    return np.array(part_events), df_dict
+
+
+def CountParticles(df):
+    """
+    It counts the number of particles of each type present
+    in an ntuple that contains 'particle' column, 
+    such as 'scoringScreen' of TestBeamOC.
+    WARNING: there may be particles that impinge multiple times 
+    on the screen (due to scattering), thus it is an approx.
+    """
+    import pandas as pd
+    import numpy as np
+    from tqdm.notebook import tqdm
+    part_counts = {}
+    df_grouped = df.groupby('particle')
+    for i, df_i in tqdm(df_grouped):
+        part_counts[i] = len(df_i)
+    return part_counts
+#######################################################################################################
+
+#######################################################################################################
 #### Functions implemented by R. Negrello to fit theta_out curve considering various contributions ####
 #######################################################################################################
-path_file_json = "parameters.json"
-if os.path.exists(path_file_json):
-    with open(path_file_json, 'r') as file:
-        parameters = json.load(file)
-
-    def f_dech_exp(theta_X, theta_dech, A_dech):
-        sigma_VR = parameters["sigma_VR"]  
-        theta_VR = parameters["mu_VR"]
-        theta_Ch = parameters["mu_ch"]
+def f_dech(theta_X, theta_dech, A_dech, path_file_json="parameters.json"):
+    if os.path.exists(path_file_json):
+        with open(path_file_json, 'r') as file:
+            parameters = json.load(file)
+        sigma_VR = parameters["sigma"]  
+        theta_VR = parameters["mu"]
+        theta_Ch = parameters["mu"]
         term1 = A_dech / (2 * theta_dech)
         term2_numerator = (sigma_VR**2) / (2 * (theta_dech**2)) + (theta_Ch - theta_X) / theta_dech
         term2 = np.exp(term2_numerator)
@@ -342,21 +830,8 @@ if os.path.exists(path_file_json):
         term3_erf2 = erf(term3_numerator2 / term3_denominator)
         result = term1 * term2 * (term3_erf1 - term3_erf2)
         return result
-
-    def f_dech_sim(theta_X, theta_dech, A_dech):
-        sigma_VR = parameters["sigma_VR_sim"]  
-        theta_VR = parameters["mu_VR_sim"]
-        theta_Ch = parameters["mu_ch_sim"]
-        term1 = A_dech / (2 * theta_dech)
-        term2_numerator = (sigma_VR**2) / (2 * (theta_dech**2)) + (theta_Ch - theta_X) / theta_dech
-        term2 = np.exp(term2_numerator)
-        term3_numerator1 = theta_VR - theta_X + (sigma_VR**2) / theta_dech
-        term3_denominator = np.sqrt(2) * sigma_VR
-        term3_erf1 = erf(term3_numerator1 / term3_denominator)
-        term3_numerator2 = theta_Ch - theta_X + (sigma_VR**2) / theta_dech
-        term3_erf2 = erf(term3_numerator2 / term3_denominator)
-        result = term1 * term2 * (term3_erf1 - term3_erf2)
-        return result
+    else:
+        return 0
     
 def proj(img, axis):
     axisN = 1 if axis=="x" else 0
@@ -367,7 +842,7 @@ def gauss(x, A, mu, sigma):
 
 def f_VR(x, A, mu, sigma, r):
     return A/(sigma*np.sqrt(2*np.pi))*np.exp(-(x-mu)**2/(2*sigma**2))+ \
-          (1-A)/(r*sigma*np.sqrt(2*np.pi))*np.exp(-(x-mu)**2/(2*r**2*sigma**2))
+           (1-A)/(r*sigma*np.sqrt(2*np.pi))*np.exp(-(x-mu)**2/(2*r**2*sigma**2))
 
 def voigt(x, A, mu, sigma, gamma):
     return A/(sigma*np.sqrt(2*np.pi)) * voigt_profile(x - mu, sigma, gamma)    
@@ -400,8 +875,6 @@ def my_dataframe_split(df, events, len_traj, Nparts_desired=500):
     kr = 0 #number of residual events
     temp_r = []
     Nentries_processed = 0
-    #for i in tqdm(events):
-    #    df_i = df[df["eventID"] == i].copy() #variables of this event
     df_grouped = df.groupby('eventID')
     for i, df_i in tqdm(df_grouped):
         if i in events:
@@ -782,6 +1255,7 @@ def merge_root_ntuples_based_on_eventID(data_path, ntuple_name, beVerbose=False)
     It returns a dataframe with the merged ntuple.
     WARNING: if you have a file with more than one ntuple, 
     by reading them separately, you'll lose the correlation.
+    OLD (full gpaterno) VERSION.
     """
     import uproot
     dataframes_list = []
@@ -828,7 +1302,7 @@ def merge_root_ntuples_based_on_eventID(data_path, ntuple_name, beVerbose=False)
     return df_root_merged 
 
 
-def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbose=False, save_result=False):
+def merge_FastSimChannelingRad_files_old(data_path, correct_particle=False, primary='e-', beVerbose=False, save_result=False):
     """
     Function to merge both the root and the txt files of a set of Geant4
     simulations of particle interaction in Oriented Crystals, obatined with
@@ -840,11 +1314,14 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
     NOTE1: due to some issues in the creation of the output tree with
     branches of strings, I converted strings in integers
     (look at volume_dict and part_dict to know the coding).
+    OLD (full gpaterno) VERSION.
     """
     import uproot
     dataframes_defl_list = []
     dataframes_rad_list = []
     dataframes_txt_list = []
+    dataframes_edep_calo_list = []
+    dataframes_edep_vol_list = []
     add2eventIDc = 0
     add2eventIDi = 0
     events_read = 0
@@ -865,7 +1342,17 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
         df_defl = rf['scoring_ntuple'].arrays(library='pd')          
         # radiation ntuple
         df_rad = rf['photon_spectrum'].arrays(library='pd')
-        df_rad = df_rad.rename(columns={"E": "Ekin"})            
+        #df_rad = df_rad.rename(columns={"E": "Ekin"})
+        # edep_vol calo
+        if 'edep_calo' in rf_content:
+            df_edep_calo = rf['edep_calo'].arrays(library='pd')
+        else:
+             df_edep_calo = pd.DataFrame()
+        # edep_vol ntuple
+        if 'edep_vol' in rf_content:
+            df_edep_vol = rf['edep_vol'].arrays(library='pd')    
+        else:
+             df_edep_vol = pd.DataFrame()
         # list of events
         event_list = list(df_defl.eventID.unique())
         #print("event_list:", event_list)
@@ -876,11 +1363,19 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
             df_defl.loc[df_defl.eventID == event, 'eventID'] += add2eventIDc + add1 if min(event_list)==0 else 0
             if not df_rad.empty:
                 df_rad.loc[df_rad.eventID == event, 'eventID'] += add2eventIDc + add1 if min(event_list)==0 else 0
+            if not df_edep_calo.empty:
+                df_edep_calo.loc[df_edep_calo.eventID == event, 'eventID'] += add2eventIDc + add1 if min(event_list)==0 else 0
+            if not df_edep_vol.empty:
+                df_edep_vol.loc[df_edep_vol.eventID == event, 'eventID'] += add2eventIDc + add1 if min(event_list)==0 else 0
         add1 = 1 if (n_events < max(event_list)) else 0
         #print("add1:", add1)
         dataframes_defl_list.append(df_defl)
         if not df_rad.empty:
-            dataframes_rad_list.append(df_rad)           
+            dataframes_rad_list.append(df_rad)
+        if not df_edep_calo.empty:
+            dataframes_edep_calo_list.append(df_edep_calo)
+        if not df_edep_vol.empty:
+            dataframes_edep_vol_list.append(df_edep_vol) 
         # open txt file
         volume = []
         eventID = []
@@ -934,8 +1429,16 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
     # merge the dataframes
     df_defl_merged = pd.concat(dataframes_defl_list, ignore_index=True)
     if correct_particle:
-        df_defl_merged.particle = ["e-"]*len(df_defl_merged) #correction #<-- it may not be required!
+        df_defl_merged.particle = [primary]*len(df_defl_merged) #correction #<-- it may not be required!
     df_rad_merged = pd.concat(dataframes_rad_list, ignore_index=True)
+    if not len(dataframes_edep_calo_list) == 0:
+        df_edep_calo_merged = pd.concat(dataframes_edep_calo_list, ignore_index=True)
+    else:
+        df_edep_calo_merged = pd.DataFrame({'eventID' : [], 'edep' : []})
+    if not len(dataframes_edep_vol_list) == 0:
+        df_edep_vol_merged = pd.concat(dataframes_edep_vol_list, ignore_index=True)
+    else:
+        df_edep_vol_merged = pd.DataFrame({'eventID' : [], 'volID' : [] , 'edep' : []})
     if not len(dataframes_txt_list) == 0:
         df_txt_merged = pd.concat(dataframes_txt_list, ignore_index=True)
     else:
@@ -963,6 +1466,7 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
         df_defl_merged["particle"] = df_defl_merged["particle"].astype(str) 
         part_dict = {item: i for i,item in enumerate(df_defl_merged.particle.unique())}
         df_defl_merged["particle"] = df_defl_merged["particle"].replace(part_dict)
+        #tree_defl
         tree_defl.extend({
                           "eventID": df_defl_merged.eventID.values, "volume": df_defl_merged.volume.values, \
                           "x": df_defl_merged.x.values, "y": df_defl_merged.y.values, \
@@ -970,15 +1474,37 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
                           "Ekin": df_defl_merged.Ekin.values, "particle": df_defl_merged.particle.values, \
                           "particleID": df_defl_merged.particleID.values, "parentID": df_defl_merged.parentID.values
                          })        
+        #tree_rad
         tree_rad = rf_merged.mktree("photon_spectrum", {
-                                                 "Ekin": np.float64, \
+                                                 "E": np.float64, \
                                                  "angle_x": np.float64, "angle_y": np.float64, \
                                                  "eventID": np.int32,
                                                 })    
         tree_rad.extend({
-                         "Ekin": df_rad_merged.Ekin.values, \
-                         "angle_x": df_rad_merged.angle_x.values, "angle_y": df_rad_merged.angle_y.values, \
+                         "E": df_rad_merged.E.values, \
+                         "angle_x": df_rad_merged.angle_x.values, \
+                         "angle_y": df_rad_merged.angle_y.values, \
                          "eventID": df_rad_merged.eventID.values
+                        })
+        #tree_edep_calo
+        tree_edep_calo = rf_merged.mktree("edep_calo", {
+                                                 "eventID": np.int32, \
+                                                 "edep": np.float64
+                                                }) 
+        tree_edep_calo.extend({
+                         "eventID": df_edep_calo_merged.eventID.values, \
+                         "edep": df_edep_calo_merged.edep
+                        })
+        #tree_edep_vol
+        tree_edep_vol = rf_merged.mktree("edep_vol", {
+                                                 "eventID": np.int32, \
+                                                 "volID": np.int32, \
+                                                 "edep": np.float64
+                                                }) 
+        tree_edep_vol.extend({
+                         "eventID": df_edep_vol_merged.eventID.values, \
+                         "volID": df_edep_vol_merged.volID, \
+                         "edep": df_edep_vol_merged.edep
                         })
         # export merged txt dataframe to text file
         if not df_txt_merged.empty:
@@ -989,13 +1515,273 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, beVerbos
     print("\n")
     if save_result:
         print("volume_dict merged:", volume_dict)
-        print("part_dict merged:", part_dict)    
+        print("part_dict merged:", part_dict)
+    else:
+        volume_dict = {}
+        part_dict = {}
     print("events_read:", events_read)
     print('%d files merged!\n' % (nfiles))
-    return df_defl_merged, df_rad_merged, df_txt_merged
+    return df_defl_merged, df_rad_merged, df_txt_merged, df_edep_calo_merged, df_edep_vol_merged, volume_dict, part_dict
 
 
-def merge_TestBeamOC_files(data_path, beVerbose=False, save_result=False):
+def merge_FastSimChannelingRad_files(data_path, correct_particle=False, primary='e-', beVerbose=False, save_result=False):
+    """
+    Optimized (DeepSeek) function to merge root files of Geant4 simulations.
+    """
+    
+    import uproot
+    import numpy as np
+    import pandas as pd
+    import os
+    
+    # Pre-allocate lists for dataframes (for faster appending)
+    dataframes_defl_list = []
+    dataframes_rad_list = []
+    dataframes_txt_list = []
+    dataframes_edep_calo_list = []
+    dataframes_edep_vol_list = []
+    
+    events_read = 0
+    nfiles = 0
+    
+    # Get file list and sort to ensure consistent processing
+    file_list = sorted([f for f in os.listdir(data_path) if f.endswith('.root')])
+    
+    if beVerbose:
+        print(f"Number of files to merge: {len(file_list)}")
+    
+    # Precompute file paths and IDs (vectorized)
+    root_files = [os.path.join(data_path, f) for f in file_list]
+    txt_files = [os.path.join(data_path.replace('rad', 'tag'), f.replace('.root', '.txt')) for f in file_list]
+    
+    # Process files
+    for root_file, txt_file, filename in zip(root_files, txt_files, file_list):
+        if beVerbose:
+            print(f'Processing {filename}...')
+        
+        # Open ROOT file
+        try:
+            rf = uproot.open(root_file)
+        except:
+            if beVerbose:
+                print(f"Failed to open {root_file}")
+            continue
+        
+        # Load data in bulk - single operation per file
+        # Process deflection ntuple
+        df_defl = rf['scoring_ntuple'].arrays(library='pd')
+        n_events = df_defl['eventID'].max() + 1  # Assuming eventID starts at 0
+        
+        # Update eventIDs in bulk (vectorized)
+        df_defl['eventID'] += events_read
+        
+        # Process radiation ntuple if exists
+        df_rad = pd.DataFrame()
+        if 'photon_spectrum' in rf:
+            df_rad = rf['photon_spectrum'].arrays(library='pd')
+            #df_rad = df_rad.rename(columns={"E": "Ekin"})
+            if not df_rad.empty:
+                df_rad['eventID'] += events_read
+        
+        # Process edep_calo if exists
+        df_edep_calo = pd.DataFrame()
+        if 'edep_calo' in rf:
+            df_edep_calo = rf['edep_calo'].arrays(library='pd')
+            if not df_edep_calo.empty:
+                df_edep_calo['eventID'] += events_read
+        
+        # Process edep_vol if exists
+        df_edep_vol = pd.DataFrame()
+        if 'edep_vol' in rf:
+            df_edep_vol = rf['edep_vol'].arrays(library='pd')
+            if not df_edep_vol.empty:
+                df_edep_vol['eventID'] += events_read
+        
+        # Append dataframes (store references, not copies)
+        dataframes_defl_list.append(df_defl)
+        if not df_rad.empty:
+            dataframes_rad_list.append(df_rad)
+        if not df_edep_calo.empty:
+            dataframes_edep_calo_list.append(df_edep_calo)
+        if not df_edep_vol.empty:
+            dataframes_edep_vol_list.append(df_edep_vol)
+        
+        # Process text file if exists
+        if os.path.exists(txt_file):
+            if beVerbose:
+                print(f'Processing text file {os.path.basename(txt_file)}...')
+            
+            # Read text file using numpy for speed
+            try:
+                data = np.loadtxt(txt_file)
+                if len(data.shape) == 1:
+                    data = data.reshape(1, -1)
+                
+                # Create dataframe from numpy array
+                n_cols = data.shape[1]
+                if n_cols >= 7:
+                    df_txt = pd.DataFrame({
+                        "volume": "Crystal",
+                        "eventID": data[:, 0].astype(int) + events_read,
+                        "trackID": data[:, 1].astype(int),
+                        "x": data[:, 2].astype(float),
+                        "tx": data[:, 3].astype(float),
+                        "z": data[:, 4].astype(float),
+                        "xx": data[:, 5].astype(float),
+                        "yy": data[:, 6].astype(float) if n_cols > 6 else np.zeros(len(data))
+                    })
+                elif n_cols == 6:
+                    df_txt = pd.DataFrame({
+                        "volume": "Crystal",
+                        "eventID": data[:, 0].astype(int) + events_read,
+                        "trackID": data[:, 1].astype(int),
+                        "x": data[:, 2].astype(float),
+                        "tx": data[:, 3].astype(float),
+                        "z": data[:, 4].astype(float),
+                        "xx": data[:, 5].astype(float),
+                        "yy": np.zeros(len(data))
+                    })
+                else:
+                    if beVerbose:
+                        print(f"Unexpected format in {txt_file}")
+                    continue
+                
+                dataframes_txt_list.append(df_txt)
+                
+            except Exception as e:
+                if beVerbose:
+                    print(f'Error reading {txt_file}: {e}')
+        elif beVerbose:
+            print(f'Text file {os.path.basename(txt_file)} not found')
+        
+        # Update counters
+        events_read += n_events
+        nfiles += 1
+        
+        if beVerbose:
+            print(f"Events in this file: {n_events}")
+            print(f"Total events read: {events_read}")
+    
+    # Merge dataframes (use concat only once)
+    if dataframes_defl_list:
+        df_defl_merged = pd.concat(dataframes_defl_list, ignore_index=True, copy=False)
+    else:
+        df_defl_merged = pd.DataFrame()
+    
+    if correct_particle:
+        df_defl_merged['particle'] = primary
+    
+    df_rad_merged = pd.concat(dataframes_rad_list, ignore_index=True, copy=False) if dataframes_rad_list else pd.DataFrame()
+    df_edep_calo_merged = pd.concat(dataframes_edep_calo_list, ignore_index=True, copy=False) if dataframes_edep_calo_list else pd.DataFrame()
+    df_edep_vol_merged = pd.concat(dataframes_edep_vol_list, ignore_index=True, copy=False) if dataframes_edep_vol_list else pd.DataFrame()
+    df_txt_merged = pd.concat(dataframes_txt_list, ignore_index=True, copy=False) if dataframes_txt_list else pd.DataFrame()
+    
+    # Save results if requested
+    if save_result and nfiles > 0:
+        # Generate output filename
+        last_file = file_list[-1].replace(".root", "")
+        if '_' in last_file:
+            last_underscore = last_file.rfind('_')
+            outputfile = last_file[:last_underscore] + '_merged' + str(nfiles) + 'files'
+        else:
+            outputfile = 'merged' + str(nfiles) + 'files'
+        
+        output_path = os.path.join(os.path.dirname(data_path), '../', outputfile + '.root')
+        
+        # Create output file
+        rf_merged = uproot.recreate(output_path)
+        
+        # Save deflection ntuple
+        if not df_defl_merged.empty:
+            # Store original mappings            
+            volume_dict = {item: i for i,item in enumerate(df_defl_merged.volume.unique())}
+            part_dict = {item: i for i,item in enumerate(df_defl_merged.particle.unique())}
+
+            # Convert string columns to categorical codes (faster than dict replacement)
+            df_defl_merged['volume'] = pd.Categorical(df_defl_merged['volume']).codes
+            df_defl_merged['particle'] = pd.Categorical(df_defl_merged['particle']).codes
+            
+            tree_defl = rf_merged.mktree("scoring_ntuple", {
+                "eventID": np.int32, "volume": np.int32,
+                "x": np.float64, "y": np.float64,
+                "angle_x": np.float64, "angle_y": np.float64,
+                "Ekin": np.float64, "particle": np.int32,
+                "particleID": np.int32, "parentID": np.int32
+            })
+            
+            tree_defl.extend({
+                "eventID": df_defl_merged.eventID.values,
+                "volume": df_defl_merged.volume.values,
+                "x": df_defl_merged.x.values,
+                "y": df_defl_merged.y.values,
+                "angle_x": df_defl_merged.angle_x.values,
+                "angle_y": df_defl_merged.angle_y.values,
+                "Ekin": df_defl_merged.Ekin.values,
+                "particle": df_defl_merged.particle.values,
+                "particleID": df_defl_merged.particleID.values,
+                "parentID": df_defl_merged.parentID.values
+            })
+        
+        # Save radiation ntuple
+        if not df_rad_merged.empty:
+            tree_rad = rf_merged.mktree("photon_spectrum", {
+                "E": np.float64,
+                "angle_x": np.float64, 
+                "angle_y": np.float64,
+                "eventID": np.int32,
+            })
+            
+            tree_rad.extend({
+                "E": df_rad_merged.E.values,
+                "angle_x": df_rad_merged.angle_x.values,
+                "angle_y": df_rad_merged.angle_y.values,
+                "eventID": df_rad_merged.eventID.values
+            })
+        
+        # Save text data
+        if not df_txt_merged.empty:
+            txt_output_path = os.path.join(os.path.dirname(data_path), '../', outputfile + '.txt')
+            # Save as CSV with header for easier reading
+            df_txt_merged.to_csv(txt_output_path, sep=' ', index=False, header=False)
+            
+        # Save edep_calo ntuple
+        if not df_edep_calo_merged.empty:
+            tree_edep_calo = rf_merged.mktree("edep_calo", {
+                                                 "eventID": np.int32,
+                                                 "edep": np.float64
+                                                }) 
+            tree_edep_calo.extend({
+                             "eventID": df_edep_calo_merged.eventID,
+                             "edep": df_edep_calo_merged.edep
+                            })
+            
+        # Save edep_vol ntuple
+        if not df_edep_vol_merged.empty:
+            tree_edep_vol = rf_merged.mktree("edep_vol", {
+                                                     "eventID": np.int32,
+                                                     "volID": np.int32, 
+                                                     "edep": np.float64
+                                                    }) 
+            tree_edep_vol.extend({
+                             "eventID": df_edep_vol_merged.eventID,
+                             "volID": df_edep_vol_merged.volID, 
+                             "edep": df_edep_vol_merged.edep
+                            })
+  
+    # Print summary and the merged dataframes
+    print("\n")
+    if save_result:
+        print("volume_dict merged:", volume_dict)
+        print("part_dict merged:", part_dict)
+    else:
+        volume_dict = {}
+        part_dict = {}
+    print("events_read:", events_read)
+    print('%d files merged!\n' % (nfiles))
+    return df_defl_merged, df_rad_merged, df_txt_merged, df_edep_calo_merged, df_edep_vol_merged, volume_dict, part_dict
+
+
+def merge_TestBeamOC_files_old(data_path, beVerbose=False, save_result=False):
     """
     Function to merge the root files of a set of Geant4 simulations 
     of particle interaction in Oriented Crystals, obatined with
@@ -1006,6 +1792,7 @@ def merge_TestBeamOC_files(data_path, beVerbose=False, save_result=False):
     NOTE1: due to some issues in the creation of the output tree with
     branches of strings, I converted strings in integers
     (look at part_dict to know the coding).
+    OLD (full gpaterno) VERSION.
     """
     import uproot
     dataframes_out_list = []
@@ -1141,11 +1928,216 @@ def merge_TestBeamOC_files(data_path, beVerbose=False, save_result=False):
                          "trackID": df_scr_merged.trackID.values if 'trackID' in df_scr.columns else np.nan, \
                          "detID": df_scr_merged.detID.values if 'detID' in df_scr.columns else np.nan
                        })
-    # return merged dataframes
+    # print summary and return merged dataframes
     print("\n")
     if save_result:
         print("part_dict merged:", part_dict)
+    else:
+        part_dict = {}
     print("events_read:", events_read)
     print('%d files merged!\n' % (nfiles))
-    return df_out_merged, df_scr_merged
+    return df_out_merged, df_scr_merged, part_dict
+
+
+def merge_TestBeamOC_files(data_path, beVerbose=False, save_result=False):
+    """
+    Optimized (DeepSeek) function to merge root files of Geant4 simulations.
+    """
+    import uproot
+    import numpy as np
+    import pandas as pd
+    import os
+    
+    # Filter for .root files only
+    file_list = sorted([f for f in os.listdir(data_path) if f.endswith('.root')])
+    if not file_list:
+        print("No .root files found in directory")
+        return pd.DataFrame(), pd.DataFrame()
+    
+    if beVerbose:
+        print(f"Number of files to merge: {len(file_list)}")
+    
+    # Precompute file paths
+    root_files = [os.path.join(data_path, f) for f in file_list]
+    
+    # Initialize lists for dataframes
+    dataframes_out_list = []
+    dataframes_scr_list = []
+    
+    events_read = 0
+    nfiles = 0
+    
+    # Pre-defined column lists for faster checking
+    expected_columns = [
+        'edep_calo2', 'edep_calo3', 'edep_bending_screen', 'edep_bending_screen2',
+        'edep_C1', 'edep_C2', 'edep_C3', 'edep_C4', 'edep_C5',
+        'edep_C6', 'edep_C7', 'edep_C8', 'edep_C9', 'edep_C10',
+        'edep_C11', 'edep_C12', 'edep_C13', 'edep_C14', 'edep_C15',
+        'edep_C16', 'edep_C17', 'edep_C18', 'edep_C19', 'edep_C20',
+        'edep_C21', 'edep_C22', 'edep_C23', 'edep_C24', 'edep_C25'
+    ]
+    
+    for i, (root_file, filename) in enumerate(zip(root_files, file_list)):
+        if beVerbose:
+            print(f'Processing {filename} ({i+1}/{len(file_list)})...')
+        
+        try:
+            # Open ROOT file
+            rf = uproot.open(root_file)
+            
+            # Load both dataframes in parallel (faster for multiple trees)
+            df_out = rf['outData'].arrays(library='pd')
+            df_scr = rf['scoringScreen'].arrays(library='pd')
+            
+            # Get number of events (simpler method)
+            n_events = df_scr['eventID'].nunique()
+            
+            # Vectorized eventID correction (much faster than per-event loop)
+            event_offset = events_read
+            df_out['eventID'] += event_offset
+            df_scr['eventID'] += event_offset
+            
+            # Store dataframes
+            dataframes_out_list.append(df_out)
+            dataframes_scr_list.append(df_scr)
+            
+            # Update counters
+            events_read += n_events
+            nfiles += 1
+            
+            if beVerbose:
+                print(f"  Events: {n_events}, Total: {events_read}")
+                
+        except Exception as e:
+            print(f"Error processing {filename}: {e}")
+            continue
+    
+    # Early return if no files processed
+    if nfiles == 0:
+        print("No files were successfully processed")
+        return pd.DataFrame(), pd.DataFrame()
+    
+    # Merge dataframes (single concat operation)
+    df_out_merged = pd.concat(dataframes_out_list, ignore_index=True, copy=False)
+    df_scr_merged = pd.concat(dataframes_scr_list, ignore_index=True, copy=False)
+    
+    # Save results if requested
+    if save_result and nfiles > 0:
+        # Generate output filename efficiently
+        last_file = file_list[-1].replace(".root", "")
+        if '_' in last_file:
+            # Find last underscore more efficiently
+            parts = last_file.split('_')
+            if len(parts) > 1:
+                outputfile = '_'.join(parts[:-1]) + f'_merged{nfiles}files'
+            else:
+                outputfile = last_file + f'_merged{nfiles}files'
+        else:
+            outputfile = f'merged{nfiles}files'
+        
+        # Create output directory path
+        output_dir = os.path.dirname(data_path)
+        output_root = os.path.join(output_dir, '../', outputfile + '.root')
+        
+        # Create merged ROOT file
+        rf_merged = uproot.recreate(output_root)
+        
+        # Prepare outData tree with optimized column handling
+        # Get all possible columns from merged dataframe
+        out_cols_present = [col for col in df_out_merged.columns if col in expected_columns]
+        
+        # Create dictionary for tree extension
+        extend_dict = {
+            "eventID": df_out_merged.eventID.values,
+            "Tracker_NHit_X_1": df_out_merged.Tracker_NHit_X_1.values,
+            "Tracker_NHit_Y_1": df_out_merged.Tracker_NHit_Y_1.values,
+            "Tracker_NHit_X_2": df_out_merged.Tracker_NHit_X_2.values,
+            "Tracker_NHit_Y_2": df_out_merged.Tracker_NHit_Y_2.values,
+            "Tracker_X_1": df_out_merged.Tracker_X_1.values,
+            "Tracker_Y_1": df_out_merged.Tracker_Y_1.values,
+            "Tracker_X_2": df_out_merged.Tracker_X_2.values,
+            "Tracker_Y_2": df_out_merged.Tracker_Y_2.values,
+            "Ekin": df_out_merged.Ekin.values,
+            "edep_APC1": df_out_merged.edep_APC1.values,
+            "edep_APC2": df_out_merged.edep_APC2.values,
+            "edep_calo": df_out_merged.edep_calo.values,
+            "edep_screen": df_out_merged.edep_screen.values,
+        }
+        
+        # Add optional columns efficiently
+        for col in out_cols_present:
+            extend_dict[col] = df_out_merged[col].values
+        
+        # Create tree definition dynamically
+        tree_def = {
+            "eventID": np.int32,
+            "Tracker_NHit_X_1": np.int32, "Tracker_NHit_Y_1": np.int32,
+            "Tracker_NHit_X_2": np.int32, "Tracker_NHit_Y_2": np.int32,
+            "Tracker_X_1": np.float64, "Tracker_Y_1": np.float64,
+            "Tracker_X_2": np.float64, "Tracker_Y_2": np.float64,
+            "Ekin": np.float64,
+            "edep_APC1": np.float64, "edep_APC2": np.float64,
+            "edep_calo": np.float64, "edep_screen": np.float64,
+        }
+        
+        # Add optional columns to tree definition
+        for col in out_cols_present:
+            tree_def[col] = np.float64
+        
+        tree_out = rf_merged.mktree("outData", tree_def)
+        tree_out.extend(extend_dict)
+        
+        # Prepare scoringScreen tree
+        # Convert particle strings to categorical codes efficiently
+        part_dict = {item: i for i,item in enumerate(df_scr_merged.particle.unique())}
+        df_scr_merged["particle"] = pd.Categorical(df_scr_merged["particle"]).codes
+        
+        # Create extend dictionary for scoringScreen
+        scr_extend_dict = {
+            "eventID": df_scr_merged.eventID.values,
+            "particle": df_scr_merged.particle.values,
+            "x": df_scr_merged.x.values,
+            "y": df_scr_merged.y.values,
+            "z": df_scr_merged.z.values,
+            "px": df_scr_merged.px.values,
+            "py": df_scr_merged.py.values,
+            "pz": df_scr_merged.pz.values,
+            "t": df_scr_merged.t.values,
+            "E": df_scr_merged.E.values,
+            "parentID": df_scr_merged.parentID.values,
+        }
+        
+        # Add optional columns if they exist
+        if 'trackID' in df_scr_merged.columns:
+            scr_extend_dict["trackID"] = df_scr_merged.trackID.values
+        else:
+            scr_extend_dict["trackID"] = np.full(len(df_scr_merged), -1, dtype=np.int32)
+            
+        if 'detID' in df_scr_merged.columns:
+            scr_extend_dict["detID"] = df_scr_merged.detID.values
+        else:
+            scr_extend_dict["detID"] = np.full(len(df_scr_merged), -1, dtype=np.int32)
+        
+        # Define tree structure
+        tree_scr_def = {
+            "eventID": np.int32, "particle": np.int32,
+            "x": np.float64, "y": np.float64, "z": np.float64,
+            "px": np.float64, "py": np.float64, "pz": np.float64,
+            "t": np.float64, "E": np.float64, "parentID": np.int32,
+            "trackID": np.int32, "detID": np.int32
+        }
+        
+        tree_scr = rf_merged.mktree("scoringScreen", tree_scr_def)
+        tree_scr.extend(scr_extend_dict)
+            
+    # Print summary and return merged dataframes
+    print("\n")
+    if save_result:
+        print("part_dict merged:", part_dict)
+    else:
+        part_dict = {}
+    print(f"Total events read: {events_read}")
+    print(f"Files successfully merged: {nfiles}\n")
+    
+    return df_out_merged, df_scr_merged, part_dict
 #######################################################################################################

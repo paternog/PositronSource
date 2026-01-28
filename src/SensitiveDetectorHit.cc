@@ -23,7 +23,7 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
+// gpaterno, October 2025
 //
 /// \file SensitiveDetectorHit.cc
 /// \brief Implementation of the SensitiveDetectorHit class
@@ -47,64 +47,7 @@
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
-#ifdef G4MULTITHREADED
-G4ThreadLocal G4Allocator<SensitiveDetectorHit>* SensitiveDetectorHitAllocator = 0;
-#else
-G4Allocator<SensitiveDetectorHit> SensitiveDetectorHitAllocator;
-#endif
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
-
-SensitiveDetectorHit::SensitiveDetectorHit()
-{
-    fTime = 0.;
-    fPos = G4ThreeVector(0.,0.,0.);
-    fMom = G4ThreeVector(0.,0.,0.);
-    fEnergy = 0.;
-    fType = -11;
-    fParticle = "";
-    fTrackID = -1;
-    fWeight = -1;
-    fDetID = -1;
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
-
-SensitiveDetectorHit::~SensitiveDetectorHit() {}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
-
-SensitiveDetectorHit::SensitiveDetectorHit(const SensitiveDetectorHit &right):G4VHit()
-{
-    fTrackID = right.fTrackID;
-    fTrackIDP = right.fTrackIDP;
-    fPos = right.fPos;
-    fMom = right.fMom;
-    fTime = right.fTime;
-    fEnergy = right.fEnergy;
-    fType = right.fType;
-    fParticle = right.fParticle;
-    fWeight = right.fWeight;
-    fDetID = right.fDetID;
-}
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
-
-const SensitiveDetectorHit& SensitiveDetectorHit::operator=(const SensitiveDetectorHit &right)
-{
-    fTrackID = right.fTrackID;
-    fTrackIDP = right.fTrackIDP;
-    fPos = right.fPos;
-    fMom = right.fMom;
-    fTime = right.fTime;
-    fEnergy = right.fEnergy;
-    fType = right.fType;
-    fParticle = right.fParticle;
-    fWeight = right.fWeight;
-    fDetID = right.fDetID;
-    
-    return *this;
-}
+G4ThreadLocal G4Allocator<SensitiveDetectorHit>* SensitiveDetectorHitAllocator = nullptr;
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
@@ -118,8 +61,7 @@ int SensitiveDetectorHit::operator==(const SensitiveDetectorHit &) const
 void SensitiveDetectorHit::Draw()
 {
     G4VVisManager* pVVisManager = G4VVisManager::GetConcreteInstance();
-    if(pVVisManager)
-    {
+    if (pVVisManager){
         G4Circle circle(fPos);
         circle.SetScreenSize(2);
         circle.SetFillStyle(G4Circle::filled);
@@ -155,7 +97,7 @@ const std::map<G4String,G4AttDef>* SensitiveDetectorHit::GetAttDefs() const
         (*store)[Mom] = G4AttDef(Mom, "Momentum","Physics","G4BestUnit","G4ThreeVector");
 
         G4String En("en");
-        (*store)[En] = G4AttDef(En, "Energy","Physics","G4BestUnit","G4double");       
+        (*store)[En] = G4AttDef(En, "Energy","Physics","G4BestUnit","G4double");
     }
     
     return store;

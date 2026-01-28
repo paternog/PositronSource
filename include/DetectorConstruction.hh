@@ -64,8 +64,7 @@ public:
     virtual void ConstructSDandField();
     
     //method to get the scoring volumes
-    std::vector<G4LogicalVolume*> GetScoringVolume() const {
-        return fScoringVolume;}        
+    std::vector<G4LogicalVolume*> GetScoringVolume() const {return fScoringVolume;}
     
     //method to set if it is a hybrid source or not
     void SetHybridSource(G4bool val) {fHybridSource = val;}
@@ -73,7 +72,7 @@ public:
     //methods to set the Crystal (Radiator) features
     void SetCrystalMaterial(G4String val) {fCrystalMaterialStr = val;}
     void SetCrystalSize(G4ThreeVector val) {fCrystalSize = val;}
-    void SetCrystalBendingAngle(G4double val) {fBendingAngle = val;}    
+    void SetCrystalBendingAngle(G4double val) {fBendingAngle = val;}
     void SetCrystalLattice(G4String val) {fLattice = val;}
     void SetCrystalAngleX(G4double val) {fAngleX = val;}
     void SetCrystalAngleY(G4double val) {fAngleY = val;}
@@ -89,11 +88,9 @@ public:
     void SetTaggingFilename(G4String filename) {fTaggingFilename = filename;}
     void SetTaggingInterval(G4int printInterval) {fTaggingInterval = printInterval;}   
     
-    //method to set/get the Converter (Target) features
-    void SetRadiatorConverterSepDistance(G4double val) {
-        fRadiatorConverterSepDistance = val;}
-    G4double GetRadiatorConverterSepDistance() const {
-        return fRadiatorConverterSepDistance;}
+    //methods to set/get the Converter (Target) features
+    void SetRadiatorConverterSepDistance(G4double val) {fRadiatorConverterSepDistance = val;}
+    G4double GetRadiatorConverterSepDistance() const {return fRadiatorConverterSepDistance;}
     void SetConverterSize(G4ThreeVector val) {fConverterSize = val;}
     void SetConverterMaterial(G4String val) {fConverterMaterialStr = val;}
     void SetGranularConverter(G4bool val) {fGranularConverter = val;}
@@ -112,17 +109,15 @@ public:
     void SetCollimatorAperture(G4double val) {fCollimatorAperture = val;}
     void SetCollimatorThickness(G4double val) {fCollimatorThickness = val;}
     void SetCollimatorSide(G4double val) {fCollimatorSide = val;}
-    void SetRadiatorCollimatorSepDistance(G4double val) {
-        fRadiatorCollimatorSepDistance = val;}
-    G4double GetRadiatorCollimatorSepDistance() const {
-        return fRadiatorCollimatorSepDistance;}
+    void SetRadiatorCollimatorSepDistance(G4double val) {fRadiatorCollimatorSepDistance = val;}
+    G4double GetRadiatorCollimatorSepDistance() const {return fRadiatorCollimatorSepDistance;}
        
     //methods to set/Get the VirtualDetector features
     void SetVirtualDetectorSize(G4ThreeVector val) {fVirtualDetectorSize = val;}
     std::vector<G4ThreeVector> GetVirtualDetectorPositionVector() const {
         return fVirtualDetectorPositionVector;}
     
-    //for the voxelization of the Absorber
+    //methods for the voxelization of the Absorber
     void SetVoxelization(G4bool bval) {fIWantVoxelization = bval;} 
     void SetTotalColumns(G4int cols) {ftotalColumns = cols;} 
     void SetTotalRows(G4int rows) {ftotalRows = rows;} 
@@ -143,73 +138,73 @@ public:
     //methods to set and get ScoreCrystalExit (27/09/2024)
     void SetScoringCrystalExit(G4bool bval) {fScoringCrystalExit = bval;} 
     G4bool GetScoringCrystalExit() const {return fScoringCrystalExit;}
-        
+
 protected:
   std::vector<G4LogicalVolume*> fScoringVolume; //for spheres only
 
 private:
-    DetectorConstructionMessenger* fMessenger;  
+    DetectorConstructionMessenger* fMessenger{nullptr};  
     
-    G4bool fHybridSource;
+    G4bool fHybridSource = true;
         
-    G4Region* fCrystalRegion;
-    G4LogicalVolume* fCrystalLogic;
-    G4String fCrystalMaterialStr;
-    G4Material* fCrystalMaterial;
-    G4ThreeVector fCrystalSize;
-    G4double fBendingAngle;
-    G4String fLattice;  
-    G4double fAngleX;
-    G4double fAngleY;
-    G4double fCrystalZ;
-    G4bool fActivateRadiationModel;
-    G4bool fActivateOCeffects;
-    G4bool fRadiator;
-    G4String fPotentialPath;
+    G4Region* fCrystalRegion{nullptr};
+    G4LogicalVolume* fCrystalLogic{nullptr};
+    G4String fCrystalMaterialStr = "W";
+    G4Material* fCrystalMaterial{nullptr};
+    G4ThreeVector fCrystalSize = G4ThreeVector(7.*mm, 7.*mm, 2.*mm);
+    G4double fBendingAngle = 0.*mrad;
+    G4String fLattice = "<111>";  
+    G4double fAngleX = 0.; //rad
+    G4double fAngleY = 0.; //rad
+    G4double fCrystalZ = 0.;
+    G4bool fActivateRadiationModel = true;
+    G4bool fActivateOCeffects = true;
+    G4bool fRadiator = false;
+    G4String fPotentialPath = "";
     G4bool fTagging = false;
     G4String fTaggingFilename = "output/output_for_tagging.txt";
     G4int fTaggingInterval = 100;
     
-    G4double fRadiatorConverterSepDistance;
-    G4ThreeVector fConverterSize;
-    G4double fConverterZ;
-    G4LogicalVolume* fConverterLogic;
-    G4bool fGranularConverter;
-    G4String fConverterMaterialStr;
-    G4Material* fConverterMaterial;
-    G4double fSphereRadius;
+    G4double fRadiatorConverterSepDistance = 60.*cm; //Doesn't include 2 det thickness + tolerance
+    G4ThreeVector fConverterSize = G4ThreeVector(199.75*mm, 199.75*mm, 11.6*mm);
+    G4double fConverterZ = 0.;
+    G4LogicalVolume* fConverterLogic{nullptr};
+    G4bool fGranularConverter = false;
+    G4String fConverterMaterialStr = "W";
+    G4Material* fConverterMaterial{nullptr};
+    G4double fSphereRadius = 1.1*mm;
     G4LogicalVolume* fSphereLogic[NSpheresMax];
-    G4int fNSpheres;
-    G4bool fConverter;
+    G4int fNSpheres = 0;
+    G4bool fConverter = true;
        
-    G4bool fSetMagneticField;
-    G4double fFieldValue;
-    G4double fFieldRegionLength;
-    G4LogicalVolume* fMFlogic; 
+    G4bool fSetMagneticField = false;
+    G4double fFieldValue = 100.*tesla;
+    G4double fFieldRegionLength = 90.*cm;
+    G4LogicalVolume* fMFlogic{nullptr}; 
     
-    G4bool fSetCollimator;
-    G4double fCollimatorAperture;
-    G4String fCollimatorHole;
-    G4double fCollimatorThickness;
-    G4double fCollimatorSide;
-    G4double fRadiatorCollimatorSepDistance;
-    G4LogicalVolume* fCollimatorLogic; 
+    G4bool fSetCollimator = false;
+    G4double fCollimatorAperture = 2.*mm;
+    G4String fCollimatorHole = "squared";
+    G4double fCollimatorThickness = 50.*cm;
+    G4double fCollimatorSide = 2.5*m;
+    G4double fRadiatorCollimatorSepDistance = 5.*cm;
+    G4LogicalVolume* fCollimatorLogic{nullptr}; 
       
-    G4ThreeVector fVirtualDetectorSize;
+    G4ThreeVector fVirtualDetectorSize = G4ThreeVector(40.*cm, 40.*cm, 0.01*mm);
     std::vector<G4ThreeVector> fVirtualDetectorPositionVector;
-    G4LogicalVolume* fVirtualDetectorLogic0;
-    G4LogicalVolume* fVirtualDetectorLogic1;
-    G4LogicalVolume* fVirtualDetectorLogic2;
+    G4LogicalVolume* fVirtualDetectorLogic0{nullptr};
+    G4LogicalVolume* fVirtualDetectorLogic1{nullptr};
+    G4LogicalVolume* fVirtualDetectorLogic2{nullptr};
         
-    G4bool fIWantVoxelization;
-    G4int ftotalColumns;
-    G4int ftotalRows;
-    G4int ftotalSlices;
-    G4double fxVoxelSpacing; 
-    G4double fyVoxelSpacing;     
-    G4double fzVoxelSpacing;
-    G4double fAbsorberZ;
-    G4LogicalVolume* fAbsorberLogic = nullptr;
+    G4bool fIWantVoxelization = false;
+    G4int ftotalColumns = 1;
+    G4int ftotalRows = 1;
+    G4int ftotalSlices = 1;
+    G4double fxVoxelSpacing = 0.*mm; 
+    G4double fyVoxelSpacing = 0.*mm;
+    G4double fzVoxelSpacing = 0.*mm;
+    G4double fAbsorberZ = 0.;
+    G4LogicalVolume* fAbsorberLogic{nullptr};
     
     G4bool fScoringCrystalExit = false;
 };

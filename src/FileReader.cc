@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file FileReader.cc
 /// \brief Implementation of the FileReader class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
@@ -54,18 +54,18 @@ FileReader::~FileReader()
 
 void FileReader::SetFileName(G4String vFileName)
 {
-    fFileName=vFileName;
+    fFileName = vFileName;
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo....
 
 void FileReader::StoreEvents()
 {    
-    if (evListPos.size() == 0) {     
+    if (evListPos.size() == 0) {
         G4String particle = "geantino";  
         G4double x = 0.;
-        G4double y = 0.;      
-        G4double z = 0.;     
+        G4double y = 0.;
+        G4double z = 0.;
         G4double px = 0.;
         G4double py = 0.;
         G4double pz = 0.;
@@ -76,7 +76,7 @@ void FileReader::StoreEvents()
         G4double mass = 0.;
         G4double E = 0.;
         G4double K = 0.;
-                
+
         G4ParticleTable* particleTable = G4ParticleTable::GetParticleTable();
         
         while (inputFile.good()) {
@@ -93,8 +93,8 @@ void FileReader::StoreEvents()
             p = sqrt(px*px+py*py+pz*pz);
             //u = px/p; //they are not required, I can use directly the momentum components!
             //v = py/p;
-            //w = pz/p;                          
-            mass = particleTable->FindParticle(particle)->GetPDGMass();   
+            //w = pz/p;
+            mass = particleTable->FindParticle(particle)->GetPDGMass();
             E = sqrt(p*p + mass*mass)*MeV;
             K = E - mass; //kinetic energy
             if (K <= 0) {K = 1.*eV;}
@@ -103,7 +103,7 @@ void FileReader::StoreEvents()
             evListPos.push_back(G4ThreeVector(x*cm, y*cm, z*cm));
             evListMom.push_back(G4ThreeVector(px*MeV, py*MeV, pz*MeV));
             //evListMom.push_back(G4ThreeVector(u, v, w)); 
-            evListEnergy.push_back(K);     
+            evListEnergy.push_back(K);
             
             /*
             G4cout.precision(17);
@@ -113,7 +113,7 @@ void FileReader::StoreEvents()
             */
         }
         
-        //for some reason the last row is read two times, so we remove it!
+        //For some reason the last row is read two times, so we remove it!
         evListPart.pop_back();
         evListPos.pop_back();
         evListMom.pop_back();

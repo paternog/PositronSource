@@ -50,11 +50,11 @@ for (( i=0; i<$n_t; i++ ))
 do
 	echo Running simulation $(($count + 1)) at $energy with: volume_th "=" ${t_array[$i]} mm ...
 
-	sed -i "s+/crystal/setCrystalSize .*+/crystal/setCrystalSize 20. 20. ${t_array[$i]} mm+" $macro
+	sed -i "s+/crystal/setCrystalSize .*+/crystal/setCrystalSize 20 20 ${t_array[$i]} mm+" $macro
 	sed -i "s+/run/setfilenamesave output/output_${energy}_W.*+/run/setfilenamesave output/output_${energy}_W${t_array[$i]}mm_conventional.root+" $macro
 	
 	halfsize=$(echo ${t_array[$i]} '* 0.5' | bc) #mm
-	sed -i "s+/score/mesh/boxSize .*+/score/mesh/boxSize 10. 10. $halfsize mm+" $macro
+	sed -i "s+/score/mesh/boxSize .*+/score/mesh/boxSize 10 10 $halfsize mm+" $macro
 	var=$(echo "scale=2; ${t_array[$i]} / $binsize" | bc -l) #mm
 	ceil $var
 	int_var=$?
@@ -65,7 +65,7 @@ do
 	fi
 	NbinZ=$int_var			
 	sed -i "s+/score/mesh/nBin .*+/score/mesh/nBin 41 41 $NbinZ+" $macro
-	sed -i "s+/score/mesh/translate/xyz 0. 0. .*+/score/mesh/translate/xyz 0. 0. -$halfsize mm+" $macro
+	sed -i "s+/score/mesh/translate/xyz 0 0 .*+/score/mesh/translate/xyz 0 0 -$halfsize mm+" $macro
 	
 	sed -i "s+/det/setSlices .*+/det/setSlices $NbinZ+" $macro
 		

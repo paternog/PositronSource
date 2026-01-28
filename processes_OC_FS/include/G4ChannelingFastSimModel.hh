@@ -32,11 +32,8 @@
 #define G4ChannelingFastSimModel_h 1
 
 #include "G4VFastSimulationModel.hh"
-#include "G4Step.hh"
-#include "G4TouchableHandle.hh"
-#include <vector>
-#include <CLHEP/Units/SystemOfUnits.h>
-#include <CLHEP/Units/PhysicalConstants.h>
+#include "globals.hh"
+#include "G4ios.hh"
 
 #include "G4ChannelingFastSimCrystalData.hh"
 #include <unordered_map>
@@ -59,7 +56,7 @@ public:
   // Constructor, destructor
   G4ChannelingFastSimModel (const G4String&, G4Region*);
   G4ChannelingFastSimModel (const G4String&);
-  ~G4ChannelingFastSimModel ();
+  ~G4ChannelingFastSimModel () = default;
 
   /// -- IsApplicable
   G4bool IsApplicable(const G4ParticleDefinition&) override;
@@ -110,20 +107,6 @@ public:
            {fMaxPhotonsProducedPerStep=nPhotons;}
 
   ///get cuts
-  G4double GetLowKineticEnergyLimit(const G4String& particleName)
-               {return GetLowKineticEnergyLimit(particleTable->
-                                                FindParticle(particleName)->
-                                                GetParticleDefinitionID());}
-  G4double GetLindhardAngleNumberHighLimit(const G4String& particleName)
-               {return GetLindhardAngleNumberHighLimit(particleTable->
-                                                       FindParticle(particleName)->
-                                                       GetParticleDefinitionID());}
-  G4double GetHighAngleLimit(const G4String& particleName)
-               {return GetHighAngleLimit(particleTable->
-                                         FindParticle(particleName)->
-                                         GetParticleDefinitionID());}
-
-  //the same functions but using particleDefinitionID (needed for faster model execution)
   G4double GetLowKineticEnergyLimit(G4int particleDefinitionID)
                {return (fLowEnergyLimit.count(particleDefinitionID) == 1)
                         ? fLowEnergyLimit[particleDefinitionID]
@@ -139,7 +122,7 @@ public:
 
   /// get the maximal number of photons that can be produced per fastStep
   G4int GetMaxPhotonsProducedPerStep(){return fMaxPhotonsProducedPerStep;}
-  
+
   // Set methods for tagging (Negrello & gpaterno)
   void SetTagging(G4bool bval) {fTagging = bval;}
   void SetTaggingFilename(G4String filename) {fTaggingFilename = filename;}
@@ -148,6 +131,12 @@ public:
   G4int GetEventID() const {
     return G4RunManager::GetRunManager()->GetCurrentEvent()->GetEventID();
   } 
+  
+  // Set method for Scattering inside the crystal (gpaterno)
+  void SetScattering(G4bool bval) {fScattering = bval;}
+  
+  // Set method for radiation cooling inside the crystal (gpaterno)
+  void SetRadiationCooling(G4bool bval) {fRadiationCooling = bval;}
 
 private:
 
@@ -176,7 +165,13 @@ private:
   G4bool fTagging = false;
   G4String fTaggingFilename = "output/output_for_tagging.txt";
   G4int fTaggingInterval = 100;
-
+  
+  // Variable to set single and multiple scattering on screened
+  // atomic potential and the scattering on free electrons (gpaterno)
+  G4bool fScattering = true;
+  
+  // Variable to turn off the radiation cooling according to V.T. (gpaterno)
+  G4bool fRadiationCooling = true;
 };
 #endif
 

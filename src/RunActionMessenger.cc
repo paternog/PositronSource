@@ -23,10 +23,10 @@
 // * acceptance of all terms of the Geant4 Software license.          *
 // ********************************************************************
 //
-// gpaterno, September 2024
-//
 /// \file RunActionMessenger.cc
 /// \brief Implementation of the RunActionMessenger class
+//
+// gpaterno, January 2026
 //
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
@@ -37,9 +37,7 @@
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
-RunActionMessenger::RunActionMessenger(RunAction* runaction)
-:G4UImessenger(),
-fSetFileNameCmd(0)
+RunActionMessenger::RunActionMessenger(RunAction* runaction) : G4UImessenger()
 {
     fRunAction = runaction;
     
