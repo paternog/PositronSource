@@ -119,7 +119,7 @@ Run the app GUI which will show you a default geometry. You could also launch a 
 
 ## Version
 version: 2.0,
-date: 27-01-2026
+date: 28-01-2026
 
 ## Last changes
 - Modified G4ChannelingFastSimCrystalData so as to read channeling data from a file with arbitrary name.
