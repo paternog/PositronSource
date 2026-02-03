@@ -63,7 +63,8 @@ private:
     
     G4UIcmdWithABool* fHybridSourceCmd{nullptr};
     
-    G4UIdirectory* fCmdDir{nullptr};   
+    G4UIdirectory* fCmdDir{nullptr};
+    
     G4UIcmdWithAString* fCrystalMaterialCmd{nullptr};
     G4UIcmdWith3VectorAndUnit* fCrystalSizeCmd{nullptr};
     G4UIcmdWithAString* fCrystalLatticeCmd{nullptr};
