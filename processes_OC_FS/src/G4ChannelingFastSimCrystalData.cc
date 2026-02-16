@@ -83,6 +83,7 @@ void G4ChannelingFastSimCrystalData::SetMaterialProperties(
     fNelements=(G4int)crystal->GetNumberOfElements();
     for(G4int i=0; i<fNelements; i++)
     {
+      G4cout << "element " << i+1 << ": " << crystal->GetElement(i)->GetName() << G4endl; //gpaterno
       fZ1.push_back(crystal->GetElement(i)->GetZ());
       fAN.push_back(crystal->GetElement(i)->GetAtomicMassAmu());
       fI0.push_back(crystal->GetElement(i)->GetIonisation()->GetMeanExcitationEnergy());
