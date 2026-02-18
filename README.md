@@ -133,6 +133,7 @@ date: 28-01-2026
 ## Last changes
 - Modified G4ChannelingFastSimCrystalData so as to read channeling data from a file with arbitrary name.
 - Changed some macro commands, so as to match the official ones in example ch5 (run.mac contains all the commands available).
+- Included code for scoring particle trajectories inside Channeling FastSim model.
 - Adapted to G4ChannelingFastSimModel of release 11.4.0.
 - Improved analysis scripts.
 
