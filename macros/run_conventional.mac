@@ -2,7 +2,7 @@
 /det/isHybridSource false                   #defualt true
 
 #amorphus crystal settings
-/crystal/setCrystalMaterial W               #PWO, BGO, W, Ir, C, Ge, Si (default)
+/crystal/setCrystalMaterial W               #PWO, BGO, W, Ir, Cu, C, Ge, Si (default)
 /crystal/setCrystalSize 20 20 15.0 mm
 /crystal/setCrystalLattice <111>            #planes (e.g. (111)) or axes (e.g. <111>)
 /crystal/setOCeffects false

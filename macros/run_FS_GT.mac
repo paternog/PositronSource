@@ -1,6 +1,6 @@
 
 #Radiator Crystal settings
-/crystal/setCrystalMaterial W               #PWO, BGO, W, Ir, C, Ge, Si (default)
+/crystal/setCrystalMaterial W               #PWO, BGO, W, Ir, Cu, C, Ge, Si (default)
 /crystal/setCrystalSize 20 20 2.0 mm
 /crystal/setCrystalLattice <111>            #planes (e.g. (111)) or axes (e.g. <111>)
 /crystal/setCrystalAngleX 0.e-6             #rad

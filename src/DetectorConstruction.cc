@@ -121,7 +121,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     G4Material* PWO = nist->FindOrBuildMaterial("G4_PbWO4");
     G4Material* Diamond = nist->FindOrBuildMaterial("G4_C");
     G4Material* Tungsten = nist->FindOrBuildMaterial("G4_W");
-    G4Material* Iridium = nist->FindOrBuildMaterial("G4_W");
+    G4Material* Iridium = nist->FindOrBuildMaterial("G4_Ir");
+    G4Material* Copper = nist->FindOrBuildMaterial("G4_Cu");
     G4Material* Germanium = nist->FindOrBuildMaterial("G4_Ge");
     G4Element* elBi = nist->FindOrBuildElement("Bi");
     G4Element* elGe = nist->FindOrBuildElement("Ge");
@@ -193,6 +194,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
         fCrystalMaterial = Tungsten;
     } else if (fCrystalMaterialStr == "Ir") {
         fCrystalMaterial = Iridium;
+    } else if (fCrystalMaterialStr == "Cu") {
+        fCrystalMaterial = Copper;
     } else if (fCrystalMaterialStr == "Ge") {
         fCrystalMaterial = Germanium;
     } else {
