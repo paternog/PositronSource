@@ -61,7 +61,7 @@ public:
     ~DetectorConstruction() override;
 
     G4VPhysicalVolume* Construct() override;
-    virtual void ConstructSDandField();
+    void ConstructSDandField() override;
     
     //method to get the scoring volumes
     std::vector<G4LogicalVolume*> GetScoringVolume() const {return fScoringVolume;}

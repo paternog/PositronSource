@@ -60,52 +60,41 @@ PrimaryGeneratorAction::PrimaryGeneratorAction()
 {
     //G4cout << "### PrimaryGeneratorAction instantiated ###" << G4endl;
     
-    //instantiating the messenger
+    //Instante the messenger
     fMessenger = new PrimaryGeneratorActionMessenger(this);
     
-    //defining a Particle Gun
+    //Define a Particle Gun
     G4int n_particle = 1;
     fGun = new G4ParticleGun(n_particle);
 
-    //defining a GPS (used if fReadFromFile==false and fUseGPS==true)
+    //Define a GPS (used if fReadFromFile==false and fUseGPS==true)
     fGPS = new G4GeneralParticleSource(); 
     
-    //default particle
+    //Default particle
     G4ParticleDefinition* particle = 
         G4ParticleTable::GetParticleTable()->FindParticle(fType);
     
-    //set default values for GPS
+    //Set default values for GPS
     //Primary particles
     fGPS->SetParticleDefinition(particle);
     //Position distribution
-    G4SPSPosDistribution* vPosDist = 
-        fGPS->GetCurrentSource()->GetPosDist();
+    G4SPSPosDistribution* vPosDist = fGPS->GetCurrentSource()->GetPosDist();
     vPosDist->SetPosDisType("Plane");
     vPosDist->SetPosDisShape("Circle");
     vPosDist->SetRadius(0.5*CLHEP::mm);   
     vPosDist->SetCentreCoords(G4ThreeVector(0., 0., -5*CLHEP::cm));
     //Angular distribution
-    G4SPSAngDistribution* vAngDist = 
-        fGPS->GetCurrentSource()->GetAngDist();
+    G4SPSAngDistribution* vAngDist = fGPS->GetCurrentSource()->GetAngDist();
     vAngDist->SetParticleMomentumDirection(G4ThreeVector(0., 0., 1.));  
     //Energy distribution
-    G4SPSEneDistribution* vEneDist = 
-        fGPS->GetCurrentSource()->GetEneDist();
+    G4SPSEneDistribution* vEneDist = fGPS->GetCurrentSource()->GetEneDist();
     vEneDist->SetEnergyDisType("Mono");
     vEneDist->SetMonoEnergy(fEnergy);
     
-    //set default values for Particle Gun
+    //Set default values for Particle Gun
     fGun->SetParticleDefinition(particle);
     fGun->SetParticleMomentumDirection(G4ThreeVector(0., 0., 1.));
-    fGun->SetParticleEnergy(fEnergy); 
-   
-    /*
-    //get an instance of the DetectorConstruction and Radiator Crystal Z 
-    const DetectorConstruction* detectorConstruction
-        = static_cast<const DetectorConstruction*>
-          (G4RunManager::GetRunManager()->GetUserDetectorConstruction());
-    fCrystalZ = detectorConstruction->GetCrystalZ();
-    */
+    fGun->SetParticleEnergy(fEnergy);
 }
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
@@ -158,6 +147,14 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
         if (fUseGPS) {
             fGPS->GeneratePrimaryVertex(anEvent); //override defaut through macro
         } else {
+            /*
+            //Get an instance of the DetectorConstruction and Radiator Crystal Z 
+            const DetectorConstruction* detectorConstruction
+                = static_cast<const DetectorConstruction*>
+                  (G4RunManager::GetRunManager()->GetUserDetectorConstruction());
+            fCrystalZ = detectorConstruction->GetCrystalZ();
+            */
+        
             //particle position
             G4double x = G4RandGauss::shoot(fX, fSigmaX);
             G4double y = G4RandGauss::shoot(fY, fSigmaY);
@@ -185,7 +182,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
             fGun->SetParticleMomentumDirection(G4ThreeVector(xp, yp, 1.)); //automatically normalized 
                
             /*
-            //calculate and print the other particle features
+            //Calculate and print the other particle features
             G4double mass = particleTable->FindParticle(fType)->GetPDGMass(); //particle mass [MeV/c2]
             G4double E = K + mass; //particle total energy
             G4double p = sqrt(E*E - mass*mass); //particle total momentum
@@ -202,7 +199,7 @@ void PrimaryGeneratorAction::GeneratePrimaries(G4Event* anEvent)
                    << " MeV, K: " << K/MeV << " MeV" << G4endl << G4endl;
             */
 
-            //generate the vertex
+            //Generate the vertex
             fGun->GeneratePrimaryVertex(anEvent);
         }
     }
