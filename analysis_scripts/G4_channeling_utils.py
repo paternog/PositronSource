@@ -37,7 +37,7 @@ def get_photons_on_detector(filename, Nevents, Elim=(0, 1e10), \
     using coll_type variable. Tilt and thetaC define the tilt of an elliptical collimator and
     the cut center, respectively. cut_angle define the abosute cut angles in x and y direction
     (for a circular collimator, the two elements must have the same value).
-    Last update: 31/10/2025.
+    Last update: 27/03/2026.
     """
     
     import numpy as np
@@ -66,10 +66,10 @@ def get_photons_on_detector(filename, Nevents, Elim=(0, 1e10), \
     # Take only the photons inside the collimator acceptance
     if apply_collimation:
         if coll_type == 'ellipse': #or circle if cut_angle[0]=cut_angle[1]
-            df_ph_sel = df_ph[np.sqrt((df_ph["angle_x"] - thetaC[0])**2/cut_angle[0]**2 + \
-                                      (df_ph["angle_y"] - thetaC[1])**2/cut_angle[1]**2) < 1]
-            #_, _, mask = elliptical_selection(df_ph["angle_x"], df_ph["angle_y"], thetaC, *cut_angle*2, tilt) #defined in G4_utils.py
-            #df_ph_sel = df_ph[mask] #It's an equivalent method!
+            #df_ph_sel = df_ph[np.sqrt((df_ph["angle_x"] - thetaC[0])**2/cut_angle[0]**2 + \
+            #                          (df_ph["angle_y"] - thetaC[1])**2/cut_angle[1]**2) < 1]
+            _, _, mask = elliptical_selection(df_ph["angle_x"], df_ph["angle_y"], thetaC, *cut_angle*2, tilt) #defined in G4_utils.py
+            df_ph_sel = df_ph[mask] #It's an equivalent method!
         else:
             mask1 = np.abs(df_ph["angle_x"] - thetaC[0]) < cut_angle[0]
             mask2 = np.abs(df_ph["angle_y"] - thetaC[1]) < cut_angle[1]
