@@ -1,56 +1,16 @@
 #######################################################################################################
 ####### Set of functions useful to analyse Geant4 simulations #########################################
-####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 23/12/2025 ######################
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 17/04/2026 ######################
 #######################################################################################################
 
 
-############# Set of functions to elaborate numpy arrays and lists ####################################
-def weighted_avg_and_std(values, weights):
-    """
-    Return the weighted average and standard deviation of an array.
-    They weights are in effect first normalized so that they 
-    sum to 1 (and so they must not all be 0).
-    values, weights -- NumPy ndarrays with the same shape.
-    The calculation is fast and numerically precise.
-    """
-    import numpy as np
-    average = np.average(values, weights=weights)
-    variance = np.average((values-average)**2, weights=weights)
-    return (average, np.sqrt(variance))
-    
-
-def print_array_size(arr):
-    """
-    Function to print the size [MB] of a list.
-    """
-    import numpy as np 
-    x = np.array(arr)
-    print("Size of the array = number of elements:", x.size)
-    print("Memory size of one array element in bytes:", x.itemsize)
-    print("Memory size of numpy array in MB:", round(x.size * x.itemsize / 1048576, 2))
-    
-    
+############# Set of functions to elaborate lists and numpy arrays ####################################
 def list_flatten(myList):
     """
     Function to flatten a list of lists
     """
     flat_list = [item for sublist in myList for item in sublist]
     return flat_list
-
-
-def find(cond, N=1e9):
-    """
-    Function equivalent to Matlab's one that returns
-    a list with the indices of an array/matrix
-    that satisfy a given condition.
-    """
-    import numpy as np 
-    cond = cond.reshape(np.size(cond), 1).ravel()
-    index = list(np.argwhere(cond).ravel())
-    if N < len(index):
-        return index[:N]
-    else:
-        return index
 
 
 def find_list_max(myList):
@@ -66,11 +26,69 @@ def find_list_max(myList):
     return the_max, imax
 
 
-def Average(lst):
+def list_average(lst):
     """
     Function to calculate the average of a list.
     """ 
     return sum(lst) / len(lst)
+
+
+def weighted_avg_and_std(values, weights):
+    """
+    Return the weighted average and standard deviation of an array.
+    They weights are in effect first normalized so that they 
+    sum to 1 (and so they must not all be 0).
+    values, weights -- NumPy ndarrays with the same shape.
+    The calculation is fast and numerically precise.
+    """
+    import numpy as np
+    average = np.average(values, weights=weights)
+    variance = np.average((values-average)**2, weights=weights)
+    return (average, np.sqrt(variance))
+    
+
+def array_shift(my_array, th):
+    """
+    Function to shift a numpy array
+    based on a threshold value
+    """
+    import numpy as np
+    N = my_array.shape[0]
+    shifted_array = np.zeros((N,))
+    jth = 0
+    for j in range(N):
+        if my_array[j] > th:
+            jth = j
+            break
+    for j in range(N):
+        shifted_array[j-jth] = my_array[j]
+    return shifted_array
+    
+
+def print_array_size(arr):
+    """
+    Function to print the size [MB] of a list.
+    """
+    import numpy as np 
+    x = np.array(arr)
+    print("Size of the array = number of elements:", x.size)
+    print("Memory size of one array element in bytes:", x.itemsize)
+    print("Memory size of numpy array in MB:", round(x.size * x.itemsize / 1048576, 2))
+    
+    
+def find(cond, N=1e9):
+    """
+    Function equivalent to Matlab's one that returns
+    a list with the indices of an array/matrix
+    that satisfy a given condition.
+    """
+    import numpy as np 
+    cond = cond.reshape(np.size(cond), 1).ravel()
+    index = list(np.argwhere(cond).ravel())
+    if N < len(index):
+        return index[:N]
+    else:
+        return index
 
 
 def from_edges_to_bins(edges): 
@@ -117,24 +135,6 @@ def histc(x, edges):
         res[el-1] += 1 # Increment appropriate bin
     return res[:-1], map_to_bins
 
-
-def array_shift(my_array, th):
-    """
-    Function to shift a numpy array
-    based on a threshold value
-    """
-    import numpy as np
-    N = my_array.shape[0]
-    shifted_array = np.zeros((N,))
-    jth = 0
-    for j in range(N):
-        if my_array[j] > th:
-            jth = j
-            break
-    for j in range(N):
-        shifted_array[j-jth] = my_array[j]
-    return shifted_array
-    
 
 def TProfile2D(X, Y, NbinX, Xmin, Xmax, NbinY, Ymin, Ymax, Z):
     """
@@ -271,6 +271,20 @@ def myLandau(x, a, b, c):
     import numpy as np
     t = (x - b) / c
     fun = np.where(t < -5., 0., a*np.sqrt(1/(2*np.pi))*np.exp(-0.5*(t+np.exp(-t))))
+    return fun
+
+
+def myCrystalball(x, a, b, c, d, e):
+    """
+    Developed by gpaterno (2/04/2026) on the basis of scipy.stats.crystalball PDF, where
+    beta is the transition point from Gaussian to power-law function, 
+    m is the exponent of the power-law used to model the left tail,
+    loc = is the mean of the Gaussian,
+    scale is the standard deviation of the Gaussian.
+    """
+    import numpy as np
+    from scipy.stats import crystalball
+    fun = a*crystalball.pdf(x, beta=b, m=c, loc=d, scale=e)
     return fun
 
 
@@ -805,6 +819,7 @@ def find_gaussian_peaks_scipy(x_data, y_data, height=None, distance=None, promin
             fitted_params.append(None)
     # Return
     return peaks, fitted_params
+
 
 def create_2d_histogram_and_slice(x_data, y_data, x_bins=50, y_bins=50, XYextent=None, \
                                   x_slice_position=None, slice_width=None, units='', flip_plot=False, \
