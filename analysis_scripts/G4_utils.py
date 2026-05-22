@@ -332,6 +332,8 @@ def simple_plot(x, y, yerr=None, icludeErrors=False, \
     ax = plt.gca()
     if showPlot:
         plt.show()
+    else:
+        plt.close()
     #Return
     return ax
     
