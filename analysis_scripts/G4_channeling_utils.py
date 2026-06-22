@@ -68,7 +68,8 @@ def get_photons_on_detector(filename, Nevents, Elim=(0, 1e10), \
         if coll_type == 'ellipse': #or circle if cut_angle[0]=cut_angle[1]
             #df_ph_sel = df_ph[np.sqrt((df_ph["angle_x"] - thetaC[0])**2/cut_angle[0]**2 + \
             #                          (df_ph["angle_y"] - thetaC[1])**2/cut_angle[1]**2) < 1]
-            _, _, mask = elliptical_selection(df_ph["angle_x"], df_ph["angle_y"], thetaC, *cut_angle*2, tilt) #defined in G4_utils.py
+            #_, _, mask = elliptical_selection(df_ph["angle_x"], df_ph["angle_y"], thetaC, *cut_angle*2, tilt) #defined in G4_utils.py
+            _, _, mask = elliptical_selection(df_ph["angle_x"], df_ph["angle_y"], thetaC, cut_angle[0]*2, cut_angle[1]*2, tilt) #defined in G4_utils.py
             df_ph_sel = df_ph[mask] #It's an equivalent method!
         else:
             mask1 = np.abs(df_ph["angle_x"] - thetaC[0]) < cut_angle[0]
@@ -766,7 +767,7 @@ def applyCutsToDF(df, th_APC1=1e15, th_APC2=0, crystal_width_cm=1e15, crystal_he
             df_sel = df[(np.abs(df.x_cry) < crystal_width_cm*0.5) & \
                         (np.abs(df.y_cry) < crystal_height_cm*0.5) & (ang_cut)]
         else:
-            df_sel = df[(df.edep_APC1 < th_APC1) & (df.edep_APC2 > th_APC2) & \
+            df_sel = df[(df.edep_APC1 < th_APC1) & (df.edep_APC2 >= th_APC2) & \
                         (np.abs(df.x_cry) < crystal_width_cm*0.5) & \
                         (np.abs(df.y_cry) < crystal_height_cm*0.5) & (ang_cut)]
     return df_sel
