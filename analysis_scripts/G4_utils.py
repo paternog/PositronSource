@@ -1005,10 +1005,10 @@ def write_spectrum(Eedges, spectrum, output_file):
     """
     DE = Eedges[1] - Eedges[0]
     Ebin = Eedges[:-1] + DE*0.5
-    print("Energy bin width: %.8f" % DE) 
-    #Eprob = spectrum * DE
-    #print("Spectrum integral:", round(sum(Eprob), 4))
-    print("Spectrum integral:", round(sum(spectrum), 4))
+    print("Energy bin width: %.8f" % DE)
+    print("Spectrum sum:", round(sum(spectrum), 4))
+    Eprob = spectrum * DE
+    print("Spectrum integral:", round(sum(Eprob), 4))
     with open(output_file, 'w') as f:
         f.write('#energy spectrum\n')
         for i in range(len(spectrum)):
