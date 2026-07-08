@@ -68,8 +68,8 @@ def get_photons_on_detector(filename, Nevents, Elim=(0, 1e10), \
         if coll_type == 'ellipse': #or circle if cut_angle[0]=cut_angle[1]
             #df_ph_sel = df_ph[np.sqrt((df_ph["angle_x"] - thetaC[0])**2/cut_angle[0]**2 + \
             #                          (df_ph["angle_y"] - thetaC[1])**2/cut_angle[1]**2) < 1]
-            #_, _, mask = elliptical_selection(df_ph["angle_x"], df_ph["angle_y"], thetaC, *cut_angle*2, tilt) #defined in G4_utils.py
-            _, _, mask = elliptical_selection(df_ph["angle_x"], df_ph["angle_y"], thetaC, cut_angle[0]*2, cut_angle[1]*2, tilt) #defined in G4_utils.py
+            _, _, mask = elliptical_selection(df_ph["angle_x"], df_ph["angle_y"], \
+                                              thetaC, cut_angle[0]*2, cut_angle[1]*2, tilt) #defined in G4_utils.py
             df_ph_sel = df_ph[mask] #It's an equivalent method!
         else:
             mask1 = np.abs(df_ph["angle_x"] - thetaC[0]) < cut_angle[0]
@@ -90,6 +90,63 @@ def get_photons_on_detector(filename, Nevents, Elim=(0, 1e10), \
     
     # Return
     return rf, df_ph_sel, df_ph_sel_E
+
+
+def get_photons_at_crystal_exit_in_TestBeamOC(df_root, Nevents, Elim=(0, 1e10), \
+                                              apply_collimation=False, coll_type='ellipse', tilt=45, \
+                                              cut_angle=(3.14, 3.14), thetaC=(0, 0), beVerbose=True):
+    """
+    Function that accepts the dataframe, with particles downstream of the crystal scored 
+    by the scoring screens in the Geant4 TestBeamOC(2) app, and selects the photons and 
+    in particular their main features: ["E", "angle_x", "angle_y", "eventID"], 
+    with E is expressed in GeV and the angles in rad.
+    The function returns two dataframes with the selected photons (in a given energy range).
+    The angular selection can be applied specifying cut angles with respect to a center thetaC.
+    The collimator can be elliptical (circular) or rectangular. The selection can be performed
+    using coll_type variable. Tilt and thetaC define the tilt of an elliptical collimator and
+    the cut center, respectively. cut_angle define the abosute cut angles in x and y direction
+    (for a circular collimator, the two elements must have the same value).
+    Last update: 06/07/2026.
+    """
+    
+    import numpy as np
+    import pandas as pd
+       
+    ph_features = ["E", "angle_x", "angle_y", "eventID"]
+       
+    # Get the simulated data
+    df_screen = df_root[df_root["detID"] == 1].copy()
+    df_screen["angle_x"] = df_screen["thx"] * 1e-3 #rad
+    df_screen["angle_y"] = df_screen["thy"] * 1e-3 #rad
+    df_ph = df_screen[ph_features]
+    Evalues = df_ph["E"].values #GeV
+    print("\nnumber of photons scored:", Evalues.shape[0])
+       
+    # Take only the photons inside the collimator acceptance
+    if apply_collimation:
+        if coll_type == 'ellipse': #or circle if cut_angle[0]=cut_angle[1]
+            _, _, mask = elliptical_selection(df_ph["angle_x"], df_ph["angle_y"], \
+                                              thetaC, cut_angle[0]*2, cut_angle[1]*2, tilt) #defined in G4_utils.py
+            df_ph_sel = df_ph[mask] #It's an equivalent method!
+        else:
+            mask1 = np.abs(df_ph["angle_x"] - thetaC[0]) < cut_angle[0]
+            mask2 = np.abs(df_ph["angle_y"] - thetaC[1]) < cut_angle[1]
+            df_ph_sel = df_ph[mask1 & mask2]
+    else:
+        df_ph_sel = df_ph.copy()    
+    df_ph_sel_E = df_ph_sel[(df_ph_sel.E >= Elim[0]) & (df_ph_sel.E <= Elim[1])].copy()
+
+    # Print number of photons emitted
+    if beVerbose:
+        print("number of collimated photons: %d" % len(df_ph_sel))
+        print("number of collimated photons with energy in [%.2f, %.2f] MeV: %d" % \
+              (*Elim, len(df_ph_sel_E.E)))
+        print("number of photons emitted per particle: %.2f" % (len(df_ph)/Nevents))
+        print("number of collimated photons emitted per particle with energy in [%.2f, %.2f] MeV: %.4f\n" % \
+              (*Elim, len(df_ph_sel_E.E)/Nevents))
+    
+    # Return
+    return df_ph_sel, df_ph_sel_E
 
 
 def read_G4_BK_spectrum(filename, file_format='new', th=1.):
