@@ -107,8 +107,7 @@ def get_photons_at_crystal_exit_in_TestBeamOC(df_root, Nevents, Elim=(0, 1e10), 
     #the cut center, respectively. cut_angle define the abosute cut angles in x and y direction
     #(for a circular collimator, the two elements must have the same value).
     #Last update: 06/07/2026.
-    
-    
+        
     import numpy as np
     import pandas as pd
        
