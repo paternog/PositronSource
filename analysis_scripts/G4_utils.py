@@ -1,13 +1,13 @@
 #######################################################################################################
 ####### Set of functions useful to analyse Geant4 simulations #########################################
-####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 17/04/2026 ######################
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 22/07/2026 ######################
 #######################################################################################################
 
 
 ############# Set of functions to elaborate lists and numpy arrays ####################################
 def list_flatten(myList):
     """
-    Function to flatten a list of lists
+    Function to flatten a list of lists.
     """
     flat_list = [item for sublist in myList for item in sublist]
     return flat_list
@@ -31,6 +31,32 @@ def list_average(lst):
     Function to calculate the average of a list.
     """ 
     return sum(lst) / len(lst)
+
+
+def unique_with_global_threshold(arr, threshold):
+    """
+    It takes a list and returns the values
+    that are unique within a given threshold.
+    """
+    import numpy as np
+    arr_sorted = np.sort(arr)
+    unique_values = []
+    # Initialize a temporary group with the first value
+    group = [arr_sorted[0]]
+    # Loop
+    for value in arr_sorted[1:]:
+        # Compare the new value with the current group
+        if abs(value - group[0]) <= threshold:
+            group.append(value)
+        else:
+            # If the value is too far, append the mean of the group
+            # to unique_values and start a new group
+            unique_values.append(np.mean(group))
+            group = [value]
+    # Append the last group
+    unique_values.append(np.mean(group)) 
+    # Return
+    return np.array(unique_values)
 
 
 def weighted_avg_and_std(values, weights):
@@ -207,32 +233,6 @@ def smooth(y, box_pts):
     return y_smooth
 
 
-def unique_with_global_threshold(arr, threshold):
-    """
-    It takes a list and returns the values
-    that are unique within a given threshold.
-    """
-    import numpy as np
-    arr_sorted = np.sort(arr)
-    unique_values = []
-    # Initialize a temporary group with the first value
-    group = [arr_sorted[0]]
-    # Loop
-    for value in arr_sorted[1:]:
-        # Compare the new value with the current group
-        if abs(value - group[0]) <= threshold:
-            group.append(value)
-        else:
-            # If the value is too far, append the mean of the group
-            # to unique_values and start a new group
-            unique_values.append(np.mean(group))
-            group = [value]
-    # Append the last group
-    unique_values.append(np.mean(group)) 
-    # Return
-    return np.array(unique_values)
-
-
 def projectDistZ3(x1, y1, z1, x2, y2, z2, z3):
     """
     General version of projectDistZ.
@@ -256,6 +256,15 @@ def get_theta_angles(x1, y1, x2, y2, d12):
     return (thetaX, thetaY)
 
 
+def get_one_over_gamma(E, m=0.511):
+    """
+    E and m are the particle energy and mass, in MeV, respectively.
+    It returns 1/gamma in urad.
+    """
+    one_over_gamma = m/E*1e6 #urad
+    return one_over_gamma
+    
+
 def myGauss(x, a, mu, sigma):
     """Simple Gaussian function."""
     import numpy as np
@@ -276,7 +285,7 @@ def myLandau(x, a, b, c):
 
 def myCrystalball(x, a, b, c, d, e):
     """
-    Developed by gpaterno (2/04/2026) on the basis of scipy.stats.crystalball PDF, where
+    Developed by gpaterno (02/04/2026) on the basis of scipy.stats.crystalball PDF, where
     beta is the transition point from Gaussian to power-law function, 
     m is the exponent of the power-law used to model the left tail,
     loc = is the mean of the Gaussian,
@@ -299,7 +308,8 @@ def myRayleigh(x, a, b):
 
 ############# Set of functions to do useful and most used plots #######################################
 def simple_plot(x, y, yerr=None, icludeErrors=False, \
-                xlbl='x', ylbl='y', fs=14, mytitle='', showPlot=True, \
+                xlbl='x', ylbl='y', fs=14, mytitle='', mylabel='', \
+                showPlot=True, showGrid=False, ax=None, \
                 myFigSize=(8, 5), saveFig=False, figname='mySimplePlot'):
     """
     Function to plot y as a function of x. Errors can be also included.
@@ -308,39 +318,45 @@ def simple_plot(x, y, yerr=None, icludeErrors=False, \
     import matplotlib.pyplot as plt
     from matplotlib.ticker import AutoMinorLocator
     # Plot
-    fig = plt.figure(figsize=myFigSize)
+    fig_created = False
+    if ax == None:
+        fig, ax = plt.subplots()
+        fig.set_size_inches(*myFigSize)
+        fig_created = True
     if icludeErrors and yerr.size>0:
-        plt.errorbar(x, y, yerr, \
+        plt.errorbar(x, y, yerr, label=mytitle, \
                      linestyle='', linewidth=1, color='b', \
                      marker='o', ms=4, ecolor='b', capsize=0.0)
     else:
-        plt.plot(x, y, \
+        plt.plot(x, y, label=mylabel,\
                  color='b', linestyle='-', linewidth=2, \
                  marker='', markersize=8,  markerfacecolor='b')
     plt.title(mytitle, fontsize=fs)
+    plt.legend(fontsize=fs*0.85)
     plt.xlabel(xlbl, fontsize=fs)
     plt.ylabel(ylbl, fontsize=fs)
     plt.xticks(fontsize=fs, rotation=0)
     plt.yticks(fontsize=fs, rotation=0)
-    plt.gca().xaxis.set_minor_locator(AutoMinorLocator(5))
-    plt.gca().yaxis.set_minor_locator(AutoMinorLocator(5))
-    plt.gca().tick_params(axis="both", which='major', direction='in', length=8)
-    plt.gca().tick_params(axis="both", which='minor', direction='in', length=4)
-    plt.grid(which="major", color="gray", linestyle="--", linewidth=1)
+    ax.xaxis.set_minor_locator(AutoMinorLocator(5))
+    ax.yaxis.set_minor_locator(AutoMinorLocator(5))
+    ax.tick_params(axis="both", which='major', direction='in', length=8)
+    ax.tick_params(axis="both", which='minor', direction='in', length=4)
+    if showGrid:
+        plt.grid(which="major", color="gray", linestyle="--", linewidth=1)
     if saveFig:
         plt.savefig(figname+".jpg")
-    ax = plt.gca()
-    if showPlot:
-        plt.show()
-    else:
-        plt.close()
+    if fig_created:
+        if showPlot:
+            plt.show()
+        else:
+            plt.close()
     #Return
     return ax
     
 
 def simple_hist(values, Nbins=100, myrange=None, IWantDensity=False, \
-                xlbl='x', fs=14, bw=0.5, mylabel='data', mytitle='', showPlot=True, \
-                icludeErrors=False, IWantGaussianFit=False, plotFitPar=False, \
+                xlbl='x', fs=14, bw=0.5, mylabel='data', mytitle='', showPlot=True, ax=None, \
+                showGrid=False, icludeErrors=False, IWantGaussianFit=False, plotFitPar=False, \
                 myFigSize=(8, 5), saveFig=False, figname='mySimpleHist'):
     """
     Function to plot the histogram of passed values. A Gaussian fit can be included.
@@ -361,11 +377,15 @@ def simple_hist(values, Nbins=100, myrange=None, IWantDensity=False, \
     if IWantDensity:
         y = y / (dx*len(values))
         yerr = yerr / (dx*len(values))
-        ylbl = "Density"
+        ylbl = "PDF"
     else:
         ylbl = "Counts"
     # Plot
-    fig = plt.figure(figsize=myFigSize)
+    fig_created = False
+    if ax == None:
+        fig, ax = plt.subplots()
+        fig.set_size_inches(*myFigSize)
+        fig_created = True
     if icludeErrors and yerr.size>0:
         plt.bar(x, y, width=bw, alpha=0.75) #, label=mylabel)
         plt.errorbar(x, y, yerr, label=mylabel, \
@@ -398,6 +418,7 @@ def simple_hist(values, Nbins=100, myrange=None, IWantDensity=False, \
     else:
         pars = []
         stdevs = []
+    # Complete the plot
     if (icludeErrors or IWantGaussianFit) and (mylabel != ''):
         plt.legend(fontsize=fs*0.75)
     plt.title(mytitle, fontsize=fs)
@@ -405,23 +426,26 @@ def simple_hist(values, Nbins=100, myrange=None, IWantDensity=False, \
     plt.ylabel(ylbl, fontsize=fs)
     plt.xticks(fontsize=fs, rotation=0)
     plt.yticks(fontsize=fs, rotation=0)
-    plt.gca().xaxis.set_minor_locator(AutoMinorLocator(5))
-    plt.gca().yaxis.set_minor_locator(AutoMinorLocator(5))
-    plt.gca().tick_params(axis="both", which='major', direction='in', length=8)
-    plt.gca().tick_params(axis="both", which='minor', direction='in', length=4)
-    #plt.grid(which="major", color="gray", linestyle="--", linewidth=1)
+    ax.xaxis.set_minor_locator(AutoMinorLocator(5))
+    ax.yaxis.set_minor_locator(AutoMinorLocator(5))
+    ax.tick_params(axis="both", which='major', direction='in', length=8)
+    ax.tick_params(axis="both", which='minor', direction='in', length=4)
+    if showGrid:
+        plt.grid(which="major", color="gray", linestyle="--", linewidth=1)
     if saveFig:
         plt.savefig(figname+".jpg")
-    ax = plt.gca()
-    if showPlot:
-        plt.show()
+    if fig_created:
+        if showPlot:
+            plt.show()
+        else:
+            plt.close()
     #Return
     return h, pars, stdevs, ax
     
     
 def scatterplot_with_hist(x1, y1, x2=[0], y2=[0], lbl1='', lbl2='', \
                           xlabel='', ylabel='', opacity=1, \
-                          nbins=100, myoutpath='', saveFigs=False):
+                          nbins=100, myoutpath='', saveFigs=False):  
     
     """
     Scatter plot of one or two distributions x1 vs y1 and x2 vs y2. If the distributions
@@ -827,9 +851,9 @@ def create_2d_histogram_and_slice(x_data, y_data, x_bins=50, y_bins=50, XYextent
                                   x_slice_position=None, slice_width=None, units='', flip_plot=False, \
                                   IWantFit=False, useP0=True, fitTh=100, fitCenter=0, fitExtent=None, \
                                   saveFig=False, figname="TH2D_and_slice"):
-    """
-    Create a 2D histogram and extract a slice along Y at a given x position with specified width.
     
+    """
+    It creates a 2D histogram and extract a slice along Y at a given x position with specified width.
     Parameters:
     x_data, y_data: Input data arrays.
     x_bins, y_bins: Number of bins for x and y axes.
@@ -843,7 +867,6 @@ def create_2d_histogram_and_slice(x_data, y_data, x_bins=50, y_bins=50, XYextent
     fitTh: threshold from which I shift from single Gaussian fit to find peak function.
     fitCenter: suggest the center of the fit.
     fitExtent: range used for the fit.
-    
     Returns:
     fig: matplotlib figure object
     y_slice: The slice data along Y (summed over the width)
@@ -988,7 +1011,7 @@ def create_2d_histogram_and_slice(x_data, y_data, x_bins=50, y_bins=50, XYextent
     ax2.set_title(f'Slice at x = {x_slice_position:.2f}±{actual_width/2:.2f}' + ' ' + units, fontsize=12)
     ax2.grid(True, alpha=0.3)
     if saveFig:
-        plt.savefig(figname + ".jpg")
+        plt.savefig(figname+".jpg")
     plt.tight_layout()
     plt.show()
     

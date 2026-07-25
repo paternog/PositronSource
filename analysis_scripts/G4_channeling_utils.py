@@ -1,6 +1,6 @@
 #######################################################################################################
 ####### Set of functions used during the analysis of channeling simulations with Geant4 ###############
-####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 19/12/2025 ######################
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 22/07/2026 ######################
 #######################################################################################################
 
 # Import the required libraries
@@ -23,6 +23,16 @@ from G4_utils import * #my custom functions of general utility
 #######################################################################################################
 ############ Custom functions useful for various Geant4 simulations related to channeling #############
 #######################################################################################################
+def get_Lindhard_angle(U0, E, q=1):
+    """
+    U0 and particleEnergy are in eV, 
+    q=particle charge is in units of electron charge.
+    """
+    import numpy as np
+    thetaL = np.sqrt(2*U0*abs(q)/E) #rad
+    return thetaL
+
+    
 def get_photons_on_detector(filename, Nevents, Elim=(0, 1e10), \
                             apply_collimation=False, coll_type='ellipse', tilt=45, \
                             cut_angle=(3.14, 3.14), thetaC=(0, 0), beVerbose=True):
