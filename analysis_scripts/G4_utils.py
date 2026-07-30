@@ -26,6 +26,19 @@ def find_list_max(myList):
     return the_max, imax
 
 
+def find_list_min(myList):
+    """
+    Function to find min and imin of a list.
+    """ 
+    the_min = myList[0]
+    imin = 0
+    for i in range(1, len(myList)):
+        if myList[i] < the_min:
+            the_min = myList[i]
+            imin = i
+    return the_min, imin
+
+
 def list_average(lst):
     """
     Function to calculate the average of a list.
@@ -308,8 +321,9 @@ def myRayleigh(x, a, b):
 
 ############# Set of functions to do useful and most used plots #######################################
 def simple_plot(x, y, yerr=None, icludeErrors=False, \
-                xlbl='x', ylbl='y', fs=14, mytitle='', mylabel='', \
-                showPlot=True, showGrid=False, ax=None, \
+                xlbl='x', ylbl='y', mytitle='', mylabel='', \
+                fs=14, lw=2, symbol='', ms=4, \
+                showPlot=True, showGrid=False, ax=None, plotLogYscale=False, \
                 myFigSize=(8, 5), saveFig=False, figname='mySimplePlot'):
     """
     Function to plot y as a function of x. Errors can be also included.
@@ -324,25 +338,27 @@ def simple_plot(x, y, yerr=None, icludeErrors=False, \
         fig.set_size_inches(*myFigSize)
         fig_created = True
     if icludeErrors and yerr.size>0:
-        plt.errorbar(x, y, yerr, label=mytitle, \
-                     linestyle='', linewidth=1, color='b', \
-                     marker='o', ms=4, ecolor='b', capsize=0.0)
+        ax.errorbar(x, y, yerr, label=mytitle, \
+                    linestyle='', linewidth=1, color='b', \
+                    marker='o', ms=4, ecolor='b', capsize=0.0)
     else:
-        plt.plot(x, y, label=mylabel,\
-                 color='b', linestyle='-', linewidth=2, \
-                 marker='', markersize=8,  markerfacecolor='b')
-    plt.title(mytitle, fontsize=fs)
-    plt.legend(fontsize=fs*0.85)
-    plt.xlabel(xlbl, fontsize=fs)
-    plt.ylabel(ylbl, fontsize=fs)
-    plt.xticks(fontsize=fs, rotation=0)
-    plt.yticks(fontsize=fs, rotation=0)
+        ax.plot(x, y, label=mylabel, \
+                color='b', linestyle='-', linewidth=lw, \
+                marker=symbol, markersize=ms, markerfacecolor='b')
+    ax.set_title(mytitle, fontsize=fs)
+    ax.legend(fontsize=fs*0.85)
+    ax.set_xlabel(xlbl, fontsize=fs)
+    ax.set_ylabel(ylbl, fontsize=fs)
+    ax.tick_params(labelsize=fs, labelrotation=0)
+    ax.tick_params(labelsize=fs, labelrotation=0)
     ax.xaxis.set_minor_locator(AutoMinorLocator(5))
     ax.yaxis.set_minor_locator(AutoMinorLocator(5))
     ax.tick_params(axis="both", which='major', direction='in', length=8)
     ax.tick_params(axis="both", which='minor', direction='in', length=4)
+    if plotLogYscale:
+        ax.set_yscale('log')
     if showGrid:
-        plt.grid(which="major", color="gray", linestyle="--", linewidth=1)
+        ax.grid(which="major", color="gray", linestyle="--", linewidth=1)
     if saveFig:
         plt.savefig(figname+".jpg")
     if fig_created:
@@ -357,7 +373,7 @@ def simple_plot(x, y, yerr=None, icludeErrors=False, \
 def simple_hist(values, Nbins=100, myrange=None, IWantDensity=False, \
                 xlbl='x', fs=14, bw=0.5, mylabel='data', mytitle='', showPlot=True, ax=None, \
                 showGrid=False, icludeErrors=False, IWantGaussianFit=False, plotFitPar=False, \
-                myFigSize=(8, 5), saveFig=False, figname='mySimpleHist'):
+                plotLogYscale=False, myFigSize=(8, 5), saveFig=False, figname='mySimpleHist'):
     """
     Function to plot the histogram of passed values. A Gaussian fit can be included.
     Errors can be calculated as the sqrt of the histogram counts.
@@ -372,7 +388,7 @@ def simple_hist(values, Nbins=100, myrange=None, IWantDensity=False, \
     y = h[0]
     yerr = np.sqrt(h[0])
     x_edges = h[1]
-    x = (x_edges[1:]+x_edges[:-1])*0.5
+    x = (x_edges[1:] + x_edges[:-1])*0.5
     dx = x[1] - x[0]
     if IWantDensity:
         y = y / (dx*len(values))
@@ -387,12 +403,12 @@ def simple_hist(values, Nbins=100, myrange=None, IWantDensity=False, \
         fig.set_size_inches(*myFigSize)
         fig_created = True
     if icludeErrors and yerr.size>0:
-        plt.bar(x, y, width=bw, alpha=0.75) #, label=mylabel)
-        plt.errorbar(x, y, yerr, label=mylabel, \
-                     linestyle='', linewidth=1, color='b', \
-                     marker='o', ms=4, ecolor='b', capsize=0.0)
+        ax.bar(x, y, width=bw, alpha=0.75) #, label=mylabel)
+        ax.errorbar(x, y, yerr, label=mylabel, \
+                    linestyle='', linewidth=1, color='b', \
+                    marker='o', ms=4, ecolor='b', capsize=0.0)
     else:
-        plt.bar(x, y, label=mylabel)
+        ax.bar(x, y, label=mylabel)
     # Fit
     if IWantGaussianFit:
         def Gauss(x, a, b, c):
@@ -411,7 +427,7 @@ def simple_hist(values, Nbins=100, myrange=None, IWantDensity=False, \
             fitlbl = f'fit: $\\mu$={pars[1]:.2f}+/-{stdevs[1]:.2f}, $\\sigma$={pars[2]:.2f}+/-{stdevs[2]:.2f}'
         else:
             fitlbl = 'fit' 
-        plt.plot(x, fit, linestyle='--', linewidth=2, color='black', label=fitlbl)
+        ax.plot(x, fit, linestyle='--', linewidth=2, color='black', label=fitlbl)
         for i in range(3):
             print("fit parameter a[%d] of %s: %.2f +/ %.2f" % (i, xlbl, pars[i], stdevs[i]))
         print('\n')
@@ -420,18 +436,20 @@ def simple_hist(values, Nbins=100, myrange=None, IWantDensity=False, \
         stdevs = []
     # Complete the plot
     if (icludeErrors or IWantGaussianFit) and (mylabel != ''):
-        plt.legend(fontsize=fs*0.75)
-    plt.title(mytitle, fontsize=fs)
-    plt.xlabel(xlbl, fontsize=fs)
-    plt.ylabel(ylbl, fontsize=fs)
-    plt.xticks(fontsize=fs, rotation=0)
-    plt.yticks(fontsize=fs, rotation=0)
+        ax.legend(fontsize=fs*0.65)
+    ax.set_title(mytitle, fontsize=fs)
+    ax.set_xlabel(xlbl, fontsize=fs)
+    ax.set_ylabel(ylbl, fontsize=fs)
+    ax.tick_params(labelsize=fs, labelrotation=0)
+    ax.tick_params(labelsize=fs, labelrotation=0)
     ax.xaxis.set_minor_locator(AutoMinorLocator(5))
     ax.yaxis.set_minor_locator(AutoMinorLocator(5))
     ax.tick_params(axis="both", which='major', direction='in', length=8)
     ax.tick_params(axis="both", which='minor', direction='in', length=4)
+    if plotLogYscale:
+        ax.set_yscale('log')
     if showGrid:
-        plt.grid(which="major", color="gray", linestyle="--", linewidth=1)
+        ax.grid(which="major", color="gray", linestyle="--", linewidth=1)
     if saveFig:
         plt.savefig(figname+".jpg")
     if fig_created:
