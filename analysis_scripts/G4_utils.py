@@ -322,7 +322,7 @@ def myRayleigh(x, a, b):
 ############# Set of functions to do useful and most used plots #######################################
 def simple_plot(x, y, yerr=None, icludeErrors=False, \
                 xlbl='x', ylbl='y', mytitle='', mylabel='', \
-                fs=14, lw=2, symbol='', ms=4, \
+                fs=14, lw=2, symbol='', ms=4, capsize=0.0, color='b', \
                 showPlot=True, showGrid=False, ax=None, plotLogYscale=False, \
                 myFigSize=(8, 5), saveFig=False, figname='mySimplePlot'):
     """
@@ -339,12 +339,12 @@ def simple_plot(x, y, yerr=None, icludeErrors=False, \
         fig_created = True
     if icludeErrors and yerr.size>0:
         ax.errorbar(x, y, yerr, label=mytitle, \
-                    linestyle='', linewidth=1, color='b', \
-                    marker='o', ms=4, ecolor='b', capsize=0.0)
+                    linestyle='', linewidth=1, color=color, \
+                    marker=symbol, ms=ms, ecolor=color, capsize=capsize)
     else:
         ax.plot(x, y, label=mylabel, \
-                color='b', linestyle='-', linewidth=lw, \
-                marker=symbol, markersize=ms, markerfacecolor='b')
+                linestyle='-', linewidth=lw, color=color, \
+                marker=symbol, markersize=ms, markerfacecolor=color)
     ax.set_title(mytitle, fontsize=fs)
     ax.legend(fontsize=fs*0.85)
     ax.set_xlabel(xlbl, fontsize=fs)
@@ -370,8 +370,8 @@ def simple_plot(x, y, yerr=None, icludeErrors=False, \
     return ax
     
 
-def simple_hist(values, Nbins=100, myrange=None, IWantDensity=False, \
-                xlbl='x', fs=14, bw=0.5, mylabel='data', mytitle='', showPlot=True, ax=None, \
+def simple_hist(values, Nbins=100, myrange=None, IWantDensity=False, mylabel='data', \
+                xlbl='x', fs=14, bw=0.5, color='#1f77b4', mytitle='', showPlot=True, ax=None, \
                 showGrid=False, icludeErrors=False, IWantGaussianFit=False, plotFitPar=False, \
                 plotLogYscale=False, myFigSize=(8, 5), saveFig=False, figname='mySimpleHist'):
     """
@@ -403,12 +403,12 @@ def simple_hist(values, Nbins=100, myrange=None, IWantDensity=False, \
         fig.set_size_inches(*myFigSize)
         fig_created = True
     if icludeErrors and yerr.size>0:
-        ax.bar(x, y, width=bw, alpha=0.75) #, label=mylabel)
+        ax.bar(x, y, width=bw, alpha=1.0, color=color) #, label=mylabel)
         ax.errorbar(x, y, yerr, label=mylabel, \
-                    linestyle='', linewidth=1, color='b', \
-                    marker='o', ms=4, ecolor='b', capsize=0.0)
+                    linestyle='', linewidth=1, color=color, \
+                    marker='o', ms=4, ecolor=color, capsize=0.0)
     else:
-        ax.bar(x, y, label=mylabel)
+        ax.bar(x, y, label=mylabel, alpha=1.0, color=color)
     # Fit
     if IWantGaussianFit:
         def Gauss(x, a, b, c):
