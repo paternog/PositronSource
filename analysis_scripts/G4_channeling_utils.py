@@ -149,10 +149,10 @@ def get_photons_at_crystal_exit_in_TestBeamOC(df_root, Nevents, Elim=(0, 1e10), 
     # Print number of photons emitted
     if beVerbose:
         print("number of collimated photons: %d" % len(df_ph_sel))
-        print("number of collimated photons with energy in [%.2f, %.2f] MeV: %d" % \
+        print("number of collimated photons with energy in [%.2f, %.2f] GeV: %d" % \
               (*Elim, len(df_ph_sel_E.E)))
         print("number of photons emitted per particle: %.2f" % (len(df_ph)/Nevents))
-        print("number of collimated photons emitted per particle with energy in [%.2f, %.2f] MeV: %.4f\n" % \
+        print("number of collimated photons emitted per particle with energy in [%.2f, %.2f] GeV: %.4f\n" % \
               (*Elim, len(df_ph_sel_E.E)/Nevents))
     
     # Return
