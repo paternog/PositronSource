@@ -285,7 +285,7 @@ def read_and_plot_Edep_event(filename, normEvents, beVerbose=True, doPlots=True,
 
 
 
-def read_Edep_event(filename, normEvents, beVerbose=True):
+def read_Edep_event(filename, normEvents, units='GeV', beVerbose=True):
     """
     Function to read Edep accumulated (through SteppingAction) 
     per event in various volumes. It is general.
@@ -317,10 +317,10 @@ def read_Edep_event(filename, normEvents, beVerbose=True):
     for ID in edep_event.keys():
         edep.append(np.sum(edep_event[ID])/nf)
         if beVerbose:
-            print('Edep[%d]: %.6f GeV' % (ID, edep[ID]))
+            print('Edep[%d]: %.6f %s' % (ID, edep[ID, units]))
         total_edep = total_edep + edep[ID]
     if beVerbose:
-        print('total_Edep in Volumes: %.2f GeV' % (total_edep))
+        print('total_Edep in Volumes: %.2f %s' % (total_edep, units))
         print('\n')
         
     return edep_event, edep, df_event, Nvolumes, Nevents
@@ -454,7 +454,8 @@ def read_Edep_BoxMesh(filename, normEvents, Nevents,
     It is general. It returns [data, (x,y,z)], where:
     data is a dictionary with 10 columns defined as follows
     {"ind_x", "ind_y", "ind_z", "eDep", "x", "y", "z", "r" ,"eDep_err", "eDepDensity", "eDepDensity_err"}
-    and (x,y,z) are the coordinates of the voxel centers, which are typically in mm (eDep is by default in MeV).
+    and (x,y,z) are the coordinates of the voxel centers. 
+    NOTE: isn't necassary to specify units, however, typically (x,y,z) are in mm, eDep is in MeV).
     """
     
     def find(cond, N=1e7):    
