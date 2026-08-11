@@ -296,6 +296,16 @@ def myLandau(x, a, b, c):
     return fun
 
 
+def myLangauss(x, a, b, c, d):
+    """
+    Developed by gpaterno (3/12/2025) on the basis of landaupy.langauss PDF.
+    """
+    import numpy as np
+    from landaupy import langauss
+    fun = a*langauss.pdf(x, landau_x_mpv=b, landau_xi=c, gauss_sigma=d)
+    return fun
+
+
 def myCrystalball(x, a, b, c, d, e):
     """
     Developed by gpaterno (02/04/2026) on the basis of scipy.stats.crystalball PDF, where
