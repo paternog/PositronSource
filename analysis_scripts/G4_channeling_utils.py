@@ -1,6 +1,6 @@
 #######################################################################################################
 ####### Set of functions used during the analysis of channeling simulations with Geant4 ###############
-####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 22/07/2026 ######################
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 11/09/2026 ######################
 #######################################################################################################
 
 # Import the required libraries
@@ -47,7 +47,7 @@ def get_photons_on_detector(filename, Nevents, Elim=(0, 1e10), \
     using coll_type variable. Tilt and thetaC define the tilt of an elliptical collimator and
     the cut center, respectively. cut_angle define the abosute cut angles in x and y direction
     (for a circular collimator, the two elements must have the same value).
-    Last update: 27/03/2026.
+    Last update: 14/08/2026.
     """
     
     import numpy as np
@@ -59,7 +59,7 @@ def get_photons_on_detector(filename, Nevents, Elim=(0, 1e10), \
     print('rf_content:\n', rf_content, '\n')
     
     ph_features = ["E", "angle_x", "angle_y", "eventID"]
-       
+
     # Get the simulated data
     if 'photon_spectrum' in rf_content:
         df_ph = rf['photon_spectrum'].arrays(library='pd')
@@ -68,10 +68,18 @@ def get_photons_on_detector(filename, Nevents, Elim=(0, 1e10), \
         df_ph = [ph_features]
     else:
         df_root = rf['scoring_ntuple'].arrays(library='pd')
-        df_det_ph = df_root[(df_root.volume == "Detector") & (df_root.particle == "gamma")].copy()
-        df_ph = df_det_ph[ph_features]
-    Evalues = df_ph["E"].values #MeV
-    print("number of photons scored:", Evalues.shape[0])
+        df_root = df_root.rename(columns={"Ekin": "E"})
+        volumes = np.unique(df_root['volume'], return_counts=True)
+        if 'Detector' in volumes[0]: #this branch is because the name changed during the time
+            cond_detector = 'Detector'
+        else:
+            cond_detector = 1
+        if 'gamma' in particles[0]: #this branch is because the name changed during the time
+            cond_gamma = 'gamma'
+        else:
+            cond_gamma = 0
+        df_det_ph = df_root[(df_root.volume == cond_detector) & (df_root.particle == cond_gamma)].copy()
+        df_ph = df_det_ph[ph_features]     
        
     # Take only the photons inside the collimator acceptance
     if apply_collimation:
@@ -89,13 +97,14 @@ def get_photons_on_detector(filename, Nevents, Elim=(0, 1e10), \
         df_ph_sel = df_ph.copy()    
     df_ph_sel_E = df_ph_sel[(df_ph_sel.E >= Elim[0]) & (df_ph_sel.E <= Elim[1])].copy()
 
-    # Print number of photons emitted
+    # Print the number of photons emitted
     if beVerbose:
+        print("number of photons scored:", len(df_ph))
         print("number of collimated photons: %d" % len(df_ph_sel))
         print("number of collimated photons with energy in [%.2f, %.2f] MeV: %d" % \
               (*Elim, len(df_ph_sel_E.E)))
-        print("number of photons emitted per particle: %.2f" % (len(df_ph)/Nevents))
-        print("number of collimated photons emitted per particle with energy in [%.2f, %.2f] MeV: %.4f\n" % \
+        print("number of photons emitted per simualted particle: %.2f" % (len(df_ph)/Nevents))
+        print("number of collimated photons emitted per simulated particle with energy in [%.2f, %.2f] MeV: %.4f\n" % \
               (*Elim, len(df_ph_sel_E.E)/Nevents))
     
     # Return
@@ -106,7 +115,7 @@ def get_photons_at_crystal_exit_in_TestBeamOC(df_root, Nevents, Elim=(0, 1e10), 
                                               apply_collimation=False, coll_type='ellipse', tilt=45, \
                                               cut_angle=(3.14, 3.14), thetaC=(0, 0), beVerbose=True):
     
-    #Function that accepts the dataframe, with particles downstream of the crystal scored 
+    #Function that accepts the dataframe, with (selected) particles downstream of the crystal scored 
     #by the scoring screens in the Geant4 TestBeamOC(2) app, and selects the photons and 
     #in particular their main features: ["E", "angle_x", "angle_y", "eventID"], 
     #with E is expressed in GeV and the angles in rad.
@@ -129,8 +138,6 @@ def get_photons_at_crystal_exit_in_TestBeamOC(df_root, Nevents, Elim=(0, 1e10), 
     df_screen["angle_y"] = df_screen["thy"] * 1e-3 #rad
     df_ph_all = df_screen[(df_screen["particle"] == "gamma").to_numpy()].copy() #select only photons
     df_ph = df_ph_all[ph_features].copy() #select only important photon features
-    Evalues = df_ph["E"].values #GeV
-    print("\nnumber of photons scored:", Evalues.shape[0])
     
     # Take only the photons inside the collimator acceptance
     if apply_collimation:
@@ -146,17 +153,136 @@ def get_photons_at_crystal_exit_in_TestBeamOC(df_root, Nevents, Elim=(0, 1e10), 
         df_ph_sel = df_ph.copy()    
     df_ph_sel_E = df_ph_sel[(df_ph_sel.E >= Elim[0]) & (df_ph_sel.E <= Elim[1])].copy()
 
-    # Print number of photons emitted
+    # Print the number of photons emitted
     if beVerbose:
+        print("\nnumber of photons scored:", len(df_ph))
         print("number of collimated photons: %d" % len(df_ph_sel))
         print("number of collimated photons with energy in [%.2f, %.2f] GeV: %d" % \
               (*Elim, len(df_ph_sel_E.E)))
-        print("number of photons emitted per particle: %.2f" % (len(df_ph)/Nevents))
-        print("number of collimated photons emitted per particle with energy in [%.2f, %.2f] GeV: %.4f\n" % \
+        print("number of photons emitted per simulated particle: %.2f" % (len(df_ph)/Nevents))
+        print("number of collimated photons emitted per simulated particle with energy in [%.2f, %.2f] GeV: %.4f\n" % \
               (*Elim, len(df_ph_sel_E.E)/Nevents))
     
     # Return
     return df_ph_sel, df_ph_sel_E
+
+
+def get_photons_on_detector_with_particle_cuts(filename, Nevents, \
+                                               thetaCutPart=[3.14, 3.14], \
+                                               Elim=(0, 1e10), \
+                                               apply_collimation=False, coll_type='ellipse', tilt=45, \
+                                               cut_angle=(3.14, 3.14), thetaC=(0, 0), beVerbose=True):
+    """
+    Function to open the root file obtained with the Geant4 FastSimChannelingRad app 
+    and get the data scored in the ntuples so as to select the main features of the photons 
+    that impinge as the detector, namely: ["E", "angle_x", "angle_y", "eventID"], 
+    with E is expressed in MeV and the angles in rad. 
+    The function returns the read root file and a dataframe with the selected photons.
+    The angular selection can be applied specifying cut angles with respect to a center thetaC.
+    The collimator can be elliptical (circular) or rectangular. The selection can be performed
+    using coll_type variable. Tilt and thetaC define the tilt of an elliptical collimator and
+    the cut center, respectively. cut_angle define the abosute cut angles in x and y direction
+    (for a circular collimator, the two elements must have the same value).
+    NOTE: this version uses the scoring_ntuple to apply angular cuts on the impinging particles.
+    Last update: 11/09/2026.
+    """
+    
+    import numpy as np
+    import pandas as pd
+    import uproot
+    
+    rf = uproot.open(filename)
+    rf_content = [item.split(';')[0] for item in rf.keys()]
+    print('rf_content:\n', rf_content, '\n')
+
+     # Get the simulated data
+    df_root = rf['scoring_ntuple'].arrays(library='pd')
+    df_root = df_root.rename(columns={"Ekin": "E"})
+
+    # Select the primary particles impinging on the Crystal
+    volumes = np.unique(df_root['volume'], return_counts=True)
+    if beVerbose:
+        print('volumes:', volumes)
+    if 'Crystal' in volumes[0]:
+        mask_crystal = df_root['volume'] == 'Crystal'
+    else:
+        mask_crystal = df_root['volume'].isin([0,2]) #<----check!
+    df_crystal = df_root[mask_crystal]
+    #print("df_crystal:\n", df_crystal)
+
+    mask_crystal_primary = df_crystal['parentID'] == 0
+    df_crystal_primary = df_crystal[mask_crystal_primary]
+    #print("df_crystal_primary:\n", df_crystal_primary)
+
+    # Apply the angular cuts on the impinging particles
+    if beVerbose:
+        print('selecting the primary particles impinging on the crystal within: +/-', thetaCutPart, "rad")
+    
+    mask_cut = (np.abs(df_crystal_primary['angle_x']) < thetaCutPart[0]) & \
+               (np.abs(df_crystal_primary['angle_y']) < thetaCutPart[1])
+
+    df_crystal_primary_cut = df_crystal_primary[mask_cut]
+    #print("df_crystal_primary_cut:\n", df_crystal_primary_cut)
+    sel_events = df_crystal_primary_cut['eventID']
+    Nevents_sel = len(sel_events)
+    if beVerbose:
+        print('Nevents_sel:', Nevents_sel)
+    
+    # Select particles on the detecotr
+    if 'Detector' in volumes[0]:
+        mask_det = df_root['volume'] == 'Detector'
+    else:
+        mask_det = df_root['volume'].isin([1,3]) #<---------------------check!
+    df_det = df_root[mask_det]
+    #print("df_det:\n", df_det)
+    
+    # Selecting only the events compatible with previous cuts
+    def_det_sel = df_det[df_det["eventID"].isin(sel_events)]
+    #print("def_det_sel:\n", def_det_sel)
+
+    # Select only the photons impinging on the detector
+    particles = np.unique(def_det_sel['particle'], return_counts=True)
+    if beVerbose:
+        print('particles on the detector:', particles)
+    if 'gamma' in particles[0]:
+        mask_ph_det = def_det_sel['particle'] == 'gamma'
+    else:
+        if len(particles) > 3:
+            mask_ph_det = def_det_sel['particle'].isin([2,5]) #<---------------------check!
+        else:
+            mask_ph_det = def_det_sel['particle'] == 2
+    df_ph = def_det_sel[mask_ph_det]
+    #print("df_ph:\n", df_ph)
+
+    # Take only the photons inside the collimator acceptance
+    if apply_collimation:
+        if coll_type == 'ellipse': #or circle if cut_angle[0]=cut_angle[1]
+            _, _, mask = elliptical_selection(df_ph["angle_x"], df_ph["angle_y"], \
+                                              thetaC, cut_angle[0]*2, cut_angle[1]*2, tilt) #defined in G4_utils.py
+            df_ph_sel = df_ph[mask]
+        else:
+            mask1 = np.abs(df_ph["angle_x"] - thetaC[0]) < cut_angle[0]
+            mask2 = np.abs(df_ph["angle_y"] - thetaC[1]) < cut_angle[1]
+            df_ph_sel = df_ph[mask1 & mask2]
+    else:
+        df_ph_sel = df_ph.copy()    
+    df_ph_sel_E = df_ph_sel[(df_ph_sel.E >= Elim[0]) & (df_ph_sel.E <= Elim[1])].copy()
+
+    # Print the number of photons emitted
+    if beVerbose:
+        print("\nnumber of photons scored:", len(df_ph))
+        print("number of collimated photons: %d" % len(df_ph_sel))
+        print("number of collimated photons with energy in [%.2f, %.2f] MeV: %d" % \
+              (*Elim, len(df_ph_sel_E.E)))
+        print("number of photons emitted per selected particle: %.2f" % (len(df_ph)/Nevents_sel))
+        print("number of collimated photons emitted per selected particle with energy in [%.2f, %.2f] MeV: %.4f" % \
+              (*Elim, len(df_ph_sel_E.E)/Nevents_sel))        
+        print("number of photons emitted per simualted particle: %.2f" % (len(df_ph)/Nevents))
+        print("number of collimated photons emitted per simulated particle with energy in [%.2f, %.2f] MeV: %.4f\n" % \
+              (*Elim, len(df_ph_sel_E.E)/Nevents))
+    
+    # Return
+    return rf, df_ph_sel, df_ph_sel_E, Nevents_sel
 
 
 def read_G4_BK_spectrum(filename, file_format='new', th=1.):
@@ -822,6 +948,8 @@ def applyCutsToDF(df, th_APC1=1e15, th_APC2=0, crystal_width_cm=1e15, crystal_he
         ang_cut = np.abs(df.thetaX) < theta_cut
     elif angular_cut_type == "thetaY":
         ang_cut = np.abs(df.thetaY) < theta_cut
+    elif angular_cut_type == "thetaXandY":
+        ang_cut = (np.abs(df.thetaX) < theta_cut) & (np.abs(df.thetaY) < theta_cut)
     else:
         ang_cut = df.thetaX**2 + df.thetaY**2 < theta_cut**2
     print("applied %.2e rad angular cut on %s" % (theta_cut, angular_cut_type))
@@ -1584,6 +1712,15 @@ def merge_FastSimChannelingRad_files_old(data_path, correct_particle=False, prim
     if save_result:
         print("volume_dict merged:", volume_dict)
         print("part_dict merged:", part_dict)
+        try:
+            import json
+            with open(data_path+'/merge_dictonaries.json', 'w') as fp:
+                fp.write("volume_dict = ")
+                json.dump(volume_dict, fp)
+                fp.write("\n\npart_dict = ")
+                json.dump(part_dict, fp)
+        except:
+            pass
     else:
         volume_dict = {}
         part_dict = {}
@@ -1841,6 +1978,15 @@ def merge_FastSimChannelingRad_files(data_path, correct_particle=False, primary=
     if save_result:
         print("volume_dict merged:", volume_dict)
         print("part_dict merged:", part_dict)
+        try:
+            import json
+            with open(data_path+'/merge_dictonaries.json', 'w') as fp:
+                fp.write("volume_dict = ")
+                json.dump(volume_dict, fp)
+                fp.write("\n\npart_dict = ")
+                json.dump(part_dict, fp)
+        except:
+            pass
     else:
         volume_dict = {}
         part_dict = {}
@@ -2000,6 +2146,13 @@ def merge_TestBeamOC_files_old(data_path, beVerbose=False, save_result=False):
     print("\n")
     if save_result:
         print("part_dict merged:", part_dict)
+        try:
+            import json
+            with open(data_path+'/merge_dictonaries.json', 'w') as fp:
+                fp.write("part_dict = ")
+                json.dump(part_dict, fp)
+        except:
+            pass
     else:
         part_dict = {}
     print("events_read:", events_read)
@@ -2202,6 +2355,13 @@ def merge_TestBeamOC_files(data_path, beVerbose=False, save_result=False):
     print("\n")
     if save_result:
         print("part_dict merged:", part_dict)
+        try:
+            import json
+            with open(data_path+'/merge_dictonaries.json', 'w') as fp:
+                fp.write("part_dict = ")
+                json.dump(part_dict, fp)
+        except:
+            pass
     else:
         part_dict = {}
     print(f"Total events read: {events_read}")
