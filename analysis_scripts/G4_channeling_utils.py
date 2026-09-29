@@ -1,6 +1,6 @@
 #######################################################################################################
 ####### Set of functions used during the analysis of channeling simulations with Geant4 ###############
-####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 11/09/2026 ######################
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 18/09/2026 ######################
 #######################################################################################################
 
 # Import the required libraries
@@ -397,10 +397,13 @@ def process_photons_optimized(rf):
     Optimized function to process photon data from ROOT file.
     
     Returns:
-    - Eph: Photon energies in GeV
-    - thetaX_ph: Photon angles in mrad
-    - thetaY_ph: Photon angles in mrad
-    - Nph: Number of photons
+      df_ph a dataframe with:
+        - eventID: eventID
+        - Eph: Photon energies in MeV
+        - thetaX_ph: Photon angles in rad
+        - thetaY_ph: Photon angles in rad
+    
+    Prints Nph: Number of photons
     """
     
     tstart = time.time()
@@ -412,24 +415,28 @@ def process_photons_optimized(rf):
     arrays = rf['scoring_ntuple'].arrays(branches_red, library='np')
     
     # Create boolean masks using numpy (much faster than pandas filtering)
-    volume_mask = arrays['volume'] == b"Detector"
+    volume_mask = arrays['volume'] == "Detector"
     parent_mask = arrays['parentID'] > 0
-    particle_mask = arrays['particle'] == b"gamma"
+    particle_mask = arrays['particle'] == "gamma"
     
     # Combine all masks
     photon_mask = volume_mask & parent_mask & particle_mask
     
     # Apply mask and convert in one step
-    Eph = arrays['Ekin'][photon_mask] * 0.001         # MeV -> GeV
-    thetaX_ph = arrays['angle_x'][photon_mask] * 1e3  # rad -> mrad
-    thetaY_ph = arrays['angle_y'][photon_mask] * 1e3  # rad -> mrad
+    eventID = arrays['eventID'][photon_mask]
+    Eph = arrays['Ekin'][photon_mask]          #MeV
+    thetaX_ph = arrays['angle_x'][photon_mask] #rad
+    thetaY_ph = arrays['angle_y'][photon_mask] #rad
     Nph = len(Eph)
+
+    df_ph = pd.DataFrame({"eventID": eventID, "Ekin": Eph, "angle_x": thetaX_ph, "angle_y": thetaY_ph})
     
     telapsed = time.time() - tstart
     print(f"Number of emitted photons: {Nph}")
     print(f"Elapsed time: {telapsed:.2f} s\n")
     
-    return Eph, thetaX_ph, thetaY_ph, Nph
+    #return eventID Eph, thetaX_ph, thetaY_ph, Nph
+    return df_ph
 
 
 # Even faster version using uproot's built-in filtering
@@ -451,16 +458,17 @@ def process_photons_uproot_filter(rf):
     )
     
     # Convert to arrays and apply unit conversions
-    Eph = df_ph['Ekin'].values * 0.001         # MeV -> GeV
-    thetaX_ph = df_ph['angle_x'].values * 1e3  # rad -> mrad
-    thetaY_ph = df_ph['angle_y'].values * 1e3  # rad -> mrad
+    eventID = arrays['eventID'].values
+    Eph = df_ph['Ekin'].values          #MeV
+    thetaX_ph = df_ph['angle_x'].values #rad
+    thetaY_ph = df_ph['angle_y'].values #rad
     Nph = len(Eph)
     
     telapsed = time.time() - tstart
     print(f"Number of emitted photons: {Nph}")
     print(f"Elapsed time: {telapsed:.2f} s\n")
     
-    return Eph, thetaX_ph, thetaY_ph, Nph
+    return eventID, Eph, thetaX_ph, thetaY_ph, Nph
 
 
 # Memory-efficient version for very large datasets
@@ -472,7 +480,7 @@ def process_photons_memory_efficient(rf, chunk_size=100000):
     tstart = time.time()
     
     total_entries = int(rf['scoring_ntuple'].num_entries)
-    Eph_list, thetaX_list, thetaY_list = [], [], []
+    eventID_list, Eph_list, thetaX_list, thetaY_list = [], [], [], []
     
     # Process data in chunks to reduce memory usage
     for start_idx in range(0, total_entries, chunk_size):
@@ -491,11 +499,13 @@ def process_photons_memory_efficient(rf, chunk_size=100000):
         
         # Store results
         if np.any(mask):
-            Eph_list.append(arrays['Ekin'][mask] * 0.001)
-            thetaX_list.append(arrays['angle_x'][mask] * 1e3)
-            thetaY_list.append(arrays['angle_y'][mask] * 1e3)
+            eventID_list.append(arrays['eventID'][mask])
+            Eph_list.append(arrays['Ekin'][mask])
+            thetaX_list.append(arrays['angle_x'][mask])
+            thetaY_list.append(arrays['angle_y'][mask])
     
     # Combine all chunks
+    eventID = np.concatenate(eventID_list) if eventID_list else np.array([])
     Eph = np.concatenate(Eph_list) if Eph_list else np.array([])
     thetaX_ph = np.concatenate(thetaX_list) if thetaX_list else np.array([])
     thetaY_ph = np.concatenate(thetaY_list) if thetaY_list else np.array([])
@@ -505,7 +515,7 @@ def process_photons_memory_efficient(rf, chunk_size=100000):
     print(f"Number of emitted photons: {Nph}")
     print(f"Elapsed time: {telapsed:.2f} s\n")
     
-    return Eph, thetaX_ph, thetaY_ph, Nph
+    return eventID, Eph, thetaX_ph, thetaY_ph, Nph
 
 
 # One-liner version for maximum simplicity
@@ -535,6 +545,7 @@ def process_photons_quick(rf):
 def load_and_process_data(rf, Nmax=100000):
     """
     Optimized function to load and process simulation data.
+    It reads data from scoring_ntuple produced by FastSimChannelingRad.
     
     Parameters:
     - rf: Root file object
@@ -544,6 +555,10 @@ def load_and_process_data(rf, Nmax=100000):
     - df_in_primary_sel: Filtered input data
     - df_out_primary_sel: Filtered output data
     """
+
+    # Start a timer
+    import time
+    tstart = time.time()
     
     # Disable warnings
     import warnings
@@ -562,13 +577,18 @@ def load_and_process_data(rf, Nmax=100000):
     df_out_all_primary = df[detector_mask].head(Nmax)
     
     # Use the actual minimum length
-    actual_Nmax = min(len(df_in_all_primary), len(df_out_all_primary), int(Nmax))
+    #actual_Nmax = min(len(df_in_all_primary), len(df_out_all_primary), int(Nmax))
     
     # Select final datasets with proper slicing
-    df_in_primary_sel = df_in_all_primary[["eventID", "angle_x", "angle_y", "Ekin"]].iloc[:actual_Nmax]
-    df_out_primary_sel = df_out_all_primary[["eventID", "angle_x", "angle_y", "Ekin"]].iloc[:actual_Nmax]
+    df_in_primary_sel = df_in_all_primary[["eventID", "angle_x", "angle_y", "Ekin"]] #.iloc[:actual_Nmax]
+    df_out_primary_sel = df_out_all_primary[["eventID", "angle_x", "angle_y", "Ekin"]] #.iloc[:actual_Nmax]
     
-    print(f"Number of considered events (oriented case): {len(df_in_primary_sel)}")
+    print(f"Number of input particles: {len(df_in_primary_sel)}")
+    print(f"Number of out particles: {len(df_out_primary_sel)}")
+
+    # Stop the timer
+    telapsed = time.time() - tstart
+    print("elapsed time: %.2f s\n" % telapsed)
     
     return df_in_primary_sel, df_out_primary_sel
 
@@ -576,9 +596,14 @@ def load_and_process_data(rf, Nmax=100000):
 # Even faster version using numpy arrays directly
 def load_and_process_data_fast(rf, Nmax=100000):
     """
-    Ultra-fast version using numpy arrays directly.
+    Ultra-fast version of previous one.
+    It uses numpy arrays directly.
     """
 
+    # Start a timer
+    import time
+    tstart = time.time()
+    
     # Disable warnings
     import warnings
     warnings.simplefilter("ignore")
@@ -596,8 +621,8 @@ def load_and_process_data_fast(rf, Nmax=100000):
     Ekin = arrays['Ekin']
     
     # Create masks
-    crystal_mask = (volume == b"Crystal") & (parentID == 0)
-    detector_mask = (volume == b"Detector") & (parentID == 0)
+    crystal_mask = (volume == "Crystal") & (parentID == 0)
+    detector_mask = (volume == "Detector") & (parentID == 0)
     
     # Apply masks and limit to Nmax
     crystal_indices = np.where(crystal_mask)[0][:Nmax]
@@ -618,7 +643,12 @@ def load_and_process_data_fast(rf, Nmax=100000):
         'Ekin': Ekin[detector_indices]
     })
     
-    print(f"Number of considered events (oriented case): {len(df_in_primary_sel)}")
+    print(f"Number of input particles: {len(df_in_primary_sel)}")
+    print(f"Number of out particles: {len(df_out_primary_sel)}")
+
+    # Stop the timer
+    telapsed = time.time() - tstart
+    print("elapsed time: %.2f s\n" % telapsed)
     
     return df_in_primary_sel, df_out_primary_sel
 
@@ -629,6 +659,13 @@ def load_and_process_data_memory_optimized(rf, Nmax=100000, chunk_size=50000):
     Memory-optimized version that processes data in chunks.
     Useful for very large files that don't fit in memory.
     """
+
+    # Start a timer
+    import time
+    tstart = time.time()
+
+    # Disable warnings
+    import warnings
     warnings.simplefilter("ignore")
     
     # Get the total number of entries to pre-allocate arrays
@@ -664,7 +701,12 @@ def load_and_process_data_memory_optimized(rf, Nmax=100000, chunk_size=50000):
     df_in_primary_sel = pd.concat(in_events, ignore_index=True).head(Nmax)
     df_out_primary_sel = pd.concat(out_events, ignore_index=True).head(Nmax)
     
-    print(f"Number of considered events (oriented case): {len(df_in_primary_sel)}")
+    print(f"Number of input particles: {len(df_in_primary_sel)}")
+    print(f"Number of out particles: {len(df_out_primary_sel)}")
+
+    # Stop the timer
+    telapsed = time.time() - tstart
+    print("elapsed time: %.2f s\n" % telapsed)
     
     return df_in_primary_sel, df_out_primary_sel
 ##################################################################################################
@@ -793,7 +835,8 @@ def get_deflection_angles_vectorized(df_merged,
     
     thetaX_in = theta_x_in_smeared[mask]
     thetaY_in = theta_y_in_smeared[mask]
-    
+
+    # Return
     return DthetaX, DthetaY, thetaX_in, thetaY_in, good_events
 
 
@@ -838,7 +881,8 @@ def get_deflection_angles_optimized(df_merged,
         DthetaY = np.random.normal(DthetaY_mean[mask], res_DthetaY)
     else:
         DthetaY = DthetaY_mean[mask]
-    
+
+    # Return
     return (DthetaX, DthetaY, 
             theta_x_in_urad[mask], theta_y_in_urad[mask], 
             df_merged['eventID'].values[mask])
@@ -868,7 +912,9 @@ def filter_photon_emission_with_defl_cut(DthetaX, DthetaY, good_events, df_ph, \
     I updated the function to consider also 2 or 3 circular selctions, as in the Bent Ge<110> article. 
     DthetaX, DthetaY, good_events are lists or numpy arrays. good_events lists some events that were 
     previously selected according to some criteria (i.e. previous angular/spatial cuts).
+    The units of the variables of this dataframe must be GeV for energy and mrad for angles.
     df_ph is the dataframe of emitted photons. It contains ['eventID', 'Ekin', 'angle_x', 'angle_y'].
+    The units of the variables in df_ph are MeV for energy and rad for angles.
     The function returns both the total energy lost by radiation per each selected event (Erad_sel),
     and the individual photon emission features (Eph_sel[GeV], thetaX_ph_sel[mrad], thetaY_ph_sel[mrad])
     as numpy arrays.
@@ -877,6 +923,7 @@ def filter_photon_emission_with_defl_cut(DthetaX, DthetaY, good_events, df_ph, \
     thetaX_ph_dict_sel = {} #it will contain the angle_x of photons emitted at each event
     thetaY_ph_dict_sel = {} #it will contain the angle_y of photons emitted at each event
     sel_events = []
+    # Select particles
     if applySel:
         print("selType:", selType)
         if selType == 0:
@@ -901,6 +948,11 @@ def filter_photon_emission_with_defl_cut(DthetaX, DthetaY, good_events, df_ph, \
                     sel_events.append(good_events[i]) 
     else:
         sel_events = good_events
+    # Calculate percentage of selected particles
+    perc_sel_part = len(sel_events)/len(good_events)*100
+    print("number of selected events:", len(sel_events), \
+          "out of", len(good_events), "(%.0f%%)" % perc_sel_part)
+    # Take the photons emitted by the selected particles
     for i in range(len(sel_events)):
         df_i = df_ph[df_ph.eventID == sel_events[i]]
         Eph_dict_sel[sel_events[i]] = list(df_i["Ekin"].values*0.001) #MeV -> GeV
@@ -908,7 +960,6 @@ def filter_photon_emission_with_defl_cut(DthetaX, DthetaY, good_events, df_ph, \
         thetaY_ph_dict_sel[sel_events[i]] = list(df_i["angle_y"].values*1e3) #rad -> mrad
     Erad_sel = np.array([sum(Eph_dict_sel[event]) for event in Eph_dict_sel.keys()]) 
     #Erad_Sel is the total energy lost by radiation per (selected) event [GeV]
-    print("number of selected events:", len(Eph_dict_sel.keys()))
     Eph_sel = [] #it will contain the individual photon spectrum [GeV]
     thetaX_ph_sel = [] #it will contain the individual photon angle_x [mrad]
     thetaY_ph_sel = [] #it will contain the individual photon angle_y [mrad]
@@ -928,7 +979,9 @@ def filter_photon_emission_with_defl_cut(DthetaX, DthetaY, good_events, df_ph, \
     Eph_sel = np.array(list_flatten(Eph_sel))
     thetaX_ph_sel = np.array(list_flatten(thetaX_ph_sel))
     thetaY_ph_sel = np.array(list_flatten(thetaY_ph_sel))
-    print("number of selected photons:", len(Eph_sel) , '\n')
+    print("number of selected photons:", len(Eph_sel))
+    print("mean number of photons emitted per selected event: %.2f\n" % (len(Eph_sel)/len(sel_events)))
+    # Return
     return Erad_sel, Eph_sel, thetaX_ph_sel, thetaY_ph_sel
 #######################################################################################################
 

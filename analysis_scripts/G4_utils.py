@@ -232,6 +232,41 @@ def elliptical_selection(x, y, g_ell_center, g_ell_width, g_ell_height, angle, a
     if ax:
         ax.add_patch(g_ellipse)
     return xin, yin, mask
+
+
+def bilateral_filter_1d(x, sigma_spatial=3.0, sigma_range=0.5):
+    """
+    Edge-preserving smoothing of a 1D signal.
+    Parameters
+    ----------
+    x : array-like
+        Input signal.
+    sigma_spatial : float
+        Controls smoothing window size.
+    sigma_range : float
+        Controls edge preservation. Smaller values preserve
+        sharper edges.
+    Returns
+    -------
+    y : ndarray
+        Smoothed signal.
+    """
+    import numpy as np
+    x = np.asarray(x, dtype=float)
+    n = len(x)
+    y = np.empty_like(x)
+    radius = int(np.ceil(3 * sigma_spatial))
+    spatial = np.exp(-0.5 * (np.arange(-radius, radius + 1) / sigma_spatial) ** 2)
+    for i in range(n):
+        left = max(0, i - radius)
+        right = min(n, i + radius + 1)
+        idx = np.arange(left, right)
+        values = x[idx]
+        spatial_w = spatial[idx - i + radius]
+        range_w = np.exp(-0.5 * ((values - x[i]) / sigma_range) ** 2)
+        w = spatial_w * range_w
+        y[i] = np.sum(w * values) / np.sum(w)
+    return y
 #######################################################################################################
 
 ############# Set of functions present also in utils_testbeam #########################################
