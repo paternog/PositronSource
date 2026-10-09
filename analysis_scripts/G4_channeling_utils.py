@@ -1,6 +1,6 @@
 #######################################################################################################
 ####### Set of functions used during the analysis of channeling simulations with Geant4 ###############
-####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 18/09/2026 ######################
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 05/10/2026 ######################
 #######################################################################################################
 
 # Import the required libraries
@@ -108,7 +108,7 @@ def get_photons_on_detector(filename, Nevents, Elim=(0, 1e10), \
               (*Elim, len(df_ph_sel_E.E)/Nevents))
     
     # Return
-    return rf, df_ph_sel, df_ph_sel_E
+    return rf, df_ph_sel, df_ph_sel_E, Nevents
 
 
 def get_photons_at_crystal_exit_in_TestBeamOC(df_root, Nevents, Elim=(0, 1e10), \
@@ -247,7 +247,7 @@ def get_photons_on_detector_with_particle_cuts(filename, Nevents, \
     if 'gamma' in particles[0]:
         mask_ph_det = def_det_sel['particle'] == 'gamma'
     else:
-        if len(particles) > 3:
+        if len(particles[0]) > 3:
             mask_ph_det = def_det_sel['particle'].isin([2,5]) #<---------------------check!
         else:
             mask_ph_det = def_det_sel['particle'] == 2
@@ -428,9 +428,10 @@ def process_photons_optimized(rf):
     thetaX_ph = arrays['angle_x'][photon_mask] #rad
     thetaY_ph = arrays['angle_y'][photon_mask] #rad
     Nph = len(Eph)
-
-    df_ph = pd.DataFrame({"eventID": eventID, "Ekin": Eph, "angle_x": thetaX_ph, "angle_y": thetaY_ph})
     
+    df_ph = pd.DataFrame({"eventID": eventID, "Ekin": Eph, "angle_x": thetaX_ph, "angle_y": thetaY_ph})
+
+    # Print Print and return df_ph
     telapsed = time.time() - tstart
     print(f"Number of emitted photons: {Nph}")
     print(f"Elapsed time: {telapsed:.2f} s\n")
@@ -443,6 +444,15 @@ def process_photons_optimized(rf):
 def process_photons_uproot_filter(rf):
     """
     Ultra-fast version using uproot's expression filtering.
+    
+    Returns:
+      df_ph a dataframe with:
+        - eventID: eventID
+        - Eph: Photon energies in MeV
+        - thetaX_ph: Photon angles in rad
+        - thetaY_ph: Photon angles in rad
+    
+    Prints Nph: Number of photons
     """
     
     tstart = time.time()
@@ -463,12 +473,16 @@ def process_photons_uproot_filter(rf):
     thetaX_ph = df_ph['angle_x'].values #rad
     thetaY_ph = df_ph['angle_y'].values #rad
     Nph = len(Eph)
-    
+
+    df_ph = pd.DataFrame({"eventID": eventID, "Ekin": Eph, "angle_x": thetaX_ph, "angle_y": thetaY_ph})
+
+    # Print Print and return df_ph
     telapsed = time.time() - tstart
     print(f"Number of emitted photons: {Nph}")
     print(f"Elapsed time: {telapsed:.2f} s\n")
     
-    return eventID, Eph, thetaX_ph, thetaY_ph, Nph
+    #return eventID Eph, thetaX_ph, thetaY_ph, Nph
+    return df_ph
 
 
 # Memory-efficient version for very large datasets
@@ -700,6 +714,66 @@ def load_and_process_data_memory_optimized(rf, Nmax=100000, chunk_size=50000):
     # Concatenate and limit to Nmax
     df_in_primary_sel = pd.concat(in_events, ignore_index=True).head(Nmax)
     df_out_primary_sel = pd.concat(out_events, ignore_index=True).head(Nmax)
+    
+    print(f"Number of input particles: {len(df_in_primary_sel)}")
+    print(f"Number of out particles: {len(df_out_primary_sel)}")
+
+    # Stop the timer
+    telapsed = time.time() - tstart
+    print("elapsed time: %.2f s\n" % telapsed)
+    
+    return df_in_primary_sel, df_out_primary_sel
+
+
+# version for TestBeamOC2
+def load_and_process_data_fast_TestBeamOC2(rf, Nmax=100000):
+    """
+    Ultra-fast version of load_and_process_data_fast for TestBeamOC2.
+    It uses numpy arrays directly.
+    """
+
+    # Start a timer
+    import time
+    tstart = time.time()
+    
+    # Disable warnings
+    import warnings
+    warnings.simplefilter("ignore")
+    
+    # Load data as numpy arrays for maximum performance
+    arrays = rf['scoring_ntuple'].arrays(['eventID', 'xp', 'yp', \
+                                          'Ekin', 'volume', 'parentID'])
+    
+    # Convert to numpy operations
+    volume = arrays['volume']
+    parentID = arrays['parentID']
+    eventID = arrays['eventID']
+    angle_x = arrays['xp']
+    angle_y = arrays['yp']
+    Ekin = arrays['Ekin']
+    
+    # Create masks
+    crystal_mask = (volume == "Crystal") & (parentID == 0)
+    detector_mask = (volume == "ScoringScreen") & (parentID == 0)
+    
+    # Apply masks and limit to Nmax
+    crystal_indices = np.where(crystal_mask)[0][:Nmax]
+    detector_indices = np.where(detector_mask)[0][:Nmax]
+    
+    # Create final DataFrames
+    df_in_primary_sel = pd.DataFrame({
+        'eventID': eventID[crystal_indices],
+        'angle_x': angle_x[crystal_indices],
+        'angle_y': angle_y[crystal_indices],
+        'Ekin': Ekin[crystal_indices]
+    })
+    
+    df_out_primary_sel = pd.DataFrame({
+        'eventID': eventID[detector_indices],
+        'angle_x': angle_x[detector_indices],
+        'angle_y': angle_y[detector_indices],
+        'Ekin': Ekin[detector_indices]
+    })
     
     print(f"Number of input particles: {len(df_in_primary_sel)}")
     print(f"Number of out particles: {len(df_out_primary_sel)}")

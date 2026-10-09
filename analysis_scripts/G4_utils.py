@@ -1,6 +1,6 @@
 #######################################################################################################
 ####### Set of functions useful to analyse Geant4 simulations #########################################
-####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 22/07/2026 ######################
+####### Author: Gianfranco Paternò (paterno@fe.infn.it), last update: 05/10/2026 ######################
 #######################################################################################################
 
 
@@ -751,8 +751,8 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
 
         try: 
             parsX, covX = curve_fit(f=GaussLin, xdata=XBinC, ydata=profileX, \
-                                    #p0=[1, (xlimH+xlimL)*0.5, (xlimH-xlimL)*0.5, 0, 0] if useP0 else None, \
-                                    p0=[np.max(profileX), np.mean(profileX), np.std(profileX)] if useP0 else None, \
+                                    p0=[0.1, (xlimH+xlimL)*0.5, (xlimH-xlimL)*0.5, 0, 0] if useP0 else None, \
+                                    #p0=[np.max(profileX), np.mean(profileX), np.std(profileX)] if useP0 else None, \
                                     bounds=(-np.inf, np.inf))
                                     #bounds=(-3*np.std(profileX), 3*np.std(profileX)) if useP0 else (-np.inf, np.inf))    
             fitX = GaussLin(XBinC, *parsX)
@@ -763,8 +763,8 @@ def calc_TH2D_profiles(TH2D, xlimL, xlimH, ylimL, ylimH, XBinEdges, YBinEdges, \
             sigmaX_fit = abs(parsX[2])
             
             parsY, covY = curve_fit(f=GaussLin, xdata=YBinC, ydata=profileY, \
-                                    #p0=[1, (ylimH+ylimL)*0.5, (ylimH-ylimL)*0.5, 0, 0] if useP0 else None, \
-                                    p0=[np.max(profileY), np.mean(profileY), np.std(profileY)] if useP0 else None, \
+                                    p0=[0.1, (ylimH+ylimL)*0.5, (ylimH-ylimL)*0.5, 0, 0] if useP0 else None, \
+                                    #p0=[np.max(profileY), np.mean(profileY), np.std(profileY)] if useP0 else None, \
                                     bounds=(-np.inf, np.inf))
                                     #bounds=(-3*np.std(profileY), 3*np.std(profileY)) if useP0 else (-np.inf, np.inf))   
             fitY = GaussLin(YBinC, *parsY)
